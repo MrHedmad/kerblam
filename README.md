@@ -176,5 +176,6 @@ The same applies to `.sh` files in the `./src/pipes/` directory.
 ---
 
 And remember! If you want it...
+
 ![Kerblam it!](docs/images/kerblam_it.gif)
 
