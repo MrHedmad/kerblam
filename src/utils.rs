@@ -2,6 +2,9 @@ use std::error::Error;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
 use std::path::PathBuf;
+use std::process::Command;
+use std::str::FromStr;
+use crate::errors::StopError;
 
 /// Create a directory, and prepare an output message.
 ///
@@ -27,6 +30,13 @@ pub fn kerblam_create_dir(dir: &PathBuf) -> Result<String, String> {
     }
 }
 
+/// Create a file, and prepare an output message.
+///
+/// Optionally, write content in the file and overwrite it.
+/// 
+/// Output messages are wrapped in `Ok` or `Err` in order to differentiate
+/// between the two. On Err, the program is expected to exit, since the
+/// folder does not exist AND it cannot be created.
 pub fn kerblam_create_file(
     file: &PathBuf,
     content: &str,
@@ -49,6 +59,13 @@ pub fn kerblam_create_file(
     }
 }
 
+/// Ask the user for dynamic input, wait for the response, and return it.
+///
+/// Will trim the input, so if a person just typed '\n' you'd get an empty
+/// list.
+///
+/// TODO: Could potentially overflow if the user types a massive amount of
+/// text. But who cares.
 pub fn ask(prompt: &str) -> Result<String, Box<dyn Error>> {
     print!("{}", prompt);
     io::stdout().flush()?;
@@ -59,72 +76,130 @@ pub fn ask(prompt: &str) -> Result<String, Box<dyn Error>> {
     Ok(buffer.trim().to_owned())
 }
 
-pub enum UserResponse {
+/// To be asked for, you need to be able to show your options.
+///
+/// TODO: I'd like this to be auto-implemented if you have a
+/// From<char>. Maybe pull out all chars?
+/// Find a way to iterate over every possible type of the enums?
+/// It might be impossible.
+pub trait AsQuestion {
+    /// Show the options that this object supports when 
+    /// using `ask_for::<Self>`.
+    /// Triggers no issue if it's done wrong, but the user will
+    /// be left pondering.
+    fn as_options() -> String;
+}
+
+pub fn ask_for<T>(prompt: &str) -> T
+where T: TryFrom<char> + AsQuestion {
+        
+    loop {
+        let t = ask(format!("{} [{}]: ", prompt, T::as_options()).as_str()).unwrap();
+        match T::try_from(t.to_ascii_lowercase().chars().nth(0).unwrap()) {
+            Ok(value) => return value,
+            Err(_) => println!("'{}' is not in {}", t, T::as_options().as_str())
+        }
+    }
+}
+
+/// A simple Yes or No enum to be asked to the user.
+#[derive(Debug, Clone)]
+pub enum YesNo {
     Yes,
     No,
-    Abort,
-    Explain,
 }
 
-impl UserResponse {
-    pub fn parse(other: String) -> Option<UserResponse> {
-        match other.to_lowercase().chars().nth(0) {
-            None => None,
-            Some(char) => match char {
-                'y' => Some(Self::Yes),
-                'n' => Some(Self::No),
-                'a' => Some(Self::Abort),
-                'e' => Some(Self::Explain),
-                _ => None,
-            },
+impl TryFrom<char> for YesNo {
+    type Error = &'static str;
+    
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        match value {
+            'y' => Ok(Self::Yes),
+            'n' => Ok(Self::No),
+            _ => Err("Invalid String!")
         }
-    }
-
-    pub fn ask_options(prompt: &str, explaination: &str) -> UserResponse {
-        let prompt = format!("{} [yes/no/abort/explain]: ", prompt);
-        let mut result: Option<UserResponse>;
-        loop {
-            match ask(&prompt) {
-                Err(_) => {
-                    println!("Error reading input. Try again?");
-                    continue;
-                }
-                Ok(string) => result = Self::parse(string),
-            };
-
-            match result {
-                None => {
-                    println!("Invalid input. Please enter y/n/a/e.");
-                    continue;
-                }
-                Some(Self::Abort) => std::process::abort(),
-                Some(Self::Explain) => println!("{}", explaination),
-                _ => break,
-            }
-        }
-
-        result.unwrap()
     }
 }
 
-impl Into<char> for UserResponse {
+impl AsQuestion for YesNo {
+    fn as_options() -> String {
+        String::from_str("yes/no").unwrap()
+    }
+}
+
+// This is currently useless, but maybe we could leverage it to not have
+// the AsQuestion trait?
+impl Into<char> for YesNo {
     fn into(self) -> char {
         match self {
             Self::Yes => 'y',
-            Self::No => 'n',
-            Self::Abort => 'a',
-            Self::Explain => 'e',
+            Self::No => 'n'
         }
     }
 }
 
-impl Into<bool> for UserResponse {
+impl Into<bool> for YesNo {
     fn into(self) -> bool {
         match self {
             Self::Yes => true,
-            Self::No => false,
-            Self::Abort => false,
-            Self::Explain => false,
+            Self::No => false
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum GitCloneMethod {
+   Ssh,
+   Https
+}
+
+
+impl TryFrom<char> for GitCloneMethod {
+    type Error = &'static str;
+    
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        match value {
+            's' => Ok(Self::Ssh),
+            'h' => Ok(Self::Https),
+            _ => Err("Invalid String!")
+        }
+    }
+}
+
+
+impl AsQuestion for GitCloneMethod {
+    fn as_options() -> String {
+        String::from_str("ssh/https").unwrap()
+    }
+}
+
+pub fn run_command(command: &str, args: Vec<&str>) -> Result<String, StopError> {
+    println!("🏃 Executing '{}'", format!("{} {}", command, args.join(" ")));
+    let output = Command::new(command)
+        .args(args)
+        .output()
+        .expect("Failed to spawn process");
+
+    if output.status.success() {
+        return Ok(String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8"));
+    } else {
+        return Err(StopError { msg: String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8") })
+    }
+}
+
+
+#[allow(dead_code)]
+pub fn clone_repo(target: Option<&PathBuf>, repo: &str, method: GitCloneMethod) -> Result<String, StopError> {
+
+    let head = match method {
+        GitCloneMethod::Ssh => "git@github.com:",
+        GitCloneMethod::Https => "https://github.com/"
+    };
+
+    let path = match target {
+        None => ".",
+        Some(path) => path.to_str().unwrap()
+    };
+
+    run_command("git", vec!["clone", format!("{}{}", head, repo).as_str(), path])
 }

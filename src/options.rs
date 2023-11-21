@@ -20,4 +20,3 @@ struct KerblamTomlOptions {
     data: DataOptions,
     code: CodeOptions,
 }
-
