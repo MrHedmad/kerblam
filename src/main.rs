@@ -6,6 +6,11 @@ use std::fs;
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
+#[derive(Debug, Clone)]
+struct StopError {
+    msg: String,
+}
+
 #[derive(Parser, Debug)]
 #[command(author = "hedmad", about = KERBLAM_LONG_ABOUT)]
 struct Cli {
@@ -17,15 +22,10 @@ struct Cli {
 enum Command {
     /// Initialize a new Kerblam! project.
     New {
-        /// Name of the new project.
-        ///
-        /// Will be created in the current working dir as `./<name>`.
-        name: String
+        /// Path of the new project.
+        path: String
     },
     /// Package a Kerblam! project for later
-    ///
-    /// This strips out the intermediate data files and creates an archive,
-    /// optionally with git
     Pack {
         /// Where to save the packed project
         path: Option<PathBuf>
@@ -200,6 +200,10 @@ fn ask(prompt: &str) -> Result<String, Box<dyn Error>> {
     Ok(buffer.trim().to_owned())
 }
 
+fn clone_repo(owner: &str, name: &str) -> Result<String, String> {
+
+}
+
 
 fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
     let dirs_to_create: Vec<&str> = vec![
@@ -252,8 +256,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
     
     match args.command {
-        Command::New { name } => {
-            create_kerblam_project(&PathBuf::from_str(name.as_str())?)?;
+        Command::New { path } => {
+            create_kerblam_project(&PathBuf::from_str(path.as_str())?)?;
         },
         _ => {println!("Not implemented yet!")} 
     };
