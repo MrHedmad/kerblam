@@ -1,45 +1,76 @@
 ![If you want it, Kerblam it!](docs/images/logo.png)
 
-> Most of this is not implemented yet.
+> :warning: **Most of this is not implemented yet.**
 > Consider this README a roadmap of sort of what kerblam! wants to be.
+>
+> ```
+>            new      run clone  data      ignore      link   tests
+>              |        |     |     |           |         |       |
+> [progress]>###---------------------------------------------------<
+> ```
+
+Kerblam! is a tool that can help you manage data analysis projects.
 
 A Kerblam! project has a `kerblam.toml` file in its root.
 If you use `kerblam`, you then get some nice perks:
-- Allows for easy remote data access, by just specifying URLs and access tokens;
-- Can package and export data quickly and easily to share the project with colleagues;
-- Allows to manage and run multiple makefiles for different versions of the project;
-- Leverages git to isolate, rollback and run the project at a different tag;
+- Allows for easy remote data access, by just specifying URLs to fetch from;
+- Can package and export data quickly to share the project with colleagues;
+- Allows to manage and run multiple makefiles for different tasks;
+- Leverages git to isolate, rollback and run the project at a different point in time;
 - Cleans up intermediate and output files quickly;
 - Manages Docker environments and runs code in them for you.
 - Manage the content of you `.gitignore` for you, allowing to add files, 
   directories and even whole languages in one command.
-- Manages `.pre-commit-hooks` and Python `virtualenv`s for you.
-- Allow you to specify test data to run
+- Helps you use `pre-commit` by managing `.pre-commit-hooks` for you.
+- Allow you to specify test data to run.
 
 To transform a project to a Kerblam! project just make the kerblam.toml
-file yourself.
+file yourself. To learn how, look at the section below.
 
 ## Overview
-- `kerblam new` and `kerblam clone` can be used to create or clone a `kerblam` project.
+
+> :warning: **Note**: In this early stage, commands with :white_check_mark: are
+> (mostly) implemented, :construction: are being implemented now, and
+> :pushpin: are planned.
+>
+> More info for implemented commands and commands under implementation are
+> available below. Features missing from implemented commands are issues,
+> so look there to see what's still missing.
+>
+> Please imagine that everything is tentative until version `1.0.0`.
+
+- :white_check_mark: `kerblam new` can be used to create a new kerblam!
+  project. Kerblam! asks you if you want to use some common programming
+  languages and sets up a proper `.gitignore` and pre-commit hooks for you.
+- :pushpin: `kerblam clone` can be used to clone a `kerblam` project.
   Kerblam! will ask you to fetch input files, create virtual environments and
   more upon creation.
-- `kerblam fetch` fetches remote data and saves it locally.
-- `kerblam clean` removes local data.
-- `kerblam package` packages your pipeline and exports a `docker` image for
-  execution later.
-  Also can be used to export the data that the pipeline produces for sharing.
-- `kerblam run` copies your project to a temporary directory, clones your
-  `makefile`s and `dockerfiles` appropriately, builds a docker container and
-  runs your analysis there.
+- :pushpin: `kerblam data` fetches remote data and saves it locally, manages
+  local data and can clean it up.
+- :pushpin: `kerblam package` packages your pipeline and exports a `docker`
+  image for execution later.
+  It's useful for reproducibility purposes as the docker image is primed
+  for execution, bundling the kerblam! executable, makefiles and non-remote
+  data in the blob itself.
+  Can also be used to just export the output data that the pipeline produces
+  for sharing with others or for usage in writing reports/papers.
+- :construction: `kerblam run` copies your project to a temporary directory,
+  clones your `makefile`s and `dockerfiles` appropriately, builds a docker
+  container and runs your analysis there.
   Optionally, allows test data to be used instead of real data, in order to
   test your pipelines.
-- `kerblam ignore` can edit your `.gitignore` file by adding files, folders and
-  GitHub's recommended ignores for specific languages in just one command.
-- `kerblam link` can be used to move your `data` folder in some other place,
+- :pushpin: `kerblam ignore` can edit your `.gitignore` file by adding files,
+  folders and GitHub's recommended ignores for specific languages in just one command.
+- :pushpin: `kerblam link` can be used to move your `data` folder in some other place,
   and leave in its way a symlink, so that everything works just like before.
   This can be useful when your data is particularly bulky and you want to
   save it on some other drive.
 
+Kerblam! is *not* and does not want to be:
+- A pipeline manager like `snakemake` and `nextflow`: It supports and helps
+  you execute `make`, but it does not interfere from then on;
+- A replacement for any of the tools it leverages (e.g. `git`, `docker`,
+  `pre-commit`);
 
 ## Opinions
 Kerblam! projects are opinionated:
@@ -47,10 +78,12 @@ Kerblam! projects are opinionated:
   although you may configure it in `kerblam.toml`.
   Read about it below.
 - You use `make` or bash scripts as your pipeline manager.
-- You use `docker` as your virtualization service.
+- You use `docker` as your virtualisation service.
 - You use `git` as your version control system.
   Additionally, you create tags with `git` to record important previous 
   versions of your project.
+- You execute your pipelines in a Docker container, and not in your development
+  environment.
 
 If you don't like this setup, Kerblam! is not for you.
 
@@ -69,45 +102,57 @@ root of the project, `./`):
 - `./requirements.txt`: Is the requirements file needed by `pip`;
 - `./requirements-dev.txt`: Is the requirements file for development tools 
   needed by `pip`;
+  - Optionally, Kerblam! looks for a `pyproject.toml` file and - upon cloning -
+    installs the Python package with `pip install -e .`.
 
 You can configure all of these paths in `kerblam.toml`, if you so desire.
 This is mostly done for compatibility reasons.
 
 ## Contributing
-Kerblam! is currently not accepting PRs as it's still in its infancy.
+Kerblam! is currently not accepting pull requests as it's still in its infancy.
+
+> :warning: When Kerblam! reaches minimal viability, I'll open PRs.
+> You are still welcome to open issues to discuss code quality / structure
+> and the design of the tool.
 
 ## Naming
 This project is named after the fictitious online shop/delivery company in
 [S11E07](https://en.wikipedia.org/wiki/Kerblam!) of Doctor Who.
 
 Kerblam! might be referred to as Kerblam!, Kerblam or Kerb!am, interchangeably,
-althoug Kerblam! is preferred.
+although Kerblam! is preferred.
 
 ## Installation
 You can find and download a Kerblam! binary in
 [the releases tab](https://github.com/mrhedmad/kerblam/releases).
 Download it and drop it somewhere that you `$PATH` points to.
 
+If you want to install from source, install Rust and `cargo`, then run:
+```bash
+cargo install --git https://github.com/MrHedmad/kerblam.git
+```
+
 ### Requirements
-Kerblam! requires a linux (or generally unix-like) OS.
+Kerblam! requires a Linux (or generally unix-like) OS.
 It also uses binaries that it assumes are already installed:
 - GNU `make`: https://www.gnu.org/software/make/
 - `git`: https://git-scm.com/
-- Docker: https://www.docker.com/
+- Docker (as `docker`): https://www.docker.com/
 
 If you can use `git`, `make` and `docker` from your CLI, you should be good.
 
 # Tutorial
-This section outlines making a Kerblam! project.
+This section outlines making and working with a Kerblam! project.
+It covers creation, execution and day-to-day tasks that Kerblam! can help with.
 
-## Creating a new project
+## Creating a new project - `kerblam new`
 Go in a directory where you want to store the new project and run `kerblam new test-project`.
 Kerblam! asks you some setup questions:
 - If you want to use [Python](https://www.python.org/);
 - If you want to use [R](https://www.r-project.org/);
 - If you want to use [pre-commit](https://pre-commit.com/);
-- If you have a github account, and would like to setup the `origin` of your
-  repository to github.com.
+- If you have a Github account, and would like to setup the `origin` of your
+  repository to Github.com.
 
 Say 'yes' to all of these questions to follow along.
 Kerblam! will:
@@ -119,19 +164,21 @@ Kerblam! will:
   files,
 - and setup the `.gitignore` file with appropriate ignores;
 
-You can now start working! The rest of this tutorial outlines common tasks
-with which you can use `kerblam` for.
+> :warning: Note that Kerblam! will not do an `Initial commit` for you!
 
-## Executing code
+You can now start writing code!
+The rest of this tutorial outlines common tasks with which you can use `kerblam` for.
+
+## Executing code - `kerblam run`
 Kerblam can be used to manage how your project is executed, where and on
 what input files.
 
 Say that you have a script in `./src/calc_sum.py`. It takes as input a `.csv`
 and outputs a new `.csv` file as output, using `stdin` and `stdout`.
-You have an `input.csv` file that you'd like to procees, to create an
+You have an `input.csv` file that you'd like to process, to create an
 `output.csv`.
 You could write a shell script or a makefile with the command to run.
-We'll refer to these scripts as "pipe"s.
+We'll refer to these scripts as "pipes".
 Here's an example makefile:
 
 ```makefile
@@ -140,7 +187,7 @@ Here's an example makefile:
 ```
 
 This is great, until you have to run another "pipe", completely different from
-the first one, with different steps, requiremets, etc...
+the first one, with different steps, requirements, etc...
 You might write new makefiles or scripts for all the runs, but you'll then
 have to remember how to structure each one, what each does and write a 
 complex "meta"-makefile that runs the appropriate one.
@@ -156,7 +203,7 @@ For instance, you could have written a `./src/pipes/process_csv.makefile` for
 the previous step, and you could invoke it with `kerblam run process_csv`.
 You could then write more makefiles for other tasks and run them similarly.
 
-If Kerblam! finds a dockerfile of the same name as one of your pipes in the
+If Kerblam! finds a Dockerfile of the same name as one of your pipes in the
 `./src/dockerfiles/` folder (e.g. `./src/dockerfiles/process_csv.dockerfile`),
 it will:
 - Move the dockerfile to the top folder, next to the makefile;
@@ -168,10 +215,53 @@ can then effectively have Kerblam! run your projects in docker environments,
 so you can tweak your dependencies and tooling (which might be different than
 your dev environment).
 
-Kerblam! will automatically `.dockerignore` your `./data/` folder (if it's not
-the case already), since it's connected to the container at runtime instead.
+> :warning: When writing Dockerfiles, remember to `.dockerignore` the
+> `./data/` folder, as it will be linked at runtime to `/data/`.
 
 The same applies to `.sh` files in the `./src/pipes/` directory.
+
+### Specifying data to run on
+By default, Kerblam! will use your whole `./data` folder
+If you want different makefiles to run on different data, Kerblam! can
+temporarily swap out your real data with this 'substitute' data.
+
+For example, your `process_csv.makefile` requires an input `./data/in/input.csv` file.
+However, you might want to run the same makefile on another, `different_input.csv` file.
+You could copy and paste the first makefile, or you can use `kerblam` to do the same.
+Define in your `kerblam.toml` file a new section under `data.profiles`:
+```toml
+# You can use any ASCII name in place of 'alternate'.
+[data.profiles.alternate]
+# The quotes are important!
+"input.csv" = "different_input.csv"
+```
+You can then run the same makefile with the new data with:
+```
+kerblam run process_csv --profile alternate
+```
+Under the hood, Kerblam! will:
+- Rename `input.csv` to `<hex>_input.csv`, where `<hex>` is a string with 5
+  random numbers and letters;
+- Symlink `different_input.csv` to `input.csv`;
+- Run the analysis as normal;
+- When the run ends (or the analysis crashes), Kerblam! will remove the symlink
+  and rename `<hex>_input.csv` back to `input.csv`.
+
+This effectively causes the makefile run with different input data in this
+alternate run.
+
+> :warning: Careful that the *output* data will be saved as the same file names
+> as a "normal" run!
+
+This is most commonly useful to run the pipelines on test data that is faster to
+process or that produces pre-defined outputs. For example, you could define
+something similar to:
+```toml
+[data.profiles.test]
+"input.csv" = "test_input.csv"
+"configs/config_file.yaml" = "configs/test_config_file.yaml"
+```
+And execute your test run with `kerblam run pipe --profile test`.
 
 ---
 
