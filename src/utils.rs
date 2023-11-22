@@ -1,10 +1,12 @@
 use std::error::Error;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::process::Command;
 use std::str::FromStr;
 use crate::errors::StopError;
+use reqwest;
+use log;
 
 /// Create a directory, and prepare an output message.
 ///
@@ -173,16 +175,21 @@ impl AsQuestion for GitCloneMethod {
     }
 }
 
-pub fn run_command(command: &str, args: Vec<&str>) -> Result<String, StopError> {
-    println!("🏃 Executing '{}'", format!("{} {}", command, args.join(" ")));
+pub fn run_command(location: Option<&PathBuf>, command: &str, args: Vec<&str>) -> Result<String, StopError> {
+    log::debug!("Running command in {:?} :: {:?}, {:?}", location, command, args);
+    print!("🏃 Executing '{}'...", format!("{} {}", command, args.join(" ")));
+
     let output = Command::new(command)
+        .current_dir(location.unwrap_or(&PathBuf::from_str("./").unwrap()))
         .args(args)
         .output()
         .expect("Failed to spawn process");
 
     if output.status.success() {
+        println!(" Done!");
         return Ok(String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8"));
     } else {
+        println!("");
         return Err(StopError { msg: String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8") })
     }
 }
@@ -201,5 +208,12 @@ pub fn clone_repo(target: Option<&PathBuf>, repo: &str, method: GitCloneMethod) 
         Some(path) => path.to_str().unwrap()
     };
 
-    run_command("git", vec!["clone", format!("{}{}", head, repo).as_str(), path])
+    run_command(target, "git", vec!["clone", format!("{}{}", head, repo).as_str(), path])
+}
+
+pub fn fetch_gitignore(name: &str) -> Result<String, Box<dyn Error>> {
+    let url = format!("https://raw.githubusercontent.com/github/gitignore/main/{}.gitignore", name);
+    
+    let response = reqwest::blocking::get(url)?.text()?;
+    Ok(response)
 }
