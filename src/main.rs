@@ -1,13 +1,15 @@
 use clap::{Parser, Subcommand};
-use std::{error::Error, path::PathBuf};
 use env_logger;
+use options::parse_kerblam_toml;
+use std::{env::current_dir, error::Error, path::PathBuf};
 
-mod errors;
 mod commands;
+mod errors;
 mod options;
 mod utils;
 
 use crate::commands::new;
+use crate::commands::run;
 
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -19,7 +21,7 @@ struct Cli {
     command: Command,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, PartialEq)]
 enum Command {
     /// Initialize a new Kerblam! project.
     New {
@@ -47,8 +49,9 @@ enum Command {
     Run {
         /// Name of the module to run
         module_name: String,
-        /// Path to the Kerblam! project to be run
-        project_path: Option<PathBuf>,
+        /// Optional data profile to run with
+        #[arg(long)]
+        profile: Option<String>,
     },
 }
 
@@ -56,15 +59,40 @@ fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let args = Cli::parse();
 
+    let config = parse_kerblam_toml(&current_dir().unwrap());
+
+    if matches!(args.command, Command::New { .. }) && config.is_err() {
+        // We cannot go forward with any command if we are not in
+        // a kerblam! project.
+        // TODO: Maybe we could check parent directories for a kerblam.toml
+        // file and run as if we were there.
+        println!("❓ Could not find a 'kerblam.toml' in the current WD. Abort!");
+        return Ok(());
+    }
+
+    let config = config.unwrap(); // This is always safe due to the check above.
+
     match args.command {
         Command::New { path } => {
             if let Some(name) = path.file_name() {
-                println!("Kerblam! Making new project '{}'", name.to_str().expect("What a weird path!"));
+                println!(
+                    "Kerblam! Making new project '{}'",
+                    name.to_str().expect("What a weird path!")
+                );
             } else {
                 println!("Please provide the name of the project.");
                 return Ok(());
             }
             new::create_kerblam_project(&path)?;
+        }
+        Command::Run {
+            module_name,
+            profile,
+        } => {
+            match run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile) {
+                Ok(msg) => println!("{}", msg),
+                Err(err) => println!("❌ {}", err.msg),
+            };
         }
         _ => {
             println!("Not implemented yet!")

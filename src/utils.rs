@@ -1,12 +1,12 @@
+use crate::errors::StopError;
+use log;
+use reqwest;
 use std::error::Error;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
-use std::path::{PathBuf, Path};
+use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
-use crate::errors::StopError;
-use reqwest;
-use log;
 
 /// Create a directory, and prepare an output message.
 ///
@@ -35,7 +35,7 @@ pub fn kerblam_create_dir(dir: &PathBuf) -> Result<String, String> {
 /// Create a file, and prepare an output message.
 ///
 /// Optionally, write content in the file and overwrite it.
-/// 
+///
 /// Output messages are wrapped in `Ok` or `Err` in order to differentiate
 /// between the two. On Err, the program is expected to exit, since the
 /// folder does not exist AND it cannot be created.
@@ -85,7 +85,7 @@ pub fn ask(prompt: &str) -> Result<String, Box<dyn Error>> {
 /// Find a way to iterate over every possible type of the enums?
 /// It might be impossible.
 pub trait AsQuestion {
-    /// Show the options that this object supports when 
+    /// Show the options that this object supports when
     /// using `ask_for::<Self>`.
     /// Triggers no issue if it's done wrong, but the user will
     /// be left pondering.
@@ -93,13 +93,14 @@ pub trait AsQuestion {
 }
 
 pub fn ask_for<T>(prompt: &str) -> T
-where T: TryFrom<char> + AsQuestion {
-        
+where
+    T: TryFrom<char> + AsQuestion,
+{
     loop {
         let t = ask(format!("{} [{}]: ", prompt, T::as_options()).as_str()).unwrap();
         match T::try_from(t.to_ascii_lowercase().chars().nth(0).unwrap()) {
             Ok(value) => return value,
-            Err(_) => println!("'{}' is not in {}", t, T::as_options().as_str())
+            Err(_) => println!("'{}' is not in {}", t, T::as_options().as_str()),
         }
     }
 }
@@ -113,12 +114,12 @@ pub enum YesNo {
 
 impl TryFrom<char> for YesNo {
     type Error = &'static str;
-    
+
     fn try_from(value: char) -> Result<Self, Self::Error> {
         match value {
             'y' => Ok(Self::Yes),
             'n' => Ok(Self::No),
-            _ => Err("Invalid String!")
+            _ => Err("Invalid String!"),
         }
     }
 }
@@ -135,7 +136,7 @@ impl Into<char> for YesNo {
     fn into(self) -> char {
         match self {
             Self::Yes => 'y',
-            Self::No => 'n'
+            Self::No => 'n',
         }
     }
 }
@@ -144,30 +145,28 @@ impl Into<bool> for YesNo {
     fn into(self) -> bool {
         match self {
             Self::Yes => true,
-            Self::No => false
+            Self::No => false,
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum GitCloneMethod {
-   Ssh,
-   Https
+    Ssh,
+    Https,
 }
-
 
 impl TryFrom<char> for GitCloneMethod {
     type Error = &'static str;
-    
+
     fn try_from(value: char) -> Result<Self, Self::Error> {
         match value {
             's' => Ok(Self::Ssh),
             'h' => Ok(Self::Https),
-            _ => Err("Invalid String!")
+            _ => Err("Invalid String!"),
         }
     }
 }
-
 
 impl AsQuestion for GitCloneMethod {
     fn as_options() -> String {
@@ -175,9 +174,21 @@ impl AsQuestion for GitCloneMethod {
     }
 }
 
-pub fn run_command(location: Option<&PathBuf>, command: &str, args: Vec<&str>) -> Result<String, StopError> {
-    log::debug!("Running command in {:?} :: {:?}, {:?}", location, command, args);
-    print!("🏃 Executing '{}'...", format!("{} {}", command, args.join(" ")));
+pub fn run_command(
+    location: Option<&PathBuf>,
+    command: &str,
+    args: Vec<&str>,
+) -> Result<String, StopError> {
+    log::debug!(
+        "Running command in {:?} :: {:?}, {:?}",
+        location,
+        command,
+        args
+    );
+    print!(
+        "🏃 Executing '{}'...",
+        format!("{} {}", command, args.join(" "))
+    );
 
     let output = Command::new(command)
         .current_dir(location.unwrap_or(&PathBuf::from_str("./").unwrap()))
@@ -187,33 +198,46 @@ pub fn run_command(location: Option<&PathBuf>, command: &str, args: Vec<&str>) -
 
     if output.status.success() {
         println!(" Done!");
-        return Ok(String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8"));
+        return Ok(
+            String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8")
+        );
     } else {
         println!("");
-        return Err(StopError { msg: String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8") })
+        return Err(StopError {
+            msg: String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8"),
+        });
     }
 }
 
-
 #[allow(dead_code)]
-pub fn clone_repo(target: Option<&PathBuf>, repo: &str, method: GitCloneMethod) -> Result<String, StopError> {
-
+pub fn clone_repo(
+    target: Option<&PathBuf>,
+    repo: &str,
+    method: GitCloneMethod,
+) -> Result<String, StopError> {
     let head = match method {
         GitCloneMethod::Ssh => "git@github.com:",
-        GitCloneMethod::Https => "https://github.com/"
+        GitCloneMethod::Https => "https://github.com/",
     };
 
     let path = match target {
         None => ".",
-        Some(path) => path.to_str().unwrap()
+        Some(path) => path.to_str().unwrap(),
     };
 
-    run_command(target, "git", vec!["clone", format!("{}{}", head, repo).as_str(), path])
+    run_command(
+        target,
+        "git",
+        vec!["clone", format!("{}{}", head, repo).as_str(), path],
+    )
 }
 
 pub fn fetch_gitignore(name: &str) -> Result<String, Box<dyn Error>> {
-    let url = format!("https://raw.githubusercontent.com/github/gitignore/main/{}.gitignore", name);
-    
+    let url = format!(
+        "https://raw.githubusercontent.com/github/gitignore/main/{}.gitignore",
+        name
+    );
+
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
 }
