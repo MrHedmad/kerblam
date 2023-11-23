@@ -31,16 +31,19 @@ impl PathRenamer {
     fn invert(self) -> Self {
         Self {
             from: self.to,
-            to: self.from
+            to: self.from,
         }
     }
 }
 
-impl From<(PathBuf, PathBuf)> for PathRenamer {
-    fn from(value: (PathBuf, PathBuf)) -> Self {
+// If you want to be a bit more generic, then you can do this:
+// Or, replace the Into<PathBuf> with AsRef<Path>, then the from/to will look
+// like value.X.as_ref().into()
+impl<F: Into<PathBuf>, T: Into<PathBuf>> From<(F, T)> for PathRenamer {
+    fn from(value: (F, T)) -> Self {
         Self {
-            from: value.0,
-            to: value.1,
+            from: value.0.into(),
+            to: value.1.into(),
         }
     }
 }
@@ -58,10 +61,9 @@ fn extract_profile_paths(
         .ok_or(format!("Could not find {} profile", profile_name))?;
 
     Ok(profile
-       .iter()
-       .map(|(from, to)| PathRenamer::from((from.to_owned(), to.to_owned())))
-       .collect()
-    )
+        .iter()
+        .map(|(from, to)| PathRenamer::from((from, to)))
+        .collect())
 }
 
 pub fn kerblam_run_project(
@@ -109,22 +111,24 @@ pub fn kerblam_run_project(
 
         if profile_paths
             .iter()
-            .map(|x| {
-                match x.execute() {
-                    Ok(_) => false,
-                    Err(msg) => {
-                        println!("🔥 Could not find {}!", msg);
-                        true
-                    }
+            .map(|x| match x.execute() {
+                Ok(_) => false,
+                Err(msg) => {
+                    println!("🔥 Could not find {}!", msg);
+                    true
                 }
             })
             .any(|x| x)
         {
-            return Err(StopError { msg: "Could not find profile files.".to_string() });
+            return Err(StopError {
+                msg: "Could not find profile files.".to_string(),
+            });
         };
 
         profile_paths.into_iter().map(|x| x.invert()).collect()
-    } else {vec![]};
+    } else {
+        vec![]
+    };
 
     // Move the files that we need to move
 

@@ -7,3 +7,6 @@ pub struct StopError {
     /// A message to show the user before stopping.
     pub msg: String,
 }
+
+// This should implement std::error::Error and Display. Then you can use this as
+// a Result<T, StopError>

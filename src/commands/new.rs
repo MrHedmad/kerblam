@@ -111,11 +111,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
 
     // Write files
     for (file, content) in files_to_create {
-        match utils::kerblam_create_file(
-            &normalize_path(dir.join(file).as_path()),
-            content.as_str(),
-            true,
-        ) {
+        match utils::kerblam_create_file(&normalize_path(dir.join(file)), content.as_str(), true) {
             Ok(msg) => println!("{}", msg),
             Err(msg) => {
                 println!("{}", msg);
@@ -126,7 +122,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
 
     // Add to gitignore
     match utils::kerblam_create_file(
-        &normalize_path(dir.join("./.gitignore").as_path()),
+        &normalize_path(dir.join("./.gitignore")),
         gitignore_content.join("\n").as_str(),
         true,
     ) {
@@ -152,8 +148,8 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
 }
 
 // This is stolen from Cargo
-pub fn normalize_path(path: &Path) -> PathBuf {
-    let mut components = path.components().peekable();
+pub fn normalize_path(path: impl AsRef<Path>) -> PathBuf {
+    let mut components = path.as_ref().components().peekable();
     let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
         components.next();
         PathBuf::from(c.as_os_str())

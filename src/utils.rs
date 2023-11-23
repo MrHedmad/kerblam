@@ -4,7 +4,7 @@ use reqwest;
 use std::error::Error;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
@@ -15,7 +15,9 @@ use std::str::FromStr;
 /// Output messages are wrapped in `Ok` or `Err` in order to differentiate
 /// between the two. On Err, the program is expected to exit, since the
 /// folder does not exist AND it cannot be created.
-pub fn kerblam_create_dir(dir: &PathBuf) -> Result<String, String> {
+pub fn kerblam_create_dir(dir: impl AsRef<Path>) -> Result<String, String> {
+    let dir = dir.as_ref();
+
     if dir.exists() && dir.is_dir() {
         return Ok(format!("🔷 {:?} was already there!", dir));
     }
@@ -40,10 +42,12 @@ pub fn kerblam_create_dir(dir: &PathBuf) -> Result<String, String> {
 /// between the two. On Err, the program is expected to exit, since the
 /// folder does not exist AND it cannot be created.
 pub fn kerblam_create_file(
-    file: &PathBuf,
+    file: impl AsRef<Path>,
     content: &str,
     overwrite: bool,
 ) -> Result<String, String> {
+    let file = file.as_ref();
+
     if file.exists() && !overwrite {
         return Err(format!("❌ {:?} was already there!", file));
     }
@@ -68,8 +72,8 @@ pub fn kerblam_create_file(
 ///
 /// TODO: Could potentially overflow if the user types a massive amount of
 /// text. But who cares.
-pub fn ask(prompt: &str) -> Result<String, Box<dyn Error>> {
-    print!("{}", prompt);
+pub fn ask(prompt: impl AsRef<str>) -> Result<String, Box<dyn Error>> {
+    print!("{}", prompt.as_ref());
     io::stdout().flush()?;
 
     let mut buffer = String::new();
@@ -97,7 +101,7 @@ where
     T: TryFrom<char> + AsQuestion,
 {
     loop {
-        let t = ask(format!("{} [{}]: ", prompt, T::as_options()).as_str()).unwrap();
+        let t = ask(format!("{} [{}]: ", prompt, T::as_options())).unwrap();
         match T::try_from(t.to_ascii_lowercase().chars().nth(0).unwrap()) {
             Ok(value) => return value,
             Err(_) => println!("'{}' is not in {}", t, T::as_options().as_str()),
@@ -175,10 +179,11 @@ impl AsQuestion for GitCloneMethod {
 }
 
 pub fn run_command(
-    location: Option<&PathBuf>,
+    location: Option<impl AsRef<Path>>,
     command: &str,
     args: Vec<&str>,
 ) -> Result<String, StopError> {
+    let location = location.map(|path| path.as_ref().to_path_buf());
     log::debug!(
         "Running command in {:?} :: {:?}, {:?}",
         location,
@@ -191,7 +196,7 @@ pub fn run_command(
     );
 
     let output = Command::new(command)
-        .current_dir(location.unwrap_or(&PathBuf::from_str("./").unwrap()))
+        .current_dir(location.unwrap_or(PathBuf::from_str("./").unwrap()))
         .args(args)
         .output()
         .expect("Failed to spawn process");
@@ -211,7 +216,7 @@ pub fn run_command(
 
 #[allow(dead_code)]
 pub fn clone_repo(
-    target: Option<&PathBuf>,
+    target: Option<impl AsRef<Path>>,
     repo: &str,
     method: GitCloneMethod,
 ) -> Result<String, StopError> {
@@ -219,16 +224,17 @@ pub fn clone_repo(
         GitCloneMethod::Ssh => "git@github.com:",
         GitCloneMethod::Https => "https://github.com/",
     };
+    let target = target.map(|path| path.as_ref().to_path_buf());
 
     let path = match target {
-        None => ".",
-        Some(path) => path.to_str().unwrap(),
+        None => ".".to_string(),
+        Some(ref path) => path.to_string_lossy().to_string(),
     };
 
     run_command(
         target,
         "git",
-        vec!["clone", format!("{}{}", head, repo).as_str(), path],
+        vec!["clone", format!("{}{}", head, repo).as_str(), &path],
     )
 }
 

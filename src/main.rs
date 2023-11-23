@@ -56,6 +56,9 @@ enum Command {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // The failure cases should return an error code of != 0, and the println!
+    // should probably print to the stderr. Instead of passing `Ok(())`, you
+    // might be able to do the following...
     env_logger::init();
     let args = Cli::parse();
 
@@ -66,8 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // a kerblam! project.
         // TODO: Maybe we could check parent directories for a kerblam.toml
         // file and run as if we were there.
-        println!("❓ Could not find a 'kerblam.toml' in the current WD. Abort!");
-        return Ok(());
+        return Err("❓ Could not find a 'kerblam.toml' in the current WD. Abort!".into());
     }
 
     let config = config.unwrap(); // This is always safe due to the check above.
@@ -75,13 +77,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     match args.command {
         Command::New { path } => {
             if let Some(name) = path.file_name() {
-                println!(
+                eprintln!(
                     "Kerblam! Making new project '{}'",
                     name.to_str().expect("What a weird path!")
                 );
             } else {
-                println!("Please provide the name of the project.");
-                return Ok(());
+                return Err("Please provide the name of the project.".into());
             }
             new::create_kerblam_project(&path)?;
         }
@@ -95,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             };
         }
         _ => {
-            println!("Not implemented yet!")
+            unimplemented!("This command is not implemented yet!")
         }
     };
 
