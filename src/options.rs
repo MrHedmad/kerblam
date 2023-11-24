@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::fs;
 use std::{collections::HashMap, path::PathBuf};
+use std::path::Path;
 
 use crate::errors::StopError;
 
@@ -35,7 +36,7 @@ pub struct KerblamTomlOptions {
     code: Option<CodeOptions>,
 }
 
-pub fn parse_kerblam_toml(toml_file: &PathBuf) -> Result<KerblamTomlOptions, StopError> {
+pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions, StopError> {
     let toml_content = match fs::read(toml_file) {
         Ok(bytes) => match String::from_utf8(bytes) {
             Ok(string) => string,
@@ -56,3 +57,4 @@ pub fn parse_kerblam_toml(toml_file: &PathBuf) -> Result<KerblamTomlOptions, Sto
 
     Ok(config)
 }
+

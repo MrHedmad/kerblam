@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 use env_logger;
+use errors::StopError;
 use options::parse_kerblam_toml;
+use std::process::ExitCode;
 use std::{env::current_dir, error::Error, path::PathBuf};
 
 mod commands;
@@ -55,7 +57,10 @@ enum Command {
     },
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), StopError> {
+    // 'main' automatically exits with `0` if it gets Ok, and '1' if it gets
+    // an Err, also calling `eprintln!(error)` for you.
+    // So, we can just return the `StopError` when we get them.
     env_logger::init();
     let args = Cli::parse();
 
@@ -66,8 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // a kerblam! project.
         // TODO: Maybe we could check parent directories for a kerblam.toml
         // file and run as if we were there.
-        println!("❓ Could not find a 'kerblam.toml' in the current WD. Abort!");
-        return Ok(());
+        return Err(StopError::from("❓ Could not find a 'kerblam.toml' in the current wd."));
     }
 
     let config = config.unwrap(); // This is always safe due to the check above.
@@ -80,10 +84,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                     name.to_str().expect("What a weird path!")
                 );
             } else {
-                println!("Please provide the name of the project.");
-                return Ok(());
+                return Err(StopError::from("Please provide the name of the project."));
             }
-            new::create_kerblam_project(&path)?;
+            // I cannot find a From<> type that I can implement to just convert
+            // any Box<dyn Error> to a StopError.
+            match new::create_kerblam_project(&path) {
+                Ok(i) => Ok(i),
+                Err(e) => {Err(StopError { msg: format!("{}", e)})},
+            }?;
         }
         Command::Run {
             module_name,
@@ -91,13 +99,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         } => {
             match run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile) {
                 Ok(msg) => println!("{}", msg),
-                Err(err) => println!("❌ {}", err.msg),
+                Err(err) => return Err(err),
             };
         }
         _ => {
-            println!("Not implemented yet!")
+            unimplemented!("Not implemented yet!")
         }
     };
 
     Ok(())
 }
+

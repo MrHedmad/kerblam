@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -31,16 +30,16 @@ impl PathRenamer {
     fn invert(self) -> Self {
         Self {
             from: self.to,
-            to: self.from
+            to: self.from,
         }
     }
 }
 
-impl From<(PathBuf, PathBuf)> for PathRenamer {
-    fn from(value: (PathBuf, PathBuf)) -> Self {
+impl<F: Into<PathBuf>, T: Into<PathBuf>> From<(F, T)> for PathRenamer {
+    fn from (value: (F, T)) -> Self {
         Self {
-            from: value.0,
-            to: value.1,
+            from: value.0.into(),
+            to: value.1.into(),
         }
     }
 }
@@ -49,17 +48,23 @@ fn extract_profile_paths(
     config: KerblamTomlOptions,
     profile_name: &str,
 ) -> Result<Vec<PathRenamer>, Box<dyn Error>> {
-    let profile = config
+    // The call here is broken because the last `ok_or` makes a temporary
+    // reference that does not live enough until the 'profile.iter()' call
+    // later on. I'm not sure why this is the case, but separating the
+    // calls fixes it.
+    let profiles = config
         .data
         .ok_or("Missing 'data' field!")?
         .profiles
-        .ok_or("Missing 'profiles' field!")?
+        .ok_or("Missing 'profiles' field!")?;
+
+    let profile = profiles
         .get(profile_name)
         .ok_or(format!("Could not find {} profile", profile_name))?;
 
     Ok(profile
        .iter()
-       .map(|(from, to)| PathRenamer::from((from.to_owned(), to.to_owned())))
+       .map(|(from, to)| PathRenamer::from((from, to)))
        .collect()
     )
 }
@@ -109,22 +114,22 @@ pub fn kerblam_run_project(
 
         if profile_paths
             .iter()
-            .map(|x| {
-                match x.execute() {
-                    Ok(_) => false,
-                    Err(msg) => {
-                        println!("🔥 Could not find {}!", msg);
-                        true
-                    }
+            .map(|x| { match x.execute() {
+                Ok(_) => false,
+                Err(msg) => {
+                    println!("🔥 Could not find {}!", msg);
+                    true
                 }
-            })
+            }})
             .any(|x| x)
         {
             return Err(StopError { msg: "Could not find profile files.".to_string() });
         };
 
         profile_paths.into_iter().map(|x| x.invert()).collect()
-    } else {vec![]};
+    } else {
+        vec![]
+    };
 
     // Move the files that we need to move
 
