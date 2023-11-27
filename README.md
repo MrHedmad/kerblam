@@ -6,7 +6,7 @@
 > ```
 >            new      run clone  data      ignore      link   tests
 >              |        |     |     |           |         |       |
-> [progress]>###---------------------------------------------------<
+> [progress]>#######-----------------------------------------------<
 > ```
 
 Kerblam! is a tool that can help you manage data analysis projects.
