@@ -1,12 +1,10 @@
 use clap::{Parser, Subcommand};
 use env_logger;
-use errors::StopError;
 use options::parse_kerblam_toml;
-use std::process::ExitCode;
-use std::{env::current_dir, error::Error, path::PathBuf};
+use std::{env::current_dir, path::PathBuf};
+use anyhow::*;
 
 mod commands;
-mod errors;
 mod options;
 mod utils;
 
@@ -57,53 +55,40 @@ enum Command {
     },
 }
 
-fn main() -> Result<(), StopError> {
+fn main() -> anyhow::Result<()> {
     // 'main' automatically exits with `0` if it gets Ok, and '1' if it gets
     // an Err, also calling `eprintln!(error)` for you.
     // So, we can just return the `StopError` when we get them.
     env_logger::init();
+    let here = &current_dir().unwrap();
     let args = Cli::parse();
+    
+    log::debug!("Kerblam is starting in {:?}", here);
 
-    let config = parse_kerblam_toml(&current_dir().unwrap());
+    let config = parse_kerblam_toml(&current_dir().unwrap().join("kerblam.toml"));
 
-    if matches!(args.command, Command::New { .. }) && config.is_err() {
+    if ! matches!(args.command, Command::New { .. }) && config.is_err() {
         // We cannot go forward with any command if we are not in
         // a kerblam! project.
         // TODO: Maybe we could check parent directories for a kerblam.toml
         // file and run as if we were there.
-        return Err(StopError::from("❓ Could not find a 'kerblam.toml' in the current wd."));
+        return Err(anyhow!("Failed to read the kerblam.toml file!").context(config.unwrap_err()));
     }
-
-    let config = config.unwrap(); // This is always safe due to the check above.
 
     match args.command {
         Command::New { path } => {
-            if let Some(name) = path.file_name() {
-                println!(
-                    "Kerblam! Making new project '{}'",
-                    name.to_str().expect("What a weird path!")
-                );
-            } else {
-                return Err(StopError::from("Please provide the name of the project."));
-            }
-            // I cannot find a From<> type that I can implement to just convert
-            // any Box<dyn Error> to a StopError.
-            match new::create_kerblam_project(&path) {
-                Ok(i) => Ok(i),
-                Err(e) => {Err(StopError { msg: format!("{}", e)})},
-            }?;
+            eprintln!("Creating a new project in {:?}!", path);
+            new::create_kerblam_project(&path)?;
         }
         Command::Run {
             module_name,
             profile,
         } => {
-            match run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile) {
-                Ok(msg) => println!("{}", msg),
-                Err(err) => return Err(err),
-            };
+            let config = config.unwrap(); // This is always safe due to the check above.
+            run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile)?;
         }
         _ => {
-            unimplemented!("Not implemented yet!")
+            todo!()
         }
     };
 

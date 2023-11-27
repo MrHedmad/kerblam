@@ -1,10 +1,10 @@
 use crate::utils::fetch_gitignore;
 use crate::utils::{self, GitCloneMethod, YesNo};
 use crate::VERSION;
-use std::error::Error;
 use std::path::{Component, Path, PathBuf};
+use anyhow::Result;
 
-pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let dirs_to_create: Vec<&str> = vec![
         "",
         "./data/in",
@@ -13,7 +13,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
         "./src/dockerfiles",
     ];
     let mut files_to_create: Vec<(&str, String)> =
-        vec![("./kerblam.toml", format!("[meta]\nversion = {}", VERSION))];
+        vec![("./kerblam.toml", format!("[meta]\nversion = \"{}\"\n", VERSION))];
     // Having this to be a Vec<String> makes all sorts of problems since most
     // commands are hardcoded &str, and we need to go back and forth.
     // Probably can be fixed by generics?
@@ -93,7 +93,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
     // Write directories
     let dirs_to_create: Vec<PathBuf> = dirs_to_create.into_iter().map(|x| dir.join(x)).collect();
 
-    let results: Vec<Result<String, String>> = dirs_to_create
+    let results: Vec<Result<String, anyhow::Error>> = dirs_to_create
         .iter()
         .map(|x| normalize_path(x))
         .map(|x| utils::kerblam_create_dir(&x))
@@ -144,7 +144,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
     for (command, args) in commands_to_run {
         match utils::run_command(Some(dir), command, args.iter().map(|x| &**x).collect()) {
             Ok(_) => (),
-            Err(e) => println!("{}", e.msg),
+            Err(e) => eprintln!("{}", e),
         }
     }
 

@@ -1,65 +1,57 @@
-use crate::errors::StopError;
 use log;
 use reqwest;
-use std::error::Error;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+use anyhow::{bail, Result, anyhow};
 
-/// Create a directory, and prepare an output message.
+/// Create a directory.
 ///
+/// Create a directory and prepare an output message to display to the user.
 /// Creates a dir only if it does not exist.
-///
-/// Output messages are wrapped in `Ok` or `Err` in order to differentiate
-/// between the two. On Err, the program is expected to exit, since the
-/// folder does not exist AND it cannot be created.
-pub fn kerblam_create_dir(dir: impl AsRef<Path>) -> Result<String, String> {
+pub fn kerblam_create_dir(dir: impl AsRef<Path>) -> Result<String> {
     let dir = dir.as_ref();
 
     if dir.exists() && dir.is_dir() {
         return Ok(format!("🔷 {:?} was already there!", dir));
     }
     if dir.exists() && dir.is_file() {
-        return Err(format!("❌ {:?} is a file!", dir));
+        bail!("❌ {:?} is a file!", dir);
     }
 
     match fs::create_dir_all(dir) {
         Ok(_) => Ok(format!("✅ {:?} created!", dir)),
         Err(e) => match e.kind() {
-            ErrorKind::PermissionDenied => Err(format!("❌ No permission to write {:?}!", dir)),
-            kind => Err(format!("❌ Failed to write {:?} - {:?}", dir, kind)),
+            ErrorKind::PermissionDenied => Err(anyhow!("❌ No permission to write {:?}!", dir)),
+            kind => Err(anyhow!("❌ Failed to write {:?} - {:?}", dir, kind)),
         },
     }
 }
 
 /// Create a file, and prepare an output message.
 ///
-/// Optionally, write content in the file and overwrite it.
-///
-/// Output messages are wrapped in `Ok` or `Err` in order to differentiate
-/// between the two. On Err, the program is expected to exit, since the
-/// folder does not exist AND it cannot be created.
+/// Optionally, write content in the file, overwriting it.
 pub fn kerblam_create_file(
     file: impl AsRef<Path>,
     content: &str,
     overwrite: bool,
-) -> Result<String, String> {
+) -> Result<String> {
     let file = file.as_ref();
     if file.exists() && !overwrite {
-        return Err(format!("❌ {:?} was already there!", file));
+        bail!("❌ {:?} was already there!", file);
     }
 
     if file.exists() && file.is_dir() {
-        return Err(format!("❌ {:?} is a directory!", file));
+        bail!("❌ {:?} is a directory!", file);
     }
 
     match fs::write(file, content) {
         Ok(_) => Ok(format!("✅ {:?} created!", file)),
         Err(e) => match e.kind() {
-            ErrorKind::PermissionDenied => Err(format!("❌ No permission to write {:?}!", file)),
-            kind => Err(format!("❌ Failed to write {:?} - {:?}", file, kind)),
+            ErrorKind::PermissionDenied => Err(anyhow!("❌ No permission to write {:?}!", file)),
+            kind => Err(anyhow!("❌ Failed to write {:?} - {:?}", file, kind)),
         },
     }
 }
@@ -71,7 +63,7 @@ pub fn kerblam_create_file(
 ///
 /// TODO: Could potentially overflow if the user types a massive amount of
 /// text. But who cares.
-pub fn ask(prompt: impl AsRef<str>) -> Result<String, Box<dyn Error>> {
+pub fn ask(prompt: impl AsRef<str>) -> Result<String> {
     let prompt = prompt.as_ref();
     print!("{}", prompt);
     io::stdout().flush()?;
@@ -117,20 +109,20 @@ pub enum YesNo {
 }
 
 impl TryFrom<char> for YesNo {
-    type Error = &'static str;
+    type Error = anyhow::Error;
 
-    fn try_from(value: char) -> Result<Self, Self::Error> {
+    fn try_from(value: char) -> Result<Self> {
         match value {
             'y' => Ok(Self::Yes),
             'n' => Ok(Self::No),
-            _ => Err("Invalid String!"),
+            _ => Err(anyhow!("Invalid cast value {}!", value))?,
         }
     }
 }
 
 impl AsQuestion for YesNo {
     fn as_options() -> String {
-        String::from_str("yes/no").unwrap()
+        String::from_str("yes/no").unwrap() // This canno fail
     }
 }
 
@@ -161,13 +153,13 @@ pub enum GitCloneMethod {
 }
 
 impl TryFrom<char> for GitCloneMethod {
-    type Error = &'static str;
+    type Error = anyhow::Error;
 
-    fn try_from(value: char) -> Result<Self, Self::Error> {
+    fn try_from(value: char) -> Result<Self> {
         match value {
             's' => Ok(Self::Ssh),
             'h' => Ok(Self::Https),
-            _ => Err("Invalid String!"),
+            _ => Err(anyhow!("Invalid cast value {}!", value)),
         }
     }
 }
@@ -182,7 +174,7 @@ pub fn run_command(
     location: Option<impl AsRef<Path>>,
     command: &str,
     args: Vec<&str>,
-) -> Result<String, StopError> {
+) -> Result<String> {
     let location = location.map(|path| path.as_ref().to_path_buf());
 
     log::debug!(
@@ -209,9 +201,9 @@ pub fn run_command(
         );
     } else {
         println!("");
-        return Err(StopError {
-            msg: String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8"),
-        });
+        return Err(anyhow!(
+            String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8"),
+        ));
     }
 }
 
@@ -220,7 +212,7 @@ pub fn clone_repo(
     target: Option<impl AsRef<Path>>,
     repo: &str,
     method: GitCloneMethod,
-) -> Result<String, StopError> {
+) -> Result<String> {
     let target = target.map(|path| path.as_ref().to_path_buf());
     let head = match method {
         GitCloneMethod::Ssh => "git@github.com:",
@@ -239,7 +231,7 @@ pub fn clone_repo(
     )
 }
 
-pub fn fetch_gitignore(name: &str) -> Result<String, Box<dyn Error>> {
+pub fn fetch_gitignore(name: &str) -> Result<String> {
     let url = format!(
         "https://raw.githubusercontent.com/github/gitignore/main/{}.gitignore",
         name
@@ -248,3 +240,4 @@ pub fn fetch_gitignore(name: &str) -> Result<String, Box<dyn Error>> {
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
 }
+
