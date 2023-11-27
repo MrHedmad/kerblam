@@ -118,9 +118,9 @@ Kerblam! is currently not accepting pull requests as it's still in its infancy.
 ## Naming
 This project is named after the fictitious online shop/delivery company in
 [S11E07](https://en.wikipedia.org/wiki/Kerblam!) of Doctor Who.
-
 Kerblam! might be referred to as Kerblam!, Kerblam or Kerb!am, interchangeably,
 although Kerblam! is preferred.
+The Kerblam! logo is written in the [Kwark Font](https://www.1001fonts.com/kwark-font.html) by [tup wanders](https://www.1001fonts.com/users/tup/).
 
 ## Installation
 You can find and download a Kerblam! binary in
