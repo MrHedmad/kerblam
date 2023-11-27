@@ -3,7 +3,7 @@ use std::fs;
 use std::{collections::HashMap, path::PathBuf};
 use std::path::Path;
 
-use crate::errors::StopError;
+use anyhow::Result;
 
 // TODO: Remove the #[allow(dead_code)] calls when we actually use the
 // options here.
@@ -36,24 +36,11 @@ pub struct KerblamTomlOptions {
     code: Option<CodeOptions>,
 }
 
-pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions, StopError> {
-    let toml_content = match fs::read(toml_file) {
-        Ok(bytes) => match String::from_utf8(bytes) {
-            Ok(string) => string,
-            Err(msg) => Err(StopError {
-                msg: msg.to_string(),
-            })?,
-        },
-        Err(reason) => Err(StopError {
-            msg: reason.to_string(),
-        })?,
-    };
-    let config: KerblamTomlOptions = match toml::from_str(toml_content.as_str()) {
-        Ok(data) => data,
-        Err(msg) => Err(StopError {
-            msg: msg.to_string(),
-        })?,
-    };
+pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions> {
+    let toml_file = toml_file.as_ref();
+    log::debug!("Reading {:?} for TOML options...", toml_file);
+    let toml_content = String::from_utf8(fs::read(toml_file)?)?;
+    let config: KerblamTomlOptions = toml::from_str(toml_content.as_str())?;
 
     Ok(config)
 }

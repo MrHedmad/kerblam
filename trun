@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+export RUST_LOG=kerblam=trace
+cargo build --manifest-path /home/hedmad/Files/repos/kerblam/Cargo.toml
+/home/hedmad/Files/repos/kerblam/target/debug/kerblam "$@"
+
