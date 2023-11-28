@@ -1,8 +1,8 @@
 use crate::utils::fetch_gitignore;
 use crate::utils::{self, GitCloneMethod, YesNo};
 use crate::VERSION;
-use std::path::{Component, Path, PathBuf};
 use anyhow::Result;
+use std::path::{Component, Path, PathBuf};
 
 pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let dirs_to_create: Vec<&str> = vec![
@@ -12,8 +12,10 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
         "./src/pipes",
         "./src/dockerfiles",
     ];
-    let mut files_to_create: Vec<(&str, String)> =
-        vec![("./kerblam.toml", format!("[meta]\nversion = \"{}\"\n", VERSION))];
+    let mut files_to_create: Vec<(&str, String)> = vec![(
+        "./kerblam.toml",
+        format!("[meta]\nversion = \"{}\"\n", VERSION),
+    )];
     // Having this to be a Vec<String> makes all sorts of problems since most
     // commands are hardcoded &str, and we need to go back and forth.
     // Probably can be fixed by generics?

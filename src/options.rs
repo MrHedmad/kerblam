@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::fs;
-use std::{collections::HashMap, path::PathBuf};
 use std::path::Path;
+use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Result;
 
@@ -44,4 +44,3 @@ pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOpti
 
     Ok(config)
 }
-

@@ -1,11 +1,9 @@
-
-
+use anyhow::{anyhow, bail, Result};
 use std::fs;
 use std::io::{self, ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
-use anyhow::{bail, Result, anyhow};
 
 /// Create a directory.
 ///
@@ -183,9 +181,7 @@ pub fn run_command(
         command,
         args
     );
-    print!(
-        "🏃 Executing '{} {}'...", command, args.join(" ")
-    );
+    print!("🏃 Executing '{} {}'...", command, args.join(" "));
 
     let output = Command::new(command)
         .current_dir(location.unwrap_or(PathBuf::from_str("./").unwrap()))
@@ -195,9 +191,7 @@ pub fn run_command(
 
     if output.status.success() {
         println!(" Done!");
-        Ok(
-            String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8")
-        )
+        Ok(String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8"))
     } else {
         println!();
         Err(anyhow!(
@@ -239,4 +233,3 @@ pub fn fetch_gitignore(name: &str) -> Result<String> {
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
 }
-

@@ -1,8 +1,8 @@
 use clap::{Parser, Subcommand};
 
+use anyhow::*;
 use options::parse_kerblam_toml;
 use std::{env::current_dir, path::PathBuf};
-use anyhow::*;
 
 mod commands;
 mod options;
@@ -62,12 +62,12 @@ fn main() -> anyhow::Result<()> {
     env_logger::init();
     let here = &current_dir().unwrap();
     let args = Cli::parse();
-    
+
     log::debug!("Kerblam is starting in {:?}", here);
 
     let config = parse_kerblam_toml(current_dir().unwrap().join("kerblam.toml"));
 
-    if ! matches!(args.command, Command::New { .. }) && config.is_err() {
+    if !matches!(args.command, Command::New { .. }) && config.is_err() {
         // We cannot go forward with any command if we are not in
         // a kerblam! project.
         // TODO: Maybe we could check parent directories for a kerblam.toml
@@ -94,4 +94,3 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-

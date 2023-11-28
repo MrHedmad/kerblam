@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::{PathBuf, Path};
-use std::process::{Command, Stdio, Output};
 use log;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output, Stdio};
 
 use crate::commands::new::normalize_path;
 use crate::options::KerblamTomlOptions;
@@ -29,29 +29,40 @@ impl Executor {
             cleanup.push(target.link()?);
         }
 
-
         let command_args = if self.env.is_some() {
             // This is a dockerized run.
             let builder = Command::new("docker")
                 // If the `self.env` path is not UTF-8 I'll eat my hat.
-                .args(["build", "-f", self.env.unwrap().to.to_str().unwrap(), "--tag", "kerblam_runtime"])
+                .args([
+                    "build",
+                    "-f",
+                    self.env.unwrap().to.to_str().unwrap(),
+                    "--tag",
+                    "kerblam_runtime",
+                ])
                 .stdout(Stdio::inherit())
                 .stdin(Stdio::inherit())
                 .output()
                 .expect("Failed to spawn builder process.");
-            
-            if ! builder.status.success() {
+
+            if !builder.status.success() {
                 bail!("Cannot build execution environment!")
             };
 
-            vec!["docker", "run", "-it", "-v", "./data:/data", "kerblam_runtime"]
-
+            vec![
+                "docker",
+                "run",
+                "-it",
+                "-v",
+                "./data:/data",
+                "kerblam_runtime",
+            ]
         } else {
             // This is a normal run.
             match self.strategy {
                 ExecutionStrategy::Make => {
                     vec!["make", "-f", self.target.to.to_str().unwrap()]
-                },
+                }
                 ExecutionStrategy::Shell => {
                     vec!["bash", self.target.to.to_str().unwrap()]
                 }
@@ -66,26 +77,29 @@ impl Executor {
             .stderr(Stdio::inherit())
             .output()
             .expect("Cannot retrieve command output!");
-        
+
         for file in cleanup {
             // The idea is that this cleanup should not fail, and anyway
             // we don't really care if it does or not.
             let _ = fs::remove_file(file);
-        };
+        }
 
         Ok(result)
-
     }
 
     fn create(project_path: impl AsRef<Path>, module_name: &str) -> Result<Self> {
         let project_path = project_path.as_ref();
         let makefile = project_path.join("src/pipes/".to_string() + module_name + ".makefile");
         let shellfile = project_path.join("src/pipes/".to_string() + module_name + ".sh");
-        let dockerfile = project_path.join("src/dockerfiles/".to_string() + module_name + ".dockerfile");
-        
+        let dockerfile =
+            project_path.join("src/dockerfiles/".to_string() + module_name + ".dockerfile");
+
         let target: PathBuf;
         let strategy = if makefile.exists() & shellfile.exists() {
-            bail!("Found both a makefile and a shellfile for module {}. Aborting!", module_name);
+            bail!(
+                "Found both a makefile and a shellfile for module {}. Aborting!",
+                module_name
+            );
         } else if makefile.exists() {
             target = makefile;
             ExecutionStrategy::Make
@@ -93,23 +107,34 @@ impl Executor {
             target = shellfile;
             ExecutionStrategy::Shell
         } else {
-            bail!("Could not find either a shellfile or a makefile named {}!", module_name);
+            bail!(
+                "Could not find either a shellfile or a makefile named {}!",
+                module_name
+            );
         };
 
-        if dockerfile.exists() { 
+        if dockerfile.exists() {
             Ok(Self {
-                target: FileMover { from: target, to: project_path.join("executor") },
-                env: Some(FileMover{ from: dockerfile, to: project_path.join("Dockerfile")} ),
-                strategy
+                target: FileMover {
+                    from: target,
+                    to: project_path.join("executor"),
+                },
+                env: Some(FileMover {
+                    from: dockerfile,
+                    to: project_path.join("Dockerfile"),
+                }),
+                strategy,
             })
         } else {
             Ok(Self {
-                target: FileMover { from: target, to: project_path.join("executor") },
+                target: FileMover {
+                    from: target,
+                    to: project_path.join("executor"),
+                },
                 env: None,
                 strategy,
             })
         }
-
     }
 }
 
@@ -156,7 +181,7 @@ impl FileMover {
 }
 
 impl<F: Into<PathBuf>, T: Into<PathBuf>> From<(F, T)> for FileMover {
-    fn from (value: (F, T)) -> Self {
+    fn from(value: (F, T)) -> Self {
         Self {
             from: value.0.into(),
             to: value.1.into(),
@@ -196,25 +221,23 @@ fn extract_profile_paths(
         .ok_or(anyhow!("Could not find {} profile", profile_name))?;
 
     Ok(profile
-       .iter()
-       .flat_map(|(original, profile)| {
-           // We need two FileMovers. One for the temporary file
-           // that holds the original file (e.g. 'to'), and one for the
-           // profile-to-original rename.
-           // To unwind, we just redo the transaction, but in reverse.
-           [
-               // This one moves the original to the temporary file
-               FileMover::from((
-                       &root_dir.join(original),
-                       &root_dir.join(push_fragment(original, ".original"))
-               )),
-               // This one moves the profile one to the original one
-               FileMover::from((&root_dir.join(profile), &root_dir.join(original)))
-           ]
-
-       })
-       .collect()
-    )
+        .iter()
+        .flat_map(|(original, profile)| {
+            // We need two FileMovers. One for the temporary file
+            // that holds the original file (e.g. 'to'), and one for the
+            // profile-to-original rename.
+            // To unwind, we just redo the transaction, but in reverse.
+            [
+                // This one moves the original to the temporary file
+                FileMover::from((
+                    &root_dir.join(original),
+                    &root_dir.join(push_fragment(original, ".original")),
+                )),
+                // This one moves the profile one to the original one
+                FileMover::from((&root_dir.join(profile), &root_dir.join(original))),
+            ]
+        })
+        .collect())
 }
 
 pub fn kerblam_run_project(
@@ -250,16 +273,15 @@ pub fn kerblam_run_project(
     let executor: Executor = Executor::create(runtime_dir, module_name.as_str())?;
 
     // Handle renaming the input files if we are in a profile
-    
+
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile {
         // This should mean that there is a profile with the same name in the
         // config...
-        let profile_paths = extract_profile_paths(config, profile.as_str(), runtime_dir.join("./data/in/"))?;
+        let profile_paths =
+            extract_profile_paths(config, profile.as_str(), runtime_dir.join("./data/in/"))?;
         // Rename the paths that we found
-        let move_results: Vec<Result<FileMover, anyhow::Error>> = profile_paths
-            .into_iter()
-            .map(|x| x.rename())
-            .collect();
+        let move_results: Vec<Result<FileMover, anyhow::Error>> =
+            profile_paths.into_iter().map(|x| x.rename()).collect();
         // If they are all ok, return the vec
         if move_results.iter().all(|x| x.is_ok()) {
             move_results.into_iter().map(|x| x.unwrap()).collect()
@@ -268,20 +290,32 @@ pub fn kerblam_run_project(
             // I have to clone here as I need to consume the vector twice,
             // but the toplevel vector cannot be cloned, so I clone and then
             // ref deeper in. A bit clunky.
-            let unwindable: Vec<FileMover> = move_results.iter().filter_map(|x| x.as_ref().ok()).map(|x| x.to_owned()).collect();
+            let unwindable: Vec<FileMover> = move_results
+                .iter()
+                .filter_map(|x| x.as_ref().ok())
+                .map(|x| x.to_owned())
+                .collect();
             for mover in unwindable {
                 // I don't use the result for the same reason.
                 let _ = mover.rename();
             }
 
-            let failed: Vec<anyhow::Error> = move_results.into_iter().filter_map(|x| x.err()).collect();
+            let failed: Vec<anyhow::Error> =
+                move_results.into_iter().filter_map(|x| x.err()).collect();
 
-            bail!("Some profiled paths failed to be moved: {}", failed.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n"))
+            bail!(
+                "Some profiled paths failed to be moved: {}",
+                failed
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            )
         }
     } else {
         vec![]
     };
-    
+
     // Execute the executor
     let runtime_result = executor.execute()?;
 
@@ -301,7 +335,9 @@ pub fn kerblam_run_project(
     if runtime_result.status.success() {
         Ok(String::from("Done!"))
     } else {
-        Err(anyhow!("Process exited with exit code {:?}", runtime_result.status.code()))
+        Err(anyhow!(
+            "Process exited with exit code {:?}",
+            runtime_result.status.code()
+        ))
     }
 }
-
