@@ -15,6 +15,14 @@ struct Executor {
     // executor_path
 }
 
+// TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
+// functions can be simplified a lot.
+// E.g. make a "cleanup: Option<Vec<PathBuf>>" to the Executor and remove
+// (without returing the fail) the files specified in the vector (if any)
+// so that we can stop at any time and still be sure to cleanup.
+// The same idea could be used for the FileRenamers, but we'd need to be
+// careful on when they are dropped.
+
 impl Executor {
     /// Execute this executor based on its data
     ///
@@ -24,29 +32,36 @@ impl Executor {
     /// Destroys itself in the process.
     fn execute(self) -> Result<Output> {
         let mut cleanup: Vec<PathBuf> = vec![];
-        cleanup.push(self.target.link()?);
+        cleanup.push(self.target.copy()?);
         if let Some(target) = self.env.clone() {
-            cleanup.push(target.link()?);
+            cleanup.push(target.copy()?);
         }
 
         let command_args = if self.env.is_some() {
             // This is a dockerized run.
             let builder = Command::new("docker")
                 // If the `self.env` path is not UTF-8 I'll eat my hat.
-                .args([
-                    "build",
-                    "-f",
-                    self.env.unwrap().to.to_str().unwrap(),
-                    "--tag",
-                    "kerblam_runtime",
-                ])
+                .args(["build", "--tag", "kerblam_runtime", "."])
                 .stdout(Stdio::inherit())
                 .stdin(Stdio::inherit())
+                .stderr(Stdio::inherit())
                 .output()
                 .expect("Failed to spawn builder process.");
 
             if !builder.status.success() {
-                bail!("Cannot build execution environment!")
+                // Cleanup early.
+                log::debug!("Failed to build docker environment. Unwinding early.");
+
+                for file in cleanup {
+                    // The idea is that this cleanup should not fail, and anyway
+                    // we don't really care if it does or not.
+                    let _ = fs::remove_file(file);
+                }
+
+                bail!(
+                    "{}",
+                    String::from_utf8(builder.stderr).expect("Cannot convert STDOUT to UTF-8.")
+                );
             };
 
             vec![
@@ -75,6 +90,7 @@ impl Executor {
             .args(&command_args[1..command_args.len()])
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
+            .stdin(Stdio::inherit())
             .output()
             .expect("Cannot retrieve command output!");
 
@@ -165,6 +181,16 @@ impl FileMover {
         // TODO: Make this compatible with other operating systems.
         log::debug!("Linking {:?} to {:?}", self.from, self.to);
         std::os::unix::fs::symlink(self.from.clone(), self.to.clone())?;
+
+        Ok(self.to.clone())
+    }
+
+    /// Copy from to to.
+    ///
+    /// Returns the location of the created file.
+    fn copy(&self) -> Result<PathBuf> {
+        log::debug!("Copying {:?} to {:?}", self.from, self.to);
+        fs::copy(self.from.clone(), self.to.clone())?;
 
         Ok(self.to.clone())
     }
@@ -356,6 +382,8 @@ pub fn kerblam_run_project(
             let _ = item.rename();
         }
     }
+
+    // Try and destroy the symlinks
 
     // Return either an error or OK, if the pipeline finished appropriately
     // or crashed and burned.
