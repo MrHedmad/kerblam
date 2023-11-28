@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use env_logger;
+
 use options::parse_kerblam_toml;
 use std::{env::current_dir, path::PathBuf};
 use anyhow::*;
@@ -12,7 +12,7 @@ use crate::commands::new;
 use crate::commands::run;
 
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser, Debug)]
 #[command(author = "hedmad", about = KERBLAM_LONG_ABOUT)]
@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<()> {
     
     log::debug!("Kerblam is starting in {:?}", here);
 
-    let config = parse_kerblam_toml(&current_dir().unwrap().join("kerblam.toml"));
+    let config = parse_kerblam_toml(current_dir().unwrap().join("kerblam.toml"));
 
     if ! matches!(args.command, Command::New { .. }) && config.is_err() {
         // We cannot go forward with any command if we are not in

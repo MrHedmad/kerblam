@@ -1,5 +1,5 @@
-use log;
-use reqwest;
+
+
 use std::fs;
 use std::io::{self, ErrorKind, Write};
 use std::path::{Path, PathBuf};
@@ -94,7 +94,7 @@ where
 {
     loop {
         let t = ask(format!("{} [{}]: ", prompt, T::as_options())).unwrap();
-        match T::try_from(t.to_ascii_lowercase().chars().nth(0).unwrap()) {
+        match T::try_from(t.to_ascii_lowercase().chars().next().unwrap()) {
             Ok(value) => return value,
             Err(_) => println!("'{}' is not in {}", t, T::as_options().as_str()),
         }
@@ -128,20 +128,20 @@ impl AsQuestion for YesNo {
 
 // This is currently useless, but maybe we could leverage it to not have
 // the AsQuestion trait?
-impl Into<char> for YesNo {
-    fn into(self) -> char {
-        match self {
-            Self::Yes => 'y',
-            Self::No => 'n',
+impl From<YesNo> for char {
+    fn from(val: YesNo) -> Self {
+        match val {
+            YesNo::Yes => 'y',
+            YesNo::No => 'n',
         }
     }
 }
 
-impl Into<bool> for YesNo {
-    fn into(self) -> bool {
-        match self {
-            Self::Yes => true,
-            Self::No => false,
+impl From<YesNo> for bool {
+    fn from(val: YesNo) -> Self {
+        match val {
+            YesNo::Yes => true,
+            YesNo::No => false,
         }
     }
 }
@@ -184,8 +184,7 @@ pub fn run_command(
         args
     );
     print!(
-        "🏃 Executing '{}'...",
-        format!("{} {}", command, args.join(" "))
+        "🏃 Executing '{} {}'...", command, args.join(" ")
     );
 
     let output = Command::new(command)
@@ -196,14 +195,14 @@ pub fn run_command(
 
     if output.status.success() {
         println!(" Done!");
-        return Ok(
+        Ok(
             String::from_utf8(output.stdout).expect("Could not parse command output as UTF-8")
-        );
+        )
     } else {
-        println!("");
-        return Err(anyhow!(
+        println!();
+        Err(anyhow!(
             String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8"),
-        ));
+        ))
     }
 }
 

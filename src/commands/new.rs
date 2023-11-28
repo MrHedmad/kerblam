@@ -96,7 +96,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let results: Vec<Result<String, anyhow::Error>> = dirs_to_create
         .iter()
         .map(|x| normalize_path(x))
-        .map(|x| utils::kerblam_create_dir(&x))
+        .map(utils::kerblam_create_dir)
         .collect();
     let mut stop = false;
     for res in results {
@@ -126,7 +126,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
 
     // Add to gitignore
     match utils::kerblam_create_file(
-        &normalize_path(dir.join("./.gitignore").as_path()),
+        normalize_path(dir.join("./.gitignore").as_path()),
         gitignore_content.join("\n").as_str(),
         true,
     ) {

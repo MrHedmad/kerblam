@@ -22,7 +22,7 @@ impl Executor {
     /// bash, depending on the strategy.
     ///
     /// Destroys itself in the process.
-    fn execute(self: Self) -> Result<Output> {
+    fn execute(self) -> Result<Output> {
         let mut cleanup: Vec<PathBuf> = vec![];
         cleanup.push(self.target.link()?);
         if let Some(target) = self.env.clone() {
@@ -254,7 +254,7 @@ pub fn kerblam_run_project(
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile {
         // This should mean that there is a profile with the same name in the
         // config...
-        let profile_paths = extract_profile_paths(config, profile.as_str(), &runtime_dir.join("./data/in/"))?;
+        let profile_paths = extract_profile_paths(config, profile.as_str(), runtime_dir.join("./data/in/"))?;
         // Rename the paths that we found
         let move_results: Vec<Result<FileMover, anyhow::Error>> = profile_paths
             .into_iter()
@@ -286,7 +286,7 @@ pub fn kerblam_run_project(
     let runtime_result = executor.execute()?;
 
     // Undo the input file renaming
-    if unwinding_paths.len() != 0 {
+    if !unwinding_paths.is_empty() {
         log::info!("Undoing profile...");
         for item in unwinding_paths.into_iter().rev() {
             // If this worked before, it should work now, that is why I discard the
