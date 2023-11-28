@@ -224,9 +224,12 @@ fn extract_profile_paths(
     // when we actually move the files.
     let exist_check: Vec<anyhow::Error> = profile
         .iter()
-        .map(|(original, _)| {
-            if !original.exists() {
-                bail!("\t- {:?} does not exists!", original)
+        .flat_map(|(a, b)| [a, b])
+        .map(|file| {
+            let f = &root_dir.join(file);
+            log::debug!("Checking if {f:?} exists...");
+            if !f.exists() {
+                bail!("\t- {:?} does not exists!", file)
             };
             Ok(())
         })
