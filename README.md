@@ -6,8 +6,12 @@
 > ```
 >            new      run clone  data      ignore      link   tests
 >              |        |     |     |           |         |       |
-> [progress]>#######-----------------------------------------------<
+> [progress]>############------------------------------------------<
 > ```
+
+> :warning: `kerblam run` is complete but still untested. Please do use it,
+> but be careful. Report any probles in the [issues](https://github.com/MrHedmad/kerblam).
+> Thank you kindly!
 
 Kerblam! is a tool that can help you manage data analysis projects.
 
@@ -42,7 +46,7 @@ file yourself. To learn how, look at the section below.
 - :white_check_mark: `kerblam new` can be used to create a new kerblam!
   project. Kerblam! asks you if you want to use some common programming
   languages and sets up a proper `.gitignore` and pre-commit hooks for you.
-- :pushpin: `kerblam clone` can be used to clone a `kerblam` project.
+- :construction: `kerblam clone` can be used to clone a `kerblam` project.
   Kerblam! will ask you to fetch input files, create virtual environments and
   more upon creation.
 - :pushpin: `kerblam data` fetches remote data and saves it locally, manages
@@ -54,11 +58,11 @@ file yourself. To learn how, look at the section below.
   data in the blob itself.
   Can also be used to just export the output data that the pipeline produces
   for sharing with others or for usage in writing reports/papers.
-- :construction: `kerblam run` copies your project to a temporary directory,
-  clones your `makefile`s and `dockerfiles` appropriately, builds a docker
-  container and runs your analysis there.
-  Optionally, allows test data to be used instead of real data, in order to
-  test your pipelines.
+- :white_check_mark: `kerblam run` executes the analysis for you,
+  by choosing your `makefile`s and `dockerfiles` appropriately and 
+  building docker containers as needed.
+  Optionally, allows test data or alternative data to be used instead of
+  real data, in order to test your pipelines.
 - :pushpin: `kerblam ignore` can edit your `.gitignore` file by adding files,
   folders and GitHub's recommended ignores for specific languages in just one command.
 - :pushpin: `kerblam link` can be used to move your `data` folder in some other place,
@@ -210,10 +214,10 @@ it will:
 - Run `docker build --tag <name_of_makefile> .` to build the container;
 - Run `docker run --rm -it -v ./data:/data <name_of_makefile>`.
 
-If you have your docker container `COPY . .` and have `ENTRYPOINT make`, you
-can then effectively have Kerblam! run your projects in docker environments,
-so you can tweak your dependencies and tooling (which might be different than
-your dev environment).
+If you have your docker container `COPY . .` and have `ENTRYPOINT make`
+(or `ENTRYPOINT bash`), you can then effectively have Kerblam! run your projects
+in docker environments, so you can tweak your dependencies and tooling
+(which might be different than your dev environment).
 
 > :warning: When writing Dockerfiles, remember to `.dockerignore` the
 > `./data/` folder, as it will be linked at runtime to `/data/`.
@@ -268,4 +272,3 @@ And execute your test run with `kerblam run pipe --profile test`.
 And remember! If you want it...
 
 ![Kerblam it!](docs/images/kerblam_it.gif)
-
