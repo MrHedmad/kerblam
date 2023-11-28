@@ -1,7 +1,7 @@
-use std::ffi::OsStr;
 use std::fs;
 use std::path::{PathBuf, Path};
 use std::process::{Command, Stdio, Output};
+use log;
 
 use crate::commands::new::normalize_path;
 use crate::options::KerblamTomlOptions;
@@ -127,6 +127,7 @@ struct FileMover {
 impl FileMover {
     /// Rename the files, destroying this file mover and making the reverse.
     fn rename(self) -> Result<FileMover> {
+        log::debug!("Moving {:?} to {:?}", self.from, self.to);
         fs::rename(&self.from, &self.to)?;
 
         Ok(self.invert())
@@ -137,6 +138,7 @@ impl FileMover {
     /// Returns the location of the created symlink.
     fn link(&self) -> Result<PathBuf> {
         // TODO: Make this compatible with other operating systems.
+        log::debug!("Linking {:?} to {:?}", self.from, self.to);
         std::os::unix::fs::symlink(self.from.clone(), self.to.clone())?;
 
         Ok(self.to.clone())
@@ -162,11 +164,23 @@ impl<F: Into<PathBuf>, T: Into<PathBuf>> From<(F, T)> for FileMover {
     }
 }
 
+/// Push a bit of a string to the end of this path
+///
+/// Useful if you want to add an extension to the path.
+/// Requires a clone.
+fn push_fragment(buffer: impl AsRef<Path>, ext: &str) -> PathBuf {
+    let buffer = buffer.as_ref();
+    let mut path = buffer.as_os_str().to_owned();
+    path.push(ext);
+    path.into()
+}
 
 fn extract_profile_paths(
     config: KerblamTomlOptions,
     profile_name: &str,
+    root_dir: impl AsRef<Path>,
 ) -> Result<Vec<FileMover>> {
+    let root_dir = root_dir.as_ref();
     // The call here was broken in 2 because the last `ok_or` makes a temporary
     // reference that does not live enough until the 'profile.iter()' call
     // later on. I'm not sure why this is the case, but separating the
@@ -183,17 +197,19 @@ fn extract_profile_paths(
 
     Ok(profile
        .iter()
-       .flat_map(|(from, to)| {
+       .flat_map(|(original, profile)| {
            // We need two FileMovers. One for the temporary file
            // that holds the original file (e.g. 'to'), and one for the
            // profile-to-original rename.
            // To unwind, we just redo the transaction, but in reverse.
-           let new_extension = to.extension().unwrap_or(&OsStr::new(""));
-           new_extension.to_os_string().push("original");
-
            [
-               FileMover::from((to, to.with_extension(new_extension))),
-               FileMover::from((from, to))
+               // This one moves the original to the temporary file
+               FileMover::from((
+                       &root_dir.join(original),
+                       &root_dir.join(push_fragment(original, ".original"))
+               )),
+               // This one moves the profile one to the original one
+               FileMover::from((&root_dir.join(profile), &root_dir.join(original)))
            ]
 
        })
@@ -238,7 +254,7 @@ pub fn kerblam_run_project(
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile {
         // This should mean that there is a profile with the same name in the
         // config...
-        let profile_paths = extract_profile_paths(config, profile.as_str())?;
+        let profile_paths = extract_profile_paths(config, profile.as_str(), &runtime_dir.join("./data/in/"))?;
         // Rename the paths that we found
         let move_results: Vec<Result<FileMover, anyhow::Error>> = profile_paths
             .into_iter()
@@ -252,7 +268,7 @@ pub fn kerblam_run_project(
             // I have to clone here as I need to consume the vector twice,
             // but the toplevel vector cannot be cloned, so I clone and then
             // ref deeper in. A bit clunky.
-            let unwindable: Vec<FileMover> = move_results.iter().filter_map(|x| x.clone().as_ref().ok()).map(|x| x.to_owned()).collect();
+            let unwindable: Vec<FileMover> = move_results.iter().filter_map(|x| x.as_ref().ok()).map(|x| x.to_owned()).collect();
             for mover in unwindable {
                 // I don't use the result for the same reason.
                 let _ = mover.rename();
