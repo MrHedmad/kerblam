@@ -220,6 +220,30 @@ fn extract_profile_paths(
         .get(profile_name)
         .ok_or(anyhow!("Could not find {} profile", profile_name))?;
 
+    // Check if the sources exist, otherwise we crash now, and not leter
+    // when we actually move the files.
+    let exist_check: Vec<anyhow::Error> = profile
+        .iter()
+        .map(|(original, _)| {
+            if !original.exists() {
+                bail!("\t- {:?} does not exists!", original)
+            };
+            Ok(())
+        })
+        .filter_map(|x| x.err())
+        .collect();
+
+    if !exist_check.is_empty() {
+        let mut missing: Vec<String> = Vec::with_capacity(exist_check.len());
+        for item in exist_check {
+            missing.push(item.to_string());
+        }
+        bail!(
+            "Failed to find some profiles files:\n{}",
+            missing.join("\n")
+        )
+    }
+
     Ok(profile
         .iter()
         .flat_map(|(original, profile)| {
