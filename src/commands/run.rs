@@ -1,12 +1,66 @@
 use log;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, ExitStatus, Stdio};
 
 use crate::commands::new::normalize_path;
 use crate::options::KerblamTomlOptions;
 
 use anyhow::{anyhow, bail, Result};
+use crossbeam_channel::{bounded, Receiver};
+use ctrlc;
+
+enum CommandResult {
+    Exited { res: ExitStatus },
+    Killed,
+}
+
+fn setup_ctrlc_hook() -> Result<Receiver<bool>> {
+    let (sender, receiver) = bounded(2);
+
+    let multiple_guard = receiver.clone();
+
+    ctrlc::try_set_handler(move || {
+        let _ = sender.send(true);
+        if multiple_guard.is_full() {
+            panic!("Got two CTRL-C without a consumer.")
+        }
+    })?;
+
+    Ok(receiver)
+}
+
+fn run_protected_command<F>(cmd_builder: F, receiver: Receiver<bool>) -> Result<CommandResult>
+where
+    F: FnOnce() -> Child,
+{
+    // check if we have to kill the child even before being spawned
+    if let Ok(true) = receiver.try_recv() {
+        bail!("Not starting with pending SIGINT!")
+    };
+
+    let mut child = cmd_builder();
+
+    loop {
+        // Check every 50 ms how the child is faring.
+        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        // If we got a kill signal, kill the child, obi-wan kenobi!
+        if let Ok(true) = receiver.try_recv() {
+            match child.kill() {
+                Ok(_) => return Ok(CommandResult::Killed),
+                Err(_) => {
+                    bail!("Failed to kill child!")
+                }
+            }
+        };
+
+        // Check if the children is done
+        if let Some(status) = child.try_wait().expect("Where did the child go?") {
+            return Ok(CommandResult::Exited { res: status });
+        };
+    }
+}
 
 struct Executor {
     target: FileMover,
@@ -30,7 +84,7 @@ impl Executor {
     /// bash, depending on the strategy.
     ///
     /// Destroys itself in the process.
-    fn execute(self) -> Result<Output> {
+    fn execute(self, signal_receiver: Receiver<bool>) -> Result<()> {
         let mut cleanup: Vec<PathBuf> = vec![];
         cleanup.push(self.target.copy()?);
         if let Some(target) = self.env.clone() {
@@ -39,16 +93,24 @@ impl Executor {
 
         let command_args = if self.env.is_some() {
             // This is a dockerized run.
-            let builder = Command::new("docker")
-                // If the `self.env` path is not UTF-8 I'll eat my hat.
-                .args(["build", "--tag", "kerblam_runtime", "."])
-                .stdout(Stdio::inherit())
-                .stdin(Stdio::inherit())
-                .stderr(Stdio::inherit())
-                .output()
-                .expect("Failed to spawn builder process.");
+            let builder = || {
+                Command::new("docker")
+                    // If the `self.env` path is not UTF-8 I'll eat my hat.
+                    .args(["build", "--tag", "kerblam_runtime", "."])
+                    .stdout(Stdio::inherit())
+                    .stdin(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .spawn()
+                    .expect("Failed to spawn builder process.")
+            };
 
-            if !builder.status.success() {
+            let success = match run_protected_command(builder, signal_receiver.clone()) {
+                Ok(CommandResult::Exited { res: _ }) => true,
+                Ok(CommandResult::Killed) => false,
+                Err(_) => false,
+            };
+
+            if !success {
                 // Cleanup early.
                 log::debug!("Failed to build docker environment. Unwinding early.");
 
@@ -58,10 +120,7 @@ impl Executor {
                     let _ = fs::remove_file(file);
                 }
 
-                bail!(
-                    "{}",
-                    String::from_utf8(builder.stderr).expect("Cannot convert STDOUT to UTF-8.")
-                );
+                bail!("Command exited with an error.",);
             };
 
             vec![
@@ -86,13 +145,23 @@ impl Executor {
 
         let mut command = Command::new(command_args[0]);
 
-        let result = command
-            .args(&command_args[1..command_args.len()])
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .stdin(Stdio::inherit())
-            .output()
-            .expect("Cannot retrieve command output!");
+        let builder = || {
+            command
+                .args(&command_args[1..command_args.len()])
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .stdin(Stdio::inherit())
+                .spawn()
+                .expect("Cannot retrieve command output!")
+        };
+
+        match run_protected_command(builder, signal_receiver) {
+            Ok(CommandResult::Exited { res: _ }) => (), // We don't care if it succeeded.
+            Ok(CommandResult::Killed) => {
+                eprintln!("\nChild process exited early. Continuing to cleanup...")
+            }
+            Err(e) => eprintln!("\nChild process failure: {}\nContinuing to cleanup...", e),
+        };
 
         for file in cleanup {
             // The idea is that this cleanup should not fail, and anyway
@@ -100,7 +169,7 @@ impl Executor {
             let _ = fs::remove_file(file);
         }
 
-        Ok(result)
+        Ok(())
     }
 
     fn create(project_path: impl AsRef<Path>, module_name: &str) -> Result<Self> {
@@ -325,8 +394,11 @@ pub fn kerblam_run_project(
     // Create an executor for later.
     let executor: Executor = Executor::create(runtime_dir, module_name.as_str())?;
 
-    // Handle renaming the input files if we are in a profile
+    // From here on we should not crash. Therefore, we have to catch SIGINTs
+    // as the come in.
+    let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
 
+    // Handle renaming the input files if we are in a profile
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile {
         // This should mean that there is a profile with the same name in the
         // config...
@@ -370,7 +442,7 @@ pub fn kerblam_run_project(
     };
 
     // Execute the executor
-    let runtime_result = executor.execute()?;
+    let runtime_result = executor.execute(sigint_rec);
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {
@@ -387,12 +459,9 @@ pub fn kerblam_run_project(
 
     // Return either an error or OK, if the pipeline finished appropriately
     // or crashed and burned.
-    if runtime_result.status.success() {
+    if runtime_result.is_ok() {
         Ok(String::from("Done!"))
     } else {
-        Err(anyhow!(
-            "Process exited with exit code {:?}",
-            runtime_result.status.code()
-        ))
+        Err(anyhow!("Process exited."))
     }
 }
