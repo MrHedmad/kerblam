@@ -8,6 +8,7 @@ mod commands;
 mod options;
 mod utils;
 
+use crate::commands::data;
 use crate::commands::new;
 use crate::commands::run;
 
@@ -28,22 +29,10 @@ enum Command {
         /// Path of the new project.
         path: PathBuf,
     },
-    /// Package a Kerblam! project for later
-    Pack {
-        /// Where to save the packed project
-        path: Option<PathBuf>,
-    },
     /// Clone a remote git Kerblam! project
     Clone {
         /// The remote git URL to clone
         remote_url: String,
-    },
-    /// Hydrate an existing Kerblam! project
-    Hydrate { path: Option<PathBuf> },
-    /// Unpack a packed Kerblam! project
-    Unpack {
-        packed_path: PathBuf,
-        destination: Option<PathBuf>,
     },
     /// Run a Kerblam! project
     Run {
@@ -52,6 +41,20 @@ enum Command {
         /// Optional data profile to run with
         #[arg(long)]
         profile: Option<String>,
+    },
+    /// Get information on local data and manage it
+    Data {
+        #[command(subcommand)]
+        subcommand: Option<DataSubcommand>,
+    },
+}
+
+#[derive(Subcommand, Debug, PartialEq, Clone)]
+enum DataSubcommand {
+    Clean {},
+    Package {
+        /// Path to save packaged output
+        path: Option<PathBuf>,
     },
 }
 
@@ -87,6 +90,24 @@ fn main() -> anyhow::Result<()> {
             let config = config.unwrap(); // This is always safe due to the check above.
             run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile)?;
         }
+        Command::Data { subcommand } => {
+            let config = config.unwrap();
+            match subcommand {
+                None => data::print_data_status(config, current_dir().unwrap())?,
+                Some(DataSubcommand::Clean {}) => {
+                    data::cleanup_data(config, current_dir().unwrap())?
+                }
+                Some(DataSubcommand::Package { path }) => {
+                    let here = current_dir().unwrap();
+                    data::package_data(
+                        config,
+                        here.clone(),
+                        path.unwrap_or(here.join("exported_data.tar.gz")),
+                    )?
+                }
+            };
+        }
+
         _ => {
             todo!()
         }
