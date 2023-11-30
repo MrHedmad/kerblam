@@ -177,47 +177,60 @@ The rest of this tutorial outlines common tasks with which you can use `kerblam`
 Kerblam can be used to manage how your project is executed, where and on
 what input files.
 
-Say that you have a script in `./src/calc_sum.py`. It takes as input a `.csv`
-and outputs a new `.csv` file as output, using `stdin` and `stdout`.
-You have an `input.csv` file that you'd like to process, to create an
-`output.csv`.
+Say that you have a script in `./src/calc_sum.py`. It takes an input `.csv` file,
+processes it, and outputs a new `.csv` file, using `stdin` and `stdout`.
+
+You have an `input.csv` file that you'd like to process with `calc_sum.py`.
 You could write a shell script or a makefile with the command to run.
 We'll refer to these scripts as "pipes".
-Here's an example makefile:
+Here's an example makefile pipe:
 
 ```makefile
 ./data/out/output.csv: ./data/in/input.csv ./src/calc_sum.py
     cat $< | ./src/calc_sum.py > $@
 ```
 
-This is great, until you have to run another "pipe", completely different from
-the first one, with different steps, requirements, etc...
-You might write new makefiles or scripts for all the runs, but you'll then
-have to remember how to structure each one, what each does and write a 
-complex "meta"-makefile that runs the appropriate one.
+You'd generally place this file in the root of the repository and run `make`
+to execute it. This is perfectly fine for projects with a relatively simple
+structure and just one execution pipeline.
 
-Kerblam! manages your makefiles for you.
-You can write different makefiles for different types of runs of your project,
-and save them in `./src/pipes/`.
+Imagine however that you have to change your pipeline to run two different
+jobs which share a lot of code and input data but have slightly (or dramatically)
+different execution.
+You might modify your pipe to accept `if` statements, or perhaps write many of
+them and run them separately.
+In any case, having a single file that has the job of running all the different
+pipelines is hard, adds complexity and makes managing the different execution
+scripts harder than it needs to be.
+
+Kerblam! manages your pipes for you.
+You can write different makefiles and/or shell files for different types of
+runs of your project and save them in `./src/pipes/`.
 When you `kerblam run`, Kerblam! looks into that folder, finds (by name) the
 makefiles that you've written, and brings them to the top level of the project
 (e.g. `./`) for execution.
 
 For instance, you could have written a `./src/pipes/process_csv.makefile` for
 the previous step, and you could invoke it with `kerblam run process_csv`.
-You could then write more makefiles for other tasks and run them similarly.
+You could then write more makefiles or shell files for other tasks and run
+them similarly.
 
+Kerblam! looks for files ending in the `.makefile` extension for makefiles and 
+`.sh` for shell files.
+
+### Containerized execution
 If Kerblam! finds a Dockerfile of the same name as one of your pipes in the
 `./src/dockerfiles/` folder (e.g. `./src/dockerfiles/process_csv.dockerfile`),
 it will:
-- Move the dockerfile to the top folder, next to the makefile;
-- Run `docker build --tag <name_of_makefile> .` to build the container;
-- Run `docker run --rm -it -v ./data:/data <name_of_makefile>`.
+- Copy the dockerfile to the top folder, as `Dockerfile`;
+- Run `docker build --tag kerblam_runtime .` to build the container;
+- Run `docker run --rm -it -v ./data:/data kerblam_runtime`.
 
 If you have your docker container `COPY . .` and have `ENTRYPOINT make`
 (or `ENTRYPOINT bash`), you can then effectively have Kerblam! run your projects
 in docker environments, so you can tweak your dependencies and tooling
-(which might be different than your dev environment).
+(which might be different than your dev environment) and execute in a protected,
+reproducible environment.
 
 > :warning: When writing Dockerfiles, remember to `.dockerignore` the
 > `./data/` folder, as it will be linked at runtime to `/data/`.
@@ -225,13 +238,17 @@ in docker environments, so you can tweak your dependencies and tooling
 The same applies to `.sh` files in the `./src/pipes/` directory.
 
 ### Specifying data to run on
-By default, Kerblam! will use your whole `./data` folder
-If you want different makefiles to run on different data, Kerblam! can
-temporarily swap out your real data with this 'substitute' data.
+By default, Kerblam! will use your `./data/in/` folder as-is when executing pipes.
+If you want the same pipes to run on different sets of input data, Kerblam! can
+temporarily swap out your real data with this 'substitute' data during execution.
 
 For example, your `process_csv.makefile` requires an input `./data/in/input.csv` file.
-However, you might want to run the same makefile on another, `different_input.csv` file.
-You could copy and paste the first makefile, or you can use `kerblam` to do the same.
+However, you might want to run the same pipe on another, `different_input.csv` file.
+You could copy and paste the first pipe, modify it on every file you wish to
+run differently. However, you then have to maintain two essentially identical
+pipelines, and you are prone to adding errors while you do so.
+You can use `kerblam` to do the same, but in a declarative, easy way.
+
 Define in your `kerblam.toml` file a new section under `data.profiles`:
 ```toml
 # You can use any ASCII name in place of 'alternate'.
@@ -244,8 +261,7 @@ You can then run the same makefile with the new data with:
 kerblam run process_csv --profile alternate
 ```
 Under the hood, Kerblam! will:
-- Rename `input.csv` to `<hex>_input.csv`, where `<hex>` is a string with 5
-  random numbers and letters;
+- Rename `input.csv` to `input.csv.original`;
 - Symlink `different_input.csv` to `input.csv`;
 - Run the analysis as normal;
 - When the run ends (or the analysis crashes), Kerblam! will remove the symlink
@@ -254,8 +270,12 @@ Under the hood, Kerblam! will:
 This effectively causes the makefile run with different input data in this
 alternate run.
 
-> :warning: Careful that the *output* data will be saved as the same file names
-> as a "normal" run!
+> :warning: Careful that the *output* data will (most likely) be saved as the
+> same file names as a "normal" run! Kerblam! does not look into where the
+> output files are saved or what they are saved as.
+
+> :warning: Careful! As of now, kerblam! has no problem overwriting existing
+> files (e.g. `input.csv.original`) while running. See issue [#9](https://github.com/MrHedmad/kerblam/issues/9).
 
 This is most commonly useful to run the pipelines on test data that is faster to
 process or that produces pre-defined outputs. For example, you could define
@@ -266,6 +286,18 @@ something similar to:
 "configs/config_file.yaml" = "configs/test_config_file.yaml"
 ```
 And execute your test run with `kerblam run pipe --profile test`.
+
+File paths specified under the `profiles` tab must be relative to the `./data/in/`
+folder.
+
+> :sparkles: Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
+> delete temporary files, etc...) when you use `kerblam run`, even if the pipe
+> fails, and even if you kill your pipe with `CTRL-C`.
+
+## Licensing and citation
+Kerblam! is licensed under the [MIT License](https://github.com/MrHedmad/kerblam/blob/main/LICENSE).
+
+If you wish to cite Kerblam!, please provide a link to this repository.
 
 ---
 
