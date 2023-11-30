@@ -4,9 +4,9 @@
 > Consider this README a roadmap of sort of what kerblam! wants to be.
 >
 > ```
->            new      run clone  data      ignore      link   tests
->              |        |     |     |           |         |       |
-> [progress]>############------------------------------------------<
+>            new      run  data clone   package   ignore  link tests
+>              |        |     |     |         |        |     |     |
+> [progress]>###############----------------------------------------<
 > ```
 
 > :warning: `kerblam run` is complete but still untested. Please do use it,
@@ -31,7 +31,7 @@ If you use `kerblam`, you then get some nice perks:
 To transform a project to a Kerblam! project just make the kerblam.toml
 file yourself. To learn how, look at the section below.
 
-## Overview
+# Overview
 
 > :warning: **Note**: In this early stage, commands with :white_check_mark: are
 > (mostly) implemented, :construction: are being implemented now, and
@@ -46,18 +46,16 @@ file yourself. To learn how, look at the section below.
 - :white_check_mark: `kerblam new` can be used to create a new kerblam!
   project. Kerblam! asks you if you want to use some common programming
   languages and sets up a proper `.gitignore` and pre-commit hooks for you.
-- :construction: `kerblam clone` can be used to clone a `kerblam` project.
+- :pushpin: `kerblam clone` can be used to clone a `kerblam` project.
   Kerblam! will ask you to fetch input files, create virtual environments and
   more upon creation.
-- :pushpin: `kerblam data` fetches remote data and saves it locally, manages
+- :construction: `kerblam data` fetches remote data and saves it locally, manages
   local data and can clean it up.
 - :pushpin: `kerblam package` packages your pipeline and exports a `docker`
   image for execution later.
   It's useful for reproducibility purposes as the docker image is primed
-  for execution, bundling the kerblam! executable, makefiles and non-remote
+  for execution, bundling the kerblam! executable, execution files and non-remote
   data in the blob itself.
-  Can also be used to just export the output data that the pipeline produces
-  for sharing with others or for usage in writing reports/papers.
 - :white_check_mark: `kerblam run` executes the analysis for you,
   by choosing your `makefile`s and `dockerfiles` appropriately and 
   building docker containers as needed.
@@ -69,6 +67,10 @@ file yourself. To learn how, look at the section below.
   and leave in its way a symlink, so that everything works just like before.
   This can be useful when your data is particularly bulky and you want to
   save it on some other drive.
+- :pushpin: `kerblam data` can be used to check the number and size of local
+  data files, and remove/export them.
+  Can also be used to just export the output data that the pipeline produces
+  for sharing with others or for usage in writing reports/papers.
 
 Kerblam! is *not* and does not want to be:
 - A pipeline manager like `snakemake` and `nextflow`: It supports and helps
@@ -118,6 +120,11 @@ Kerblam! is currently not accepting pull requests as it's still in its infancy.
 > :warning: When Kerblam! reaches minimal viability, I'll open PRs.
 > You are still welcome to open issues to discuss code quality / structure
 > and the design of the tool.
+
+## Licensing and citation
+Kerblam! is licensed under the [MIT License](https://github.com/MrHedmad/kerblam/blob/main/LICENSE).
+
+If you wish to cite Kerblam!, please provide a link to this repository.
 
 ## Naming
 This project is named after the fictitious online shop/delivery company in
@@ -294,10 +301,73 @@ folder.
 > delete temporary files, etc...) when you use `kerblam run`, even if the pipe
 > fails, and even if you kill your pipe with `CTRL-C`.
 
-## Licensing and citation
-Kerblam! is licensed under the [MIT License](https://github.com/MrHedmad/kerblam/blob/main/LICENSE).
+## Managing local and remote data
+Kerblam! can help you retrieve remote data and manage your local data.
 
-If you wish to cite Kerblam!, please provide a link to this repository.
+`kerblam data` will give you an overview of the status of local data:
+```
+> kerblam data
+./data       500 KiB [2]
+└── in       1.2 MiB [8]
+└── out      823 KiB [2]
+──────────────────────
+Total        2.5 Mib [12]
+└── cleanup  2.3 Mib [9] (92.0%)
+└── remote   1.0 Mib [5]
+! There are 3 undownloaded files.   
+```
+The first lines highlight the size (`500 KiB`) and amount (`2`) of files in the
+`./data/in` (input), `./data/out` (output) and `./data` (intermediate) folders.
+
+The total size of all the files in the `./data/` folder is then broken down
+between categories: the `Total` data size, how much data can be removed with
+`kerblam data clean` or `kerblam data pack`, and how many files are specified
+to be downloaded but are not yet present locally.
+
+You can manipulate your data with `kerblam data` in several ways.
+In the following sections we explain every one of these ways.
+
+### `kerblam data fetch` - Fetch remote data
+If you define in `kerblam.toml` the section `data.remote` you can have
+Kerblam! automatically fetch remote data for you:
+```toml
+[data.remote]
+# This follows the form "url_to_download" = "save_as_file"
+"https://raw.githubusercontent.com/MrHedmad/kerblam/main/README.md" = "some_readme.md"
+```
+When you run `kerblam data fetch`, Kerblam! will attempt to download `some_readme.md`
+by following the URL you provided.
+Most importantly, `some_readme.md` is treated as a file that is remotely available
+and therefore locally expendable for the sake of saving disk size (see the
+`data clean` and `data pack` commands).
+
+You can specify any number of URLs and file names in `[data.remote]`, one for
+each file that you wish to be downloaded.
+
+### `kerblam data clean` - Free local disk space safely
+If you want to cleanup your data (perhaps you have finished your work, and would
+like to save some disk space), you can run `kerblam data clean`.
+Kerblam! will remove:
+- All temporary files in `./data/`;
+- All output files in `./data/out`;
+- All input files that can be downloaded remotely in `./data/in`.
+This essentially only leaves input data that cannot be retrieved remotely on
+disk.
+
+Kerblam! will consider as "remotely available" files that are present in the
+`data.remote` section of `kerblam.toml`.
+
+## `kerblam data pack` - Package and export your local data
+Say that you wish to send all your data folder to a colleague for inspection.
+You can `tar -czvf exported_data.tar.gz ./data/` and send your whole data folder,
+but you might want to only pick the output and non-remotely available inputs.
+
+If you run `kerblam data pack` you can do just that.
+Kerblam! will create a `exported_data.tar.gz` file and save it locally with the
+non-remotely-available `.data/in` files and the files in `./data/out`.
+You can also pass the `--cleanup` flag to also delete them after packing.
+
+You can then share the data pack with others.
 
 ---
 
