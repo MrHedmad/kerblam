@@ -28,7 +28,7 @@ fn d_temp_dir() -> PathBuf {
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-pub struct DataOptions {
+pub struct DataPaths {
     #[serde(default = "d_input_dir")]
     input: PathBuf,
     #[serde(default = "d_output_dir")]
@@ -37,8 +37,6 @@ pub struct DataOptions {
     intermediate: PathBuf,
     #[serde(default = "d_temp_dir")]
     temporary: PathBuf,
-    // Profiles are like HashMap<profile_name, HashMap<old_file_name, new_file_name>>
-    pub profiles: Option<HashMap<String, HashMap<PathBuf, PathBuf>>>,
 }
 
 fn d_pipes_dir() -> PathBuf {
@@ -51,8 +49,10 @@ fn d_env_dir() -> PathBuf {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct DataOptions {
-    paths: Option<DataPaths>,
-    remote: Option<Vec<HashMap<Url, PathBuf>>>,
+    pub paths: Option<DataPaths>,
+    // Profiles are like HashMap<profile_name, HashMap<old_file_name, new_file_name>>
+    pub profiles: Option<HashMap<String, HashMap<PathBuf, PathBuf>>>,
+    pub remote: Option<HashMap<Url, PathBuf>>,
 }
 
 #[allow(dead_code)]

@@ -84,10 +84,15 @@ fn main() -> anyhow::Result<()> {
             run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile)?;
         }
         Command::Data { subcommand } => match subcommand {
-            None => todo!(),
+            None => {
+                let config = config.unwrap();
+                let data_info =
+                    data::get_data_status(config, &current_dir().unwrap().join("data"))?;
+                println!("{}", data_info)
+            }
             Some(DataCommands::Fetch) => todo!(),
             Some(DataCommands::Clean) => todo!(),
-            Some(DataCommands::Pack { output_path: path }) => todo!(),
+            Some(DataCommands::Pack { output_path: _path }) => todo!(),
         },
     };
 

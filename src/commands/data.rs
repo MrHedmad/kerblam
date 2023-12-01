@@ -16,10 +16,9 @@ struct FileSize {
 
 impl Copy for FileSize {}
 
-impl FileSize {
-    fn from_path(value: impl AsRef<Path>) -> Result<Self> {
-        let value = value.as_ref();
-
+impl TryFrom<PathBuf> for FileSize {
+    type Error = anyhow::Error;
+    fn try_from(value: PathBuf) -> std::result::Result<Self, Self::Error> {
         let meta = fs::metadata(value)?;
 
         Ok(FileSize {
@@ -39,7 +38,7 @@ impl Sum<FileSize> for FileSize {
     }
 }
 
-struct DataStatus {
+pub struct DataStatus {
     // We don't care to the individuality of the
     // files, so just store all of their values
     temp_data: Vec<FileSize>,
@@ -116,22 +115,23 @@ impl Display for DataStatus {
 
         concat.push("──────────────────────".into());
         concat.push(format!(
-            "Total\n{} [{}]",
+            "Total\t{} [{}]",
             self.total_local_size(),
             self.output_data.len() + self.temp_data.len() + self.input_data.len()
         ));
 
         concat.push(format!(
-            "└── cleanup\t{} [{}] ({})",
+            "└── cleanup\t{} [{}] ({:.2}%)",
             self.cleanable_data.clone().into_iter().sum::<FileSize>(),
             self.cleanable_data.len(),
-            self.total_local_size().size
-                / self
-                    .cleanable_data
-                    .clone()
-                    .into_iter()
-                    .sum::<FileSize>()
-                    .size
+            (self
+                .cleanable_data
+                .clone()
+                .into_iter()
+                .sum::<FileSize>()
+                .size as f64
+                / self.total_local_size().size as f64)
+                * 100.
         ));
 
         concat.push(format!(
@@ -159,22 +159,78 @@ pub fn get_data_status(
     let input_files: Vec<PathBuf> = walkdir::WalkDir::new(inspected_path.join("in"))
         .into_iter()
         .filter_map(|i| i.ok())
+        .filter(|path| path.metadata().unwrap().is_file())
         .map(|x| x.path().to_owned())
         .collect();
+    log::debug!("Input files: {:?}", input_files);
     let output_files: Vec<PathBuf> = walkdir::WalkDir::new(inspected_path.join("out"))
         .into_iter()
         .filter_map(|i| i.ok())
+        .filter(|path| path.metadata().unwrap().is_file())
         .map(|x| x.path().to_owned())
         .collect();
-    let temp_files: Vec<PathBuf> = walkdir::WalkDir::new(inspected_path)
+    log::debug!("Output files: {:?}", output_files);
+    let temp_files: Vec<PathBuf> = fs::read_dir(inspected_path)?
         .into_iter()
-        .filter_entry(|x| {
-            x.path().starts_with(inspected_path.join("in"))
+        .into_iter()
+        .filter_map(|i| i.ok())
+        .filter(|x| {
+            !x.path().starts_with(inspected_path.join("in"))
                 | x.path().starts_with(inspected_path.join("out"))
         })
-        .filter_map(|i| i.ok())
+        .filter(|path| path.metadata().unwrap().is_file())
         .map(|x| x.path().to_owned())
         .collect();
+    log::debug!("Temp files: {:?}", output_files);
 
-    todo!()
+    // We need to find out what paths are remote
+    let specified_remote_paths = config.data.and_then(|x| x.remote);
+    log::debug!("TOML-specified remote paths: {specified_remote_paths:?}");
+
+    let specified_remote_files: Vec<PathBuf> = match specified_remote_paths {
+        None => vec![],
+        Some(paths) => paths
+            .into_iter()
+            .map(|x| inspected_path.join(x.1))
+            .collect(),
+    };
+    log::debug!("Remote files: {specified_remote_files:?}");
+    let undownloaded_files: Vec<PathBuf> = specified_remote_files
+        .clone()
+        .into_iter()
+        .filter(|remote_path| {
+            // If any of the local paths end with the remote path, then
+            // the file is not undownloaded.
+            !input_files.iter().any(|x| x.ends_with(remote_path))
+        })
+        .collect();
+    let remote_files: Vec<PathBuf> = specified_remote_files
+        .clone()
+        .into_iter()
+        .filter(|remote_path| {
+            // Same as above, but inversed
+            input_files.iter().any(|x| x == remote_path)
+        })
+        .collect();
+    log::debug!("Undownloded files: {undownloaded_files:?}");
+    log::debug!("Downlodaed files: {remote_files:?}");
+
+    Ok(DataStatus {
+        temp_data: unsafe_path_filesize_conversion(&temp_files),
+        input_data: unsafe_path_filesize_conversion(&input_files),
+        output_data: unsafe_path_filesize_conversion(&output_files),
+        remote_data: unsafe_path_filesize_conversion(&remote_files),
+        cleanable_data: unsafe_path_filesize_conversion(
+            &[remote_files, output_files, temp_files].concat(),
+        ),
+        not_local: undownloaded_files.len() as u64,
+    })
+}
+
+fn unsafe_path_filesize_conversion(items: &Vec<PathBuf>) -> Vec<FileSize> {
+    items
+        .to_owned()
+        .into_iter()
+        .map(|x| x.try_into().unwrap())
+        .collect()
 }

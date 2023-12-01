@@ -10,6 +10,7 @@ use anyhow::{anyhow, bail, Result};
 use crossbeam_channel::{bounded, Receiver};
 use ctrlc;
 
+#[allow(dead_code)]
 enum CommandResult {
     Exited { res: ExitStatus },
     Killed,
@@ -246,7 +247,7 @@ impl FileMover {
     /// Symlink the two paths, without any actual move.
     ///
     /// Returns the location of the created symlink.
-    fn link(&self) -> Result<PathBuf> {
+    fn _link(&self) -> Result<PathBuf> {
         // TODO: Make this compatible with other operating systems.
         log::debug!("Linking {:?} to {:?}", self.from, self.to);
         std::os::unix::fs::symlink(self.from.clone(), self.to.clone())?;
