@@ -28,23 +28,6 @@ enum Command {
         /// Path of the new project.
         path: PathBuf,
     },
-    /// Package a Kerblam! project for later
-    Pack {
-        /// Where to save the packed project
-        path: Option<PathBuf>,
-    },
-    /// Clone a remote git Kerblam! project
-    Clone {
-        /// The remote git URL to clone
-        remote_url: String,
-    },
-    /// Hydrate an existing Kerblam! project
-    Hydrate { path: Option<PathBuf> },
-    /// Unpack a packed Kerblam! project
-    Unpack {
-        packed_path: PathBuf,
-        destination: Option<PathBuf>,
-    },
     /// Run a Kerblam! project
     Run {
         /// Name of the module to run
