@@ -11,22 +11,49 @@ use anyhow::Result;
 // Note: i keep all the fields that are not used to private until we
 // actually support their usage.
 
+// Serde requires functions like this, for now. See serde-rs/serde/issues/368
+fn d_input_dir() -> PathBuf {
+    "./data/in".into()
+}
+fn d_output_dir() -> PathBuf {
+    "./data/out".into()
+}
+fn d_int_dir() -> PathBuf {
+    "./data".into()
+}
+fn d_temp_dir() -> PathBuf {
+    "/tmp/data".into()
+}
+
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct DataOptions {
-    input: Option<PathBuf>,
-    output: Option<PathBuf>,
-    intermediate: Option<PathBuf>,
-    temporary: Option<PathBuf>,
+    #[serde(default = "d_input_dir")]
+    input: PathBuf,
+    #[serde(default = "d_output_dir")]
+    output: PathBuf,
+    #[serde(default = "d_int_dir")]
+    intermediate: PathBuf,
+    #[serde(default = "d_temp_dir")]
+    temporary: PathBuf,
     // Profiles are like HashMap<profile_name, HashMap<old_file_name, new_file_name>>
     pub profiles: Option<HashMap<String, HashMap<PathBuf, PathBuf>>>,
+}
+
+fn d_pipes_dir() -> PathBuf {
+    "./src/pipes/".into()
+}
+fn d_env_dir() -> PathBuf {
+    "./src/dockerfiles".into()
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct CodeOptions {
-    root: Option<PathBuf>,
-    modules: Option<PathBuf>,
+    #[serde(default = "d_env_dir")]
+    env_dir: PathBuf,
+    #[serde(default = "d_pipes_dir")]
+    pipes_dir: PathBuf,
 }
 
 #[allow(dead_code)]
