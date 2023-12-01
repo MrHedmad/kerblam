@@ -8,6 +8,7 @@ mod commands;
 mod options;
 mod utils;
 
+use crate::commands::data;
 use crate::commands::new;
 use crate::commands::run;
 
@@ -36,6 +37,18 @@ enum Command {
         #[arg(long)]
         profile: Option<String>,
     },
+    /// Manage local data
+    Data {
+        #[command(subcommand)]
+        subcommand: Option<DataCommands>,
+    },
+}
+
+#[derive(Subcommand, Debug, PartialEq)]
+enum DataCommands {
+    Fetch,
+    Clean,
+    Pack { output_path: Option<PathBuf> },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -70,9 +83,12 @@ fn main() -> anyhow::Result<()> {
             let config = config.unwrap(); // This is always safe due to the check above.
             run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile)?;
         }
-        _ => {
-            todo!()
-        }
+        Command::Data { subcommand } => match subcommand {
+            None => todo!(),
+            Some(DataCommands::Fetch) => todo!(),
+            Some(DataCommands::Clean) => todo!(),
+            Some(DataCommands::Pack { output_path: path }) => todo!(),
+        },
     };
 
     Ok(())

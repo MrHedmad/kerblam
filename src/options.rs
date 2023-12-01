@@ -4,6 +4,7 @@ use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Result;
+use url::Url;
 
 // TODO: Remove the #[allow(dead_code)] calls when we actually use the
 // options here.
@@ -13,13 +14,20 @@ use anyhow::Result;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-pub struct DataOptions {
+pub struct DataPaths {
     input: Option<PathBuf>,
     output: Option<PathBuf>,
     intermediate: Option<PathBuf>,
     temporary: Option<PathBuf>,
     // Profiles are like HashMap<profile_name, HashMap<old_file_name, new_file_name>>
     pub profiles: Option<HashMap<String, HashMap<PathBuf, PathBuf>>>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+pub struct DataOptions {
+    paths: Option<DataPaths>,
+    remote: Option<Vec<HashMap<Url, PathBuf>>>,
 }
 
 #[allow(dead_code)]
