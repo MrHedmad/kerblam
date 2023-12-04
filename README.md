@@ -4,9 +4,9 @@
 > Consider this README a roadmap of sort of what kerblam! wants to be.
 >
 > ```
->            new      run  data clone   package   ignore  link tests
->              |        |     |     |         |        |     |     |
-> [progress]>###############----------------------------------------<
+>            new      run  data         package   ignore  link tests
+>              |        |     |               |        |     |     |
+> [progress]>####################-----------------------------------<
 > ```
 
 > :warning: `kerblam run` is complete but still untested. Please do use it,
@@ -46,12 +46,9 @@ file yourself. To learn how, look at the section below.
 - :white_check_mark: `kerblam new` can be used to create a new kerblam!
   project. Kerblam! asks you if you want to use some common programming
   languages and sets up a proper `.gitignore` and pre-commit hooks for you.
-- :pushpin: `kerblam clone` can be used to clone a `kerblam` project.
-  Kerblam! will ask you to fetch input files, create virtual environments and
-  more upon creation.
-- :construction: `kerblam data` fetches remote data and saves it locally, manages
+- :white_check_mark: `kerblam data` fetches remote data and saves it locally, manages
   local data and can clean it up.
-- :pushpin: `kerblam package` packages your pipeline and exports a `docker`
+- :construction: `kerblam package` packages your pipeline and exports a `docker`
   image for execution later.
   It's useful for reproducibility purposes as the docker image is primed
   for execution, bundling the kerblam! executable, execution files and non-remote
@@ -369,7 +366,7 @@ You can also pass the `--cleanup` flag to also delete them after packing.
 
 You can then share the data pack with others.
 
----
+u---
 
 And remember! If you want it...
 

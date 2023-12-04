@@ -29,11 +29,6 @@ enum Command {
         /// Path of the new project.
         path: PathBuf,
     },
-    /// Clone a remote git Kerblam! project
-    Clone {
-        /// The remote git URL to clone
-        remote_url: String,
-    },
     /// Run a Kerblam! project
     Run {
         /// Name of the module to run
@@ -102,9 +97,6 @@ fn main() -> anyhow::Result<()> {
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
         },
-        Command::Clone {
-            remote_url: _remote_url,
-        } => todo!(),
     };
 
     Ok(())
