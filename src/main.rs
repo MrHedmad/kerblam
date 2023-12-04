@@ -29,6 +29,11 @@ enum Command {
         /// Path of the new project.
         path: PathBuf,
     },
+    /// Clone a remote git Kerblam! project
+    Clone {
+        /// The remote git URL to clone
+        remote_url: String,
+    },
     /// Run a Kerblam! project
     Run {
         /// Name of the module to run
