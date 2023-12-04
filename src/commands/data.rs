@@ -428,6 +428,8 @@ pub fn package_data_to_archive(
 ) -> Result<()> {
     let inspected_path = current_dir()?.join("data");
     let output_path = output_path.as_ref();
+    // This is to render relative paths not relative.
+    let output_path = current_dir()?.join(output_path);
 
     let remote_files = config.remote_files();
     let precious_input_files = find_files(inspected_path.join("in"), None)
