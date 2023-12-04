@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::env::current_dir;
 use std::fs;
 use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
@@ -27,7 +28,7 @@ fn d_temp_dir() -> PathBuf {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DataPaths {
     #[serde(default = "d_input_dir")]
     input: PathBuf,
@@ -47,7 +48,7 @@ fn d_env_dir() -> PathBuf {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DataOptions {
     pub paths: Option<DataPaths>,
     // Profiles are like HashMap<profile_name, HashMap<old_file_name, new_file_name>>
@@ -56,7 +57,7 @@ pub struct DataOptions {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct CodeOptions {
     #[serde(default = "d_env_dir")]
     env_dir: PathBuf,
@@ -65,7 +66,7 @@ pub struct CodeOptions {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct KerblamTomlOptions {
     pub data: Option<DataOptions>,
     code: Option<CodeOptions>,
@@ -78,4 +79,38 @@ pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOpti
     let config: KerblamTomlOptions = toml::from_str(toml_content.as_str())?;
 
     Ok(config)
+}
+
+pub struct RemoteFile {
+    pub url: Url,
+    pub path: PathBuf,
+}
+
+impl KerblamTomlOptions {
+    pub fn remote_files(&self) -> Vec<RemoteFile> {
+        let here = &current_dir().unwrap();
+
+        let root_data_dir = self
+            .data
+            .clone()
+            .and_then(|x| x.paths)
+            .and_then(|x| x.input.into())
+            .or_else(|| Some(here.join("data/in")))
+            .unwrap();
+
+        self.data
+            .clone()
+            .and_then(|x| x.remote)
+            .and_then(|y| {
+                Some(
+                    y.iter()
+                        .map(|pairs| RemoteFile {
+                            url: pairs.0.clone(),
+                            path: root_data_dir.join(pairs.1),
+                        })
+                        .collect(),
+                )
+            })
+            .unwrap_or(vec![])
+    }
 }

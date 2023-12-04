@@ -196,16 +196,8 @@ pub fn get_data_status(
     log::debug!("Temp files: {:?}", output_files);
 
     // We need to find out what paths are remote
-    let specified_remote_paths = config.data.and_then(|x| x.remote);
-    log::debug!("TOML-specified remote paths: {specified_remote_paths:?}");
-
-    let specified_remote_files: Vec<PathBuf> = match specified_remote_paths {
-        None => vec![],
-        Some(paths) => paths
-            .into_iter()
-            .map(|x| inspected_path.join(x.1))
-            .collect(),
-    };
+    let specified_remote_files: Vec<PathBuf> =
+        config.remote_files().into_iter().map(|x| x.path).collect();
     log::debug!("Remote files: {specified_remote_files:?}");
     let undownloaded_files: Vec<PathBuf> = specified_remote_files
         .clone()
@@ -225,7 +217,7 @@ pub fn get_data_status(
         })
         .collect();
     log::debug!("Undownloded files: {undownloaded_files:?}");
-    log::debug!("Downlodaed files: {remote_files:?}");
+    log::debug!("Downloaded files: {remote_files:?}");
 
     Ok(DataStatus {
         temp_data: unsafe_path_filesize_conversion(&temp_files),
