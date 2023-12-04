@@ -1,13 +1,16 @@
 use std::borrow::Cow;
+use std::env::current_dir;
 use std::fmt::Display;
 use std::fs::{self, create_dir_all};
 use std::iter::Sum;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
+use crate::new::normalize_path;
 use crate::options::KerblamTomlOptions;
+use crate::utils::{ask_for, run_command, YesNo};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
 use reqwest::blocking::Client;
 use walkdir;
@@ -338,4 +341,142 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     } else {
         Err(anyhow!("Something failed to be retrieved."))
     }
+}
+
+fn get_volatile_files(
+    config: KerblamTomlOptions,
+    inspected_path: impl AsRef<Path>,
+) -> Vec<PathBuf> {
+    let inspected_path = inspected_path.as_ref();
+    let temp_files = find_files(
+        inspected_path.clone(),
+        Some(vec![inspected_path.join("in"), inspected_path.join("out")]),
+    );
+    let output_files = find_files(inspected_path.join("out"), None);
+    let input_files = find_files(inspected_path.join("in"), None);
+    let specified_remote_files: Vec<PathBuf> =
+        config.remote_files().into_iter().map(|x| x.path).collect();
+    let remote_files: Vec<PathBuf> = specified_remote_files
+        .clone()
+        .into_iter()
+        .filter(|remote_path| {
+            // Same as above, but inversed
+            input_files.iter().any(|x| x == remote_path)
+        })
+        .collect();
+
+    [output_files, temp_files, remote_files].concat()
+}
+
+pub fn clean_data(config: KerblamTomlOptions) -> Result<()> {
+    let inspected_path = current_dir()?.join("data");
+
+    let cleanable_files = get_volatile_files(config, inspected_path.clone());
+
+    if cleanable_files.is_empty() {
+        println!("✨ Nothing to clean!");
+        return Ok(());
+    }
+
+    let question = format!(
+        "🧹 About to delete {} files ({}). Continue?",
+        cleanable_files.len(),
+        unsafe_path_filesize_conversion(&cleanable_files)
+            .into_iter()
+            .sum::<FileSize>()
+    );
+
+    let progress = ProgressBar::new(cleanable_files.len() as u64);
+
+    match ask_for::<YesNo>(question.as_str()) {
+        YesNo::Yes => {
+            let mut failures: Vec<(PathBuf, std::io::Error)> = vec![];
+            for file in progress.wrap_iter(cleanable_files.into_iter()) {
+                if let Err(e) = fs::remove_file(file.clone()) {
+                    failures.push((file.clone(), e));
+                }
+            }
+
+            if !failures.is_empty() {
+                bail!(
+                    "Failed to clean some files:\n {}",
+                    failures
+                        .into_iter()
+                        .map(|x| {
+                            format!(
+                                "\t- {}: {}\n",
+                                normalize_path(x.0.strip_prefix(inspected_path.clone()).unwrap())
+                                    .to_string_lossy(),
+                                x.1.to_string()
+                            )
+                        })
+                        .collect::<String>()
+                )
+            };
+        }
+        YesNo::No => {
+            bail!("Aborted!");
+        }
+    };
+
+    Ok(())
+}
+
+pub fn package_data_to_archive(
+    config: KerblamTomlOptions,
+    output_path: impl AsRef<Path>,
+) -> Result<()> {
+    let inspected_path = current_dir()?.join("data");
+    let output_path = output_path.as_ref();
+
+    let remote_files = config.remote_files();
+    let precious_input_files = find_files(inspected_path.join("in"), None)
+        .into_iter()
+        .filter(|x| remote_files.iter().any(|y| x == &y.path))
+        .collect();
+
+    let files_to_package: Vec<PathBuf> = [
+        precious_input_files,
+        find_files(inspected_path.join("out"), None),
+    ]
+    .concat()
+    .into_iter()
+    .filter(|x| x.is_file())
+    .collect();
+
+    if files_to_package.is_empty() {
+        println!("🕸️ Nothing to pack!");
+        return Ok(());
+    }
+
+    let compression_dir = tempfile::tempdir()?;
+    let compression_dir_path = compression_dir.path();
+
+    for file in files_to_package {
+        println!("➕ Adding {:?}...", normalize_path(file.as_ref()));
+        let target_file = compression_dir_path
+            .to_path_buf()
+            .join(file.strip_prefix(&inspected_path)?);
+        log::debug!("Moving {file:?} to {target_file:?}");
+        create_dir_all(&target_file.parent().unwrap())?;
+        fs::copy(&file, &target_file)?;
+    }
+
+    println!("Compressing...");
+    run_command(
+        compression_dir_path.parent(),
+        "tar",
+        vec![
+            "czf",
+            output_path.as_os_str().to_str().unwrap(),
+            "-C",
+            compression_dir_path.to_str().unwrap(),
+            ".",
+        ],
+    )?;
+
+    drop(compression_dir);
+
+    println!("✨ Done!");
+    Ok(())
 }

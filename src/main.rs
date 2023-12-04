@@ -91,8 +91,11 @@ fn main() -> anyhow::Result<()> {
                 println!("{}", data_info)
             }
             Some(DataCommands::Fetch) => data::fetch_remote_data(config.unwrap())?,
-            Some(DataCommands::Clean) => todo!(),
-            Some(DataCommands::Pack { output_path: _path }) => todo!(),
+            Some(DataCommands::Clean) => data::clean_data(config.unwrap())?,
+            Some(DataCommands::Pack { output_path: path }) => data::package_data_to_archive(
+                config.unwrap(),
+                path.unwrap_or(here.join("data/data_export.tar.gz")),
+            )?,
         },
     };
 
