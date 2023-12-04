@@ -90,7 +90,7 @@ fn main() -> anyhow::Result<()> {
                     data::get_data_status(config, &current_dir().unwrap().join("data"))?;
                 println!("{}", data_info)
             }
-            Some(DataCommands::Fetch) => todo!(),
+            Some(DataCommands::Fetch) => data::fetch_remote_data(config.unwrap())?,
             Some(DataCommands::Clean) => todo!(),
             Some(DataCommands::Pack { output_path: _path }) => todo!(),
         },

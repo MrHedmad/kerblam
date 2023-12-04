@@ -97,6 +97,7 @@ impl KerblamTomlOptions {
             .and_then(|x| x.input.into())
             .or_else(|| Some(here.join("data/in")))
             .unwrap();
+        log::debug!("Remote file save dir is {root_data_dir:?}");
 
         self.data
             .clone()

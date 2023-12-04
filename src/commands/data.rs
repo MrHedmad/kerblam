@@ -1,12 +1,15 @@
+use std::borrow::Cow;
 use std::fmt::Display;
-use std::fs;
+use std::fs::{self, create_dir_all};
 use std::iter::Sum;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use crate::options::KerblamTomlOptions;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
+use reqwest::blocking::Client;
 use walkdir;
 
 #[derive(Debug, Clone)]
@@ -237,4 +240,100 @@ fn unsafe_path_filesize_conversion(items: &Vec<PathBuf>) -> Vec<FileSize> {
         .into_iter()
         .map(|x| x.try_into().unwrap())
         .collect()
+}
+
+pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
+    let remote_files = config.remote_files();
+
+    if remote_files.is_empty() {
+        println!("No remote files to fetch!");
+        return Ok(());
+    }
+
+    let mut success = true;
+
+    let client = Client::new();
+
+    let spinner_bar_style =
+        ProgressStyle::with_template("⬇️  [{binary_bytes_per_sec}] {msg} {spinner} ({elapsed})")
+            .unwrap();
+    let bar_style = ProgressStyle::with_template(
+        "⬇️  [{binary_bytes_per_sec}] {msg} {wide_bar} {eta} ({elapsed})",
+    )
+    .unwrap();
+
+    for file in remote_files {
+        // Stop if the file is already there
+
+        if file.path.exists() {
+            println!(
+                "✅ file {} exists!",
+                file.path.file_name().unwrap().to_string_lossy()
+            );
+            continue;
+        }
+
+        let created_msg = format!(
+            "Created {}!",
+            file.path.file_name().unwrap().to_string_lossy()
+        );
+        let bar_msg = format!(
+            "Fetching {}",
+            file.path.file_name().unwrap().to_string_lossy()
+        );
+
+        let mut result = client.get(file.url).send()?;
+        // See if we have the content size
+        let size = result
+            .headers()
+            .get("content-length")
+            .and_then(|val| val.to_str().unwrap().parse::<u64>().ok());
+
+        let progress = match size {
+            None => ProgressBar::new_spinner()
+                .with_style(spinner_bar_style.clone())
+                .with_message(bar_msg)
+                .with_finish(ProgressFinish::WithMessage(Cow::from(created_msg))),
+            Some(val) => ProgressBar::new(val)
+                .with_style(bar_style.clone())
+                .with_message(bar_msg)
+                .with_finish(ProgressFinish::WithMessage(Cow::from(created_msg))),
+        };
+
+        if !result.status().is_success() {
+            progress.abandon_with_message(Cow::from(format!(
+                " ❌ Failed! {}",
+                result.error_for_status_ref()?.status()
+            )));
+            success = false;
+            continue;
+        }
+
+        // Create the container dir and open a file connection
+        let _ = create_dir_all(file.path.parent().unwrap());
+        let writer = match fs::File::create(file.path) {
+            Ok(f) => f,
+            Err(e) => {
+                progress.abandon_with_message(Cow::from(format!(
+                    " ❌ Failed to create output file! {e:?}"
+                )));
+                success = false;
+                continue;
+            }
+        };
+
+        match result.copy_to(&mut progress.wrap_write(writer)) {
+            Ok(_) => progress.finish_using_style(),
+            Err(e) => {
+                println!(" ❌ Failed to write to output buffer: {e}");
+                success = false;
+            }
+        };
+    }
+
+    if success {
+        Ok(())
+    } else {
+        Err(anyhow!("Something failed to be retrieved."))
+    }
 }
