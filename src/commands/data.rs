@@ -150,37 +150,49 @@ impl Display for DataStatus {
     }
 }
 
+fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
+    let inspected_path = inspected_path.as_ref();
+
+    if let Some(filters) = filters {
+        walkdir::WalkDir::new(inspected_path)
+            .into_iter()
+            .filter_map(|i| i.ok())
+            .filter(|x| {
+                let mut p = true;
+                for path in filters.clone() {
+                    if x.path().starts_with(path) {
+                        p = false;
+                    }
+                }
+                p
+            })
+            .filter(|path| path.metadata().unwrap().is_file())
+            .map(|x| x.path().to_owned())
+            .collect()
+    } else {
+        walkdir::WalkDir::new(inspected_path)
+            .into_iter()
+            .filter_map(|i| i.ok())
+            .filter(|path| path.metadata().unwrap().is_file())
+            .map(|x| x.path().to_owned())
+            .collect()
+    }
+}
+
 pub fn get_data_status(
     config: KerblamTomlOptions,
     inspected_path: impl AsRef<Path>,
 ) -> Result<DataStatus> {
     let inspected_path = inspected_path.as_ref();
 
-    let input_files: Vec<PathBuf> = walkdir::WalkDir::new(inspected_path.join("in"))
-        .into_iter()
-        .filter_map(|i| i.ok())
-        .filter(|path| path.metadata().unwrap().is_file())
-        .map(|x| x.path().to_owned())
-        .collect();
+    let input_files = find_files(inspected_path.join("in"), None);
     log::debug!("Input files: {:?}", input_files);
-    let output_files: Vec<PathBuf> = walkdir::WalkDir::new(inspected_path.join("out"))
-        .into_iter()
-        .filter_map(|i| i.ok())
-        .filter(|path| path.metadata().unwrap().is_file())
-        .map(|x| x.path().to_owned())
-        .collect();
+    let output_files = find_files(inspected_path.join("out"), None);
     log::debug!("Output files: {:?}", output_files);
-    let temp_files: Vec<PathBuf> = fs::read_dir(inspected_path)?
-        .into_iter()
-        .into_iter()
-        .filter_map(|i| i.ok())
-        .filter(|x| {
-            !x.path().starts_with(inspected_path.join("in"))
-                | x.path().starts_with(inspected_path.join("out"))
-        })
-        .filter(|path| path.metadata().unwrap().is_file())
-        .map(|x| x.path().to_owned())
-        .collect();
+    let temp_files = find_files(
+        inspected_path,
+        Some(vec![inspected_path.join("in"), inspected_path.join("out")]),
+    );
     log::debug!("Temp files: {:?}", output_files);
 
     // We need to find out what paths are remote
