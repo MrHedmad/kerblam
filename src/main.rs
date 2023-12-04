@@ -42,20 +42,18 @@ enum Command {
         #[arg(long)]
         profile: Option<String>,
     },
-    /// Get information on local data and manage it
+    /// Manage local data
     Data {
         #[command(subcommand)]
-        subcommand: Option<DataSubcommand>,
+        subcommand: Option<DataCommands>,
     },
 }
 
-#[derive(Subcommand, Debug, PartialEq, Clone)]
-enum DataSubcommand {
-    Clean {},
-    Package {
-        /// Path to save packaged output
-        path: Option<PathBuf>,
-    },
+#[derive(Subcommand, Debug, PartialEq)]
+enum DataCommands {
+    Fetch,
+    Clean,
+    Pack { output_path: Option<PathBuf> },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -90,27 +88,20 @@ fn main() -> anyhow::Result<()> {
             let config = config.unwrap(); // This is always safe due to the check above.
             run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile)?;
         }
-        Command::Data { subcommand } => {
-            let config = config.unwrap();
-            match subcommand {
-                None => data::print_data_status(config, current_dir().unwrap())?,
-                Some(DataSubcommand::Clean {}) => {
-                    data::cleanup_data(config, current_dir().unwrap())?
-                }
-                Some(DataSubcommand::Package { path }) => {
-                    let here = current_dir().unwrap();
-                    data::package_data(
-                        config,
-                        here.clone(),
-                        path.unwrap_or(here.join("exported_data.tar.gz")),
-                    )?
-                }
-            };
-        }
-
-        _ => {
-            todo!()
-        }
+        Command::Data { subcommand } => match subcommand {
+            None => {
+                let config = config.unwrap();
+                let data_info =
+                    data::get_data_status(config, &current_dir().unwrap().join("data"))?;
+                println!("{}", data_info)
+            }
+            Some(DataCommands::Fetch) => data::fetch_remote_data(config.unwrap())?,
+            Some(DataCommands::Clean) => data::clean_data(config.unwrap())?,
+            Some(DataCommands::Pack { output_path: path }) => data::package_data_to_archive(
+                config.unwrap(),
+                path.unwrap_or(here.join("data/data_export.tar.gz")),
+            )?,
+        },
     };
 
     Ok(())
