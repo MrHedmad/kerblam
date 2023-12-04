@@ -102,6 +102,9 @@ fn main() -> anyhow::Result<()> {
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
         },
+        Command::Clone {
+            remote_url: _remote_url,
+        } => todo!(),
     };
 
     Ok(())
