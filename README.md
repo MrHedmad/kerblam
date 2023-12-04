@@ -357,7 +357,7 @@ disk.
 Kerblam! will consider as "remotely available" files that are present in the
 `data.remote` section of `kerblam.toml`.
 
-## `kerblam data pack` - Package and export your local data
+### `kerblam data pack` - Package and export your local data
 Say that you wish to send all your data folder to a colleague for inspection.
 You can `tar -czvf exported_data.tar.gz ./data/` and send your whole data folder,
 but you might want to only pick the output and non-remotely available inputs.
