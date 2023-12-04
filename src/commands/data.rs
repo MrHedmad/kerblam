@@ -264,25 +264,24 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
 
     for file in remote_files {
         // Stop if the file is already there
+        let filename = file.path.file_name().unwrap().to_string_lossy();
 
         if file.path.exists() {
-            println!(
-                "✅ file {} exists!",
-                file.path.file_name().unwrap().to_string_lossy()
-            );
+            println!("✅ file {} exists!", filename);
             continue;
         }
 
-        let created_msg = format!(
-            "Created {}!",
-            file.path.file_name().unwrap().to_string_lossy()
-        );
-        let bar_msg = format!(
-            "Fetching {}",
-            file.path.file_name().unwrap().to_string_lossy()
-        );
+        let created_msg = format!("Created {}!", filename);
+        let bar_msg = format!("Fetching {}", filename);
 
-        let mut result = client.get(file.url).send()?;
+        let mut result = match client.get(file.url).send() {
+            Ok(res) => res,
+            Err(e) => {
+                println!("Failed to fetch {}! {}", filename, e);
+                success = false;
+                continue;
+            }
+        };
         // See if we have the content size
         let size = result
             .headers()
@@ -301,10 +300,13 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
         };
 
         if !result.status().is_success() {
-            progress.abandon_with_message(Cow::from(format!(
-                " ❌ Failed! {}",
-                result.error_for_status_ref()?.status()
-            )));
+            progress.finish_and_clear();
+            eprintln!(
+                "❌ Failed retrieving {}! {} ({})",
+                filename,
+                result.status().canonical_reason().unwrap(),
+                result.status().as_str()
+            );
             success = false;
             continue;
         }
