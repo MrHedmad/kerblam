@@ -10,23 +10,23 @@
 > ```
 
 > :warning: `kerblam run` is complete but still untested. Please do use it,
-> but be careful. Report any probles in the [issues](https://github.com/MrHedmad/kerblam).
+> but be careful. Report any problems in the [issues](https://github.com/MrHedmad/kerblam).
 > Thank you kindly!
 
 Kerblam! is a tool that can help you manage data analysis projects.
 
 A Kerblam! project has a `kerblam.toml` file in its root.
-If you use `kerblam`, you then get some nice perks:
-- Allows for easy remote data access, by just specifying URLs to fetch from;
-- Can package and export data quickly to share the project with colleagues;
-- Allows to manage and run multiple makefiles for different tasks;
-- Leverages git to isolate, rollback and run the project at a different point in time;
-- Cleans up intermediate and output files quickly;
-- Manages Docker environments and runs code in them for you.
+Kerblam! allows you to:
+- Access remote data quickly, by just specifying URLs to fetch from;
+- Package and export data in order to share the project with colleagues;
+- Manage and run multiple makefiles for different tasks;
+- Leverage git to isolate, rollback and run the project at a different point in time;
+- Clean up intermediate and output files quickly;
+- Manage Docker environments and run code in them for you.
 - Manage the content of you `.gitignore` for you, allowing to add files, 
   directories and even whole languages in one command.
-- Helps you use `pre-commit` by managing `.pre-commit-hooks` for you.
-- Allow you to specify test data to run.
+- Make it easy to use `pre-commit` by managing `.pre-commit-hooks`.
+- Specify test data to run and quickly use it instead of real data.
 
 To transform a project to a Kerblam! project just make the kerblam.toml
 file yourself. To learn how, look at the section below.
