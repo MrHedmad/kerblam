@@ -1,7 +1,10 @@
 ![If you want it, Kerblam it!](docs/images/logo.png)
 
-> :warning: **Most of this is not implemented yet.**
+> [!WARNING]
+>
+> **Most of this is not implemented yet.**
 > Consider this README a roadmap of sort of what kerblam! wants to be.
+> Here's a handy progress bar:
 >
 > ```
 >            new      run  data         package   ignore  link tests
@@ -9,7 +12,9 @@
 > [progress]>####################-----------------------------------<
 > ```
 
-> :warning: `kerblam run` is complete but still untested. Please do use it,
+> [!WARNING]
+>
+> `kerblam run` is complete but still untested. Please do use it,
 > but be careful. Report any problems in the [issues](https://github.com/MrHedmad/kerblam).
 > Thank you kindly!
 
@@ -33,7 +38,8 @@ file yourself. To learn how, look at the section below.
 
 # Overview
 
-> :warning: **Note**: In this early stage, commands with :white_check_mark: are
+> [!NOTE]
+> In this early stage, commands with :white_check_mark: are
 > (mostly) implemented, :construction: are being implemented now, and
 > :pushpin: are planned.
 >
@@ -112,7 +118,8 @@ This is mostly done for compatibility reasons with non-kerblam! projects.
 ## Contributing
 Kerblam! is currently not accepting pull requests as it's still in its infancy.
 
-> :warning: When Kerblam! reaches minimal viability, I'll open PRs.
+> [!NOTE]
+> When Kerblam! reaches minimal viability, I'll open PRs.
 > You are still welcome to open issues to discuss code quality / structure
 > and the design of the tool.
 
@@ -171,7 +178,8 @@ Kerblam! will:
   files,
 - and setup the `.gitignore` file with appropriate ignores;
 
-> :warning: Note that Kerblam! will not do an `Initial commit` for you!
+> [!TIP]
+> Kerblam! will not do an `Initial commit` for you!
 
 You can now start writing code!
 The rest of this tutorial outlines common tasks with which you can use `kerblam` for.
@@ -235,11 +243,13 @@ in docker environments, so you can tweak your dependencies and tooling
 (which might be different than your dev environment) and execute in a protected,
 reproducible environment.
 
-> :warning: Kerblam! will build the docker environments without moving the dockerfiles.
-> This means that you have to write `.dockerignore` files in the `./src/dockerfiles`
-> directory instead of the root of the repository.
+> [!IMPORTANT]
+> Kerblam! will build the docker environments without moving the dockerfiles.
+> This means that you **have to write `.dockerignore` files in the `./src/dockerfiles`
+> directory instead of the root of the repository**.
+> 
 > As an added bonus, you can write custom dockerignores for each of your
-> docker containers as `pipe.dockerfile.dockerignore`.
+> docker containers as `pipe.dockerfile.dockerignore`.\
 > See [docker's documentation for this feature](https://docs.docker.com/engine/reference/commandline/build/#file)
 > and the related ['using a dockerignore' section](https://docs.docker.com/engine/reference/commandline/build/#use-a-dockerignore-file).
 > 
@@ -280,11 +290,13 @@ Under the hood, Kerblam! will:
 This effectively causes the makefile run with different input data in this
 alternate run.
 
-> :warning: Careful that the *output* data will (most likely) be saved as the
+> [!WARNING]
+> Careful that the *output* data will (most likely) be saved as the
 > same file names as a "normal" run! Kerblam! does not look into where the
 > output files are saved or what they are saved as.
 
-> :warning: Careful! As of now, kerblam! has no problem overwriting existing
+> [!WARNING]
+> Careful! As of now, kerblam! has no problem overwriting existing
 > files (e.g. `input.csv.original`) while running. See issue [#9](https://github.com/MrHedmad/kerblam/issues/9).
 
 This is most commonly useful to run the pipelines on test data that is faster to
@@ -300,7 +312,8 @@ And execute your test run with `kerblam run pipe --profile test`.
 File paths specified under the `profiles` tab must be relative to the `./data/in/`
 folder.
 
-> :sparkles: Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
+> [!TIP]
+> Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
 > delete temporary files, etc...) when you use `kerblam run`, even if the pipe
 > fails, and even if you kill your pipe with `CTRL-C`.
 
@@ -381,7 +394,8 @@ For example, say that you have a `process` pipe that uses `make` to run, and
 requires both a remotely-downloaded `remote.txt` file and a local-only
 `precious.txt` file.
 
-> :warning: You must have a dockerfile `process.dockerfile` for every pipeline
+> [!IMPORTANT]
+> You must have a dockerfile `process.dockerfile` for every pipeline
 > that you want to package!
 
 If you execute
