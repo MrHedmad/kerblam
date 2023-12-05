@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
+use walkdir;
+
 /// Create a directory.
 ///
 /// Create a directory and prepare an output message to display to the user.
@@ -232,4 +234,33 @@ pub fn fetch_gitignore(name: &str) -> Result<String> {
 
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
+}
+
+pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
+    let inspected_path = inspected_path.as_ref();
+
+    if let Some(filters) = filters {
+        walkdir::WalkDir::new(inspected_path)
+            .into_iter()
+            .filter_map(|i| i.ok())
+            .filter(|x| {
+                let mut p = true;
+                for path in filters.clone() {
+                    if x.path().starts_with(path) {
+                        p = false;
+                    }
+                }
+                p
+            })
+            .filter(|path| path.metadata().unwrap().is_file())
+            .map(|x| x.path().to_owned())
+            .collect()
+    } else {
+        walkdir::WalkDir::new(inspected_path)
+            .into_iter()
+            .filter_map(|i| i.ok())
+            .filter(|path| path.metadata().unwrap().is_file())
+            .map(|x| x.path().to_owned())
+            .collect()
+    }
 }

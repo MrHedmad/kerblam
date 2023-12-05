@@ -95,8 +95,7 @@ fn main() -> anyhow::Result<()> {
         Command::Data { subcommand } => match subcommand {
             None => {
                 let config = config.unwrap();
-                let data_info =
-                    data::get_data_status(config, &current_dir().unwrap().join("data"))?;
+                let data_info = data::get_data_status(config)?;
                 println!("{}", data_info)
             }
             Some(DataCommands::Fetch) => data::fetch_remote_data(config.unwrap())?,

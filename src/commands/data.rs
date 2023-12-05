@@ -13,7 +13,6 @@ use crate::utils::{ask_for, run_command, YesNo};
 use anyhow::{anyhow, bail, Result};
 use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
 use reqwest::blocking::Client;
-use walkdir;
 
 #[derive(Debug, Clone)]
 struct FileSize {
@@ -156,87 +155,42 @@ impl Display for DataStatus {
     }
 }
 
-fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
-    let inspected_path = inspected_path.as_ref();
-
-    if let Some(filters) = filters {
-        walkdir::WalkDir::new(inspected_path)
-            .into_iter()
-            .filter_map(|i| i.ok())
-            .filter(|x| {
-                let mut p = true;
-                for path in filters.clone() {
-                    if x.path().starts_with(path) {
-                        p = false;
-                    }
-                }
-                p
-            })
-            .filter(|path| path.metadata().unwrap().is_file())
-            .map(|x| x.path().to_owned())
-            .collect()
-    } else {
-        walkdir::WalkDir::new(inspected_path)
-            .into_iter()
-            .filter_map(|i| i.ok())
-            .filter(|path| path.metadata().unwrap().is_file())
-            .map(|x| x.path().to_owned())
-            .collect()
-    }
-}
-
-pub fn get_data_status(
-    config: KerblamTomlOptions,
-    inspected_path: impl AsRef<Path>,
-) -> Result<DataStatus> {
-    let inspected_path = inspected_path.as_ref();
-
-    let input_files = find_files(inspected_path.join("in"), None);
-    log::debug!("Input files: {:?}", input_files);
-    let output_files = find_files(inspected_path.join("out"), None);
+pub fn get_data_status(config: KerblamTomlOptions) -> Result<DataStatus> {
+    let input_files = config.input_files();
+    let output_files = config.output_files();
+    let int_files = config.intermediate_files();
     log::debug!("Output files: {:?}", output_files);
-    let temp_files = find_files(
-        inspected_path,
-        Some(vec![inspected_path.join("in"), inspected_path.join("out")]),
-    );
-    log::debug!("Temp files: {:?}", output_files);
+    log::debug!("Input files: {:?}", input_files);
+    log::debug!("Temp files: {:?}", int_files);
 
-    // We need to find out what paths are remote
-    let specified_remote_files: Vec<PathBuf> =
-        config.remote_files().into_iter().map(|x| x.path).collect();
-    log::debug!("Remote files: {specified_remote_files:?}");
-    let undownloaded_files: Vec<PathBuf> = specified_remote_files
-        .clone()
+    let undownloaded_files: Vec<PathBuf> = config
+        .undownloaded_files()
         .into_iter()
-        .filter(|remote_path| {
-            // If any of the local paths end with the remote path, then
-            // the file is not undownloaded.
-            !input_files.iter().any(|x| x.ends_with(remote_path))
-        })
+        .map(Into::into)
         .collect();
-    let remote_files: Vec<PathBuf> = specified_remote_files
-        .clone()
+    let remote_files: Vec<PathBuf> = config
+        .downloaded_files()
         .into_iter()
-        .filter(|remote_path| {
-            // Same as above, but inversed
-            input_files.iter().any(|x| x == remote_path)
-        })
+        .map(Into::into)
         .collect();
     log::debug!("Undownloded files: {undownloaded_files:?}");
     log::debug!("Downloaded files: {remote_files:?}");
 
     Ok(DataStatus {
-        temp_data: unsafe_path_filesize_conversion(&temp_files),
+        temp_data: unsafe_path_filesize_conversion(&int_files),
         input_data: unsafe_path_filesize_conversion(&input_files),
         output_data: unsafe_path_filesize_conversion(&output_files),
         remote_data: unsafe_path_filesize_conversion(&remote_files),
-        cleanable_data: unsafe_path_filesize_conversion(
-            &[remote_files, output_files, temp_files].concat(),
-        ),
+        cleanable_data: unsafe_path_filesize_conversion(&config.volatile_files()),
         not_local: undownloaded_files.len() as u64,
     })
 }
 
+/// Convert a vector of paths to a vector of file sizes.
+///
+/// This is unsafe as the path might not exist, so there is a dangerous
+/// 'unwrap' in here. Use it only when it's fairly certain that the file
+/// is there.
 fn unsafe_path_filesize_conversion(items: &Vec<PathBuf>) -> Vec<FileSize> {
     items
         .to_owned()
@@ -246,6 +200,8 @@ fn unsafe_path_filesize_conversion(items: &Vec<PathBuf>) -> Vec<FileSize> {
 }
 
 pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
+    // I work with this instead of undownloaded_files() to show a message
+    // when the file is already there, but it's a choice I guess.
     let remote_files = config.remote_files();
 
     if remote_files.is_empty() {
@@ -343,35 +299,10 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     }
 }
 
-fn get_volatile_files(
-    config: KerblamTomlOptions,
-    inspected_path: impl AsRef<Path>,
-) -> Vec<PathBuf> {
-    let inspected_path = inspected_path.as_ref();
-    let temp_files = find_files(
-        inspected_path.clone(),
-        Some(vec![inspected_path.join("in"), inspected_path.join("out")]),
-    );
-    let output_files = find_files(inspected_path.join("out"), None);
-    let input_files = find_files(inspected_path.join("in"), None);
-    let specified_remote_files: Vec<PathBuf> =
-        config.remote_files().into_iter().map(|x| x.path).collect();
-    let remote_files: Vec<PathBuf> = specified_remote_files
-        .clone()
-        .into_iter()
-        .filter(|remote_path| {
-            // Same as above, but inversed
-            input_files.iter().any(|x| x == remote_path)
-        })
-        .collect();
-
-    [output_files, temp_files, remote_files].concat()
-}
-
 pub fn clean_data(config: KerblamTomlOptions) -> Result<()> {
     let inspected_path = current_dir()?.join("data");
 
-    let cleanable_files = get_volatile_files(config, inspected_path.clone());
+    let cleanable_files = config.volatile_files();
 
     if cleanable_files.is_empty() {
         println!("✨ Nothing to clean!");
@@ -426,25 +357,17 @@ pub fn package_data_to_archive(
     config: KerblamTomlOptions,
     output_path: impl AsRef<Path>,
 ) -> Result<()> {
-    let inspected_path = current_dir()?.join("data");
     let output_path = output_path.as_ref();
     // This is to render relative paths not relative.
     let output_path = current_dir()?.join(output_path);
 
-    let remote_files = config.remote_files();
-    let precious_input_files = find_files(inspected_path.join("in"), None)
-        .into_iter()
-        .filter(|x| remote_files.iter().any(|y| x == &y.path))
-        .collect();
+    let precious_files = config.precious_files();
 
-    let files_to_package: Vec<PathBuf> = [
-        precious_input_files,
-        find_files(inspected_path.join("out"), None),
-    ]
-    .concat()
-    .into_iter()
-    .filter(|x| x.is_file())
-    .collect();
+    let files_to_package: Vec<PathBuf> = [precious_files, config.output_files()]
+        .concat()
+        .into_iter()
+        .filter(|x| x.is_file())
+        .collect();
 
     if files_to_package.is_empty() {
         println!("🕸️ Nothing to pack!");
@@ -454,11 +377,12 @@ pub fn package_data_to_archive(
     let compression_dir = tempfile::tempdir()?;
     let compression_dir_path = compression_dir.path();
 
+    let root_path = current_dir().unwrap();
     for file in files_to_package {
         println!("➕ Adding {:?}...", normalize_path(file.as_ref()));
         let target_file = compression_dir_path
             .to_path_buf()
-            .join(file.strip_prefix(&inspected_path)?);
+            .join(file.strip_prefix(&root_path)?);
         log::debug!("Moving {file:?} to {target_file:?}");
         create_dir_all(&target_file.parent().unwrap())?;
         fs::copy(&file, &target_file)?;
