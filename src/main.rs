@@ -10,6 +10,7 @@ mod utils;
 
 use crate::commands::data;
 use crate::commands::new;
+use crate::commands::package;
 use crate::commands::run;
 
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
@@ -41,6 +42,14 @@ enum Command {
     Data {
         #[command(subcommand)]
         subcommand: Option<DataCommands>,
+    },
+    /// Package for execution later
+    Package {
+        /// The name of the pipe to package
+        pipe: String,
+        /// The label of the exported docker image
+        #[arg(long)]
+        name: Option<String>,
     },
 }
 
@@ -97,6 +106,13 @@ fn main() -> anyhow::Result<()> {
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
         },
+        Command::Package { pipe, name } => {
+            package::package_pipe(
+                config.unwrap(),
+                &pipe,
+                &name.unwrap_or(format!("{}_exec", &pipe)),
+            )?;
+        }
     };
 
     Ok(())
