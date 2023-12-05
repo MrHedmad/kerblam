@@ -16,7 +16,7 @@ enum CommandResult {
     Killed,
 }
 
-fn setup_ctrlc_hook() -> Result<Receiver<bool>> {
+pub fn setup_ctrlc_hook() -> Result<Receiver<bool>> {
     let (sender, receiver) = bounded(2);
 
     let multiple_guard = receiver.clone();
@@ -204,7 +204,7 @@ impl Executor {
         Ok(String::from(env_name))
     }
 
-    fn create(project_path: impl AsRef<Path>, module_name: &str) -> Result<Self> {
+    pub fn create(project_path: impl AsRef<Path>, module_name: &str) -> Result<Self> {
         let project_path = project_path.as_ref();
         let makefile = project_path.join("src/pipes/".to_string() + module_name + ".makefile");
         let shellfile = project_path.join("src/pipes/".to_string() + module_name + ".sh");
@@ -253,12 +253,25 @@ impl Executor {
             })
         }
     }
+
+    #[allow(dead_code)]
+    pub fn strategy(&self) -> ExecutionStrategy {
+        self.strategy
+    }
+
+    /// Will this executor run in an environment?
+    pub fn has_env(&self) -> bool {
+        self.env.is_some()
+    }
 }
 
-enum ExecutionStrategy {
+#[derive(Debug, Clone)]
+pub enum ExecutionStrategy {
     Make,
     Shell,
 }
+
+impl Copy for ExecutionStrategy {}
 
 #[derive(Debug, Clone)]
 struct FileMover {

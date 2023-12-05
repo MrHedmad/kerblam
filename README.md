@@ -236,10 +236,17 @@ in docker environments, so you can tweak your dependencies and tooling
 (which might be different than your dev environment) and execute in a protected,
 reproducible environment.
 
-> :warning: When writing Dockerfiles, remember to `.dockerignore` the
-> `./data/` folder, as it will be linked at runtime to `/data/`.
+> :warning: Kerblam! will build the docker environments without moving the dockerfiles.
+> This means that you have to write `.dockerignore` files in the `./src/dockerfiles`
+> directory instead of the root of the repository.
+> As an added bonus, you can write custom dockerignores for each of your
+> docker containers as `pipe.dockerfile.dockerignore`.
+> See [docker's documentation for this feature](https://docs.docker.com/engine/reference/commandline/build/#file)
+> and the related ['using a dockerignore' section](https://docs.docker.com/engine/reference/commandline/build/#use-a-dockerignore-file).
+> 
+> Neat!
 
-The same applies to `.sh` files in the `./src/pipes/` directory.
+You can write dockerfiles for both `make` and `sh` pipes.
 
 ### Specifying data to run on
 By default, Kerblam! will use your `./data/in/` folder as-is when executing pipes.
