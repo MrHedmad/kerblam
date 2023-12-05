@@ -366,7 +366,43 @@ You can also pass the `--cleanup` flag to also delete them after packing.
 
 You can then share the data pack with others.
 
-u---
+## `kerblam package` - Export an executable version of pipelines
+The `kerblam package` command is one of the most useful features of Kerblam!
+It allows you to package everything needed to execute a pipeline in a docker
+container and export it for execution later.
+
+For example, say that you have a `process` pipe that uses `make` to run, and 
+requires both a remotely-downloaded `remote.txt` file and a local-only
+`precious.txt` file.
+
+> :warning: You must have a dockerfile `process.dockerfile` for every pipeline
+> that you want to package!
+
+If you execute
+```bash
+kerblam package process --name my_process_package
+```
+Kerblam! will:
+- Clone the `process` pipe to the root of the project;
+- Clone the `process.dockerfile` to the root of the project;
+- Edit the `Dockerfile`:
+  - Copy the non-remote input files to `/data/in` (i.e. the `precious.txt` file);
+  - Copy the Kerblam! executable to the root of the dockerfile;
+  - Configure the default command to `kerblam fetch && make .`
+- Build the docker container and tag it with `my_process_package`;
+
+After Kerblam! packages your project, you can re-run the analysis with:
+```bash
+docker run --rm -it -v /some/output/dir:/data/in my_process_package
+```
+In the container, Kerblam! fetches remote files and then the pipeline is triggered.
+Since the output folder is attached to the output directory on disk, the 
+final output of the pipeline is saved locally.
+
+These packages are meant to make pipelines reproducible in the long-term.
+For day-to-day runs, `kerblam run` is still better.
+
+---
 
 And remember! If you want it...
 
