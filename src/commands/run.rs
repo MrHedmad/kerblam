@@ -63,7 +63,7 @@ where
     }
 }
 
-struct Executor {
+pub struct Executor {
     target: FileMover,
     env: Option<FileMover>,
     strategy: ExecutionStrategy,
@@ -85,66 +85,32 @@ impl Executor {
     /// bash, depending on the strategy.
     ///
     /// Destroys itself in the process.
-    fn execute(self, signal_receiver: Receiver<bool>) -> Result<()> {
+    pub fn execute(self, signal_receiver: Receiver<bool>) -> Result<()> {
         let mut cleanup: Vec<PathBuf> = vec![];
-        cleanup.push(self.target.copy()?);
-        if let Some(target) = self.env.clone() {
-            cleanup.push(target.copy()?);
-        }
 
         let command_args = if self.env.is_some() {
-            // This is a dockerized run.
-            let builder = || {
-                Command::new("docker")
-                    // If the `self.env` path is not UTF-8 I'll eat my hat.
-                    .args(["build", "--tag", "kerblam_runtime", "."])
-                    .stdout(Stdio::inherit())
-                    .stdin(Stdio::inherit())
-                    .stderr(Stdio::inherit())
-                    .spawn()
-                    .expect("Failed to spawn builder process.")
-            };
-
-            let success = match run_protected_command(builder, signal_receiver.clone()) {
-                Ok(CommandResult::Exited { res: _ }) => true,
-                Ok(CommandResult::Killed) => false,
-                Err(_) => false,
-            };
-
-            if !success {
-                // Cleanup early.
-                log::debug!("Failed to build docker environment. Unwinding early.");
-
-                for file in cleanup {
-                    // The idea is that this cleanup should not fail, and anyway
-                    // we don't really care if it does or not.
-                    let _ = fs::remove_file(file);
-                }
-
-                bail!("Command exited with an error.",);
-            };
-
-            vec![
-                "docker",
-                "run",
-                "-it",
-                "-v",
-                "./data:/data",
-                "kerblam_runtime",
-            ]
+            let runtime_name = self.build_env(signal_receiver.clone())?;
+            let partial = vec!["docker", "run", "-it", "-v", "./data:/data"];
+            let mut partial: Vec<String> = partial.into_iter().map(|x| x.to_string()).collect();
+            partial.push(runtime_name);
+            partial
         } else {
             // This is a normal run.
+            // Move the executor file
+            cleanup.push(self.target.copy()?);
             match self.strategy {
-                ExecutionStrategy::Make => {
-                    vec!["make", "-f", self.target.to.to_str().unwrap()]
-                }
-                ExecutionStrategy::Shell => {
-                    vec!["bash", self.target.to.to_str().unwrap()]
-                }
+                ExecutionStrategy::Make => vec!["make", "-f", self.target.to.to_str().unwrap()]
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect(),
+                ExecutionStrategy::Shell => vec!["bash", self.target.to.to_str().unwrap()]
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect(),
             }
         };
 
-        let mut command = Command::new(command_args[0]);
+        let mut command = Command::new(&command_args[0]);
 
         let builder = || {
             command
@@ -171,6 +137,71 @@ impl Executor {
         }
 
         Ok(())
+    }
+
+    /// Build the context of this executor and return its tag.
+    pub fn build_env(&self, signal_receiver: Receiver<bool>) -> Result<String> {
+        let mut cleanup: Vec<PathBuf> = vec![];
+        let env_name = "kerblam_runtime";
+
+        if self.env.is_none() {
+            bail!("Cannot build environment with no environment file.")
+        }
+
+        // Move the executor file
+        cleanup.push(self.target.copy()?);
+        let dockerfile_path = self
+            .env
+            .clone()
+            .unwrap()
+            .from
+            .as_os_str()
+            .to_string_lossy()
+            .to_string();
+
+        let builder = || {
+            Command::new("docker")
+                // If the `self.env` path is not UTF-8 I'll eat my hat.
+                .args([
+                    "build",
+                    "-f",
+                    dockerfile_path.as_str(),
+                    "--tag",
+                    env_name,
+                    ".",
+                ])
+                .stdout(Stdio::inherit())
+                .stdin(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .spawn()
+                .expect("Failed to spawn builder process.")
+        };
+
+        let success = match run_protected_command(builder, signal_receiver.clone()) {
+            Ok(CommandResult::Exited { res: _ }) => true,
+            Ok(CommandResult::Killed) => false,
+            Err(_) => false,
+        };
+
+        if !success {
+            // Cleanup early.
+            log::debug!("Failed to build docker environment. Unwinding early.");
+
+            for file in cleanup {
+                // The idea is that this cleanup should not fail, and anyway
+                // we don't really care if it does or not.
+                let _ = fs::remove_file(file);
+            }
+
+            bail!("Command exited with an error.",);
+        };
+
+        // Cleanup now that the build is over
+        for file in cleanup {
+            let _ = fs::remove_file(file);
+        }
+
+        Ok(String::from(env_name))
     }
 
     fn create(project_path: impl AsRef<Path>, module_name: &str) -> Result<Self> {

@@ -186,12 +186,15 @@ impl KerblamTomlOptions {
     pub fn output_files(&self) -> Vec<PathBuf> {
         self.extract_dir(self.output_data_dir())
     }
+
+    #[allow(dead_code)]
     /// Return all the locally present temporary files
     ///
     /// This filters out output, input and intermediate files from the call
     pub fn temporary_files(&self) -> Vec<PathBuf> {
         self.extract_dir(self.temporary_data_dir())
     }
+
     /// Return all the locally present intermediate files
     ///
     /// This filters out output, temporary and input files from the call
