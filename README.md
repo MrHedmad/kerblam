@@ -23,7 +23,7 @@ Kerblam! allows you to:
 - Leverage git to isolate, rollback and run the project at a different point in time;
 - Clean up intermediate and output files quickly;
 - Manage Docker environments and run code in them for you.
-- Manage the content of you `.gitignore` for you, allowing to add files, 
+- Manage the content of your `.gitignore` for you, allowing to add files, 
   directories and even whole languages in one command.
 - Make it easy to use `pre-commit` by managing `.pre-commit-hooks`.
 - Specify test data to run and quickly use it instead of real data.
@@ -47,7 +47,9 @@ file yourself. To learn how, look at the section below.
   project. Kerblam! asks you if you want to use some common programming
   languages and sets up a proper `.gitignore` and pre-commit hooks for you.
 - :white_check_mark: `kerblam data` fetches remote data and saves it locally, manages
-  local data and can clean it up.
+  local data and can clean it up, preserving only files that must be preserved.
+  It also shows you how much local data is on the disk, how much data is remote and
+  how much disk space you can free without losing anything important.
 - :construction: `kerblam package` packages your pipeline and exports a `docker`
   image for execution later.
   It's useful for reproducibility purposes as the docker image is primed
@@ -64,10 +66,6 @@ file yourself. To learn how, look at the section below.
   and leave in its way a symlink, so that everything works just like before.
   This can be useful when your data is particularly bulky and you want to
   save it on some other drive.
-- :pushpin: `kerblam data` can be used to check the number and size of local
-  data files, and remove/export them.
-  Can also be used to just export the output data that the pipeline produces
-  for sharing with others or for usage in writing reports/papers.
 
 Kerblam! is *not* and does not want to be:
 - A pipeline manager like `snakemake` and `nextflow`: It supports and helps
@@ -109,7 +107,7 @@ root of the project, `./`):
     installs the Python package with `pip install -e .`.
 
 You can configure all of these paths in `kerblam.toml`, if you so desire.
-This is mostly done for compatibility reasons.
+This is mostly done for compatibility reasons with non-kerblam! projects.
 
 ## Contributing
 Kerblam! is currently not accepting pull requests as it's still in its infancy.
@@ -146,8 +144,9 @@ It also uses binaries that it assumes are already installed:
 - GNU `make`: https://www.gnu.org/software/make/
 - `git`: https://git-scm.com/
 - Docker (as `docker`): https://www.docker.com/
+- `tar`.
 
-If you can use `git`, `make` and `docker` from your CLI, you should be good.
+If you can use `git`, `make`, `tar` and `docker` from your CLI, you should be good.
 
 # Tutorial
 This section outlines making and working with a Kerblam! project.
