@@ -68,7 +68,7 @@ file yourself. To learn how, look at the section below.
   building docker containers as needed.
   Optionally, allows test data or alternative data to be used instead of
   real data, in order to test your pipelines.
-- :pushpin: `kerblam ignore` can edit your `.gitignore` file by adding files,
+- :construction: `kerblam ignore` can edit your `.gitignore` file by adding files,
   folders and GitHub's recommended ignores for specific languages in just one command.
 - :pushpin: `kerblam link` can be used to move your `data` folder in some other place,
   and leave in its way a symlink, so that everything works just like before.
@@ -460,6 +460,27 @@ For day-to-day runs, `kerblam run` is still better.
 > You can always enter with `--entrypoint bash` and interactively work inside the
 > container later, manually fixing any issues that time or wrong setup might
 > have introduced.
+
+## `kerblam ignore` - Add items to your `.gitignore` quickly
+Oops! You forgot to include your preferred language to your `.gitignore`.
+You now need to google for the template `.gitignore` and copy-paste it in.
+
+With Kerblam! you can do that in just one command. For example:
+```bash
+kerblam ignore Rust
+```
+will fetch `Rust.gitignore` from the [Github gitignore repository](https://github.com/github/gitignore)
+and append it to your `.gitignore` for you.
+You can also add specific files or folders this way:
+```bash
+kerblam ignore ./src/something_useless.txt
+```
+Kerblam! will add the proper pattern to the `.gitignore` file to filter out
+that specific file.
+
+The optional `--sponge` flag makes Kerblam! check the `.gitignore` file for
+duplicated entries, and only retain one copy of each pattern.
+This preserves comments and empty lines.
 
 ---
 
