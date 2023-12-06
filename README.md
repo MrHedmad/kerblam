@@ -2,7 +2,7 @@
 
 > [!WARNING]
 >
-> **Most of this is not implemented yet.**
+> **Some of this is not implemented yet.**
 > Consider this README a roadmap of sort of what kerblam! wants to be.
 > Here's a handy progress bar:
 >
@@ -80,6 +80,23 @@ Kerblam! is *not* and does not want to be:
   you execute `make`, but it does not interfere from then on;
 - A replacement for any of the tools it leverages (e.g. `git`, `docker`,
   `pre-commit`);
+- Something that insulates you from the nuances of writing good, correct
+  pipelines and Dockerfiles.\
+  Specifically, Kerblam! will never:
+  - Parse your `.gitignore`, `.dockerignore`, pipes or `Dockerfile`s to check
+    for errors or potential issues;
+  - Edit code for you (with the exception of a tiny bit of wrapping to allow
+    `kerblam package` to work);
+  - Handle any errors produced by the pipelines or containers.
+- A tool that covers every edge case. Implementing more features for popular
+  and widespread tasks is perfectly fine, but Kerblam! will never have a wall
+  of options for you to choose from.
+  If you need more advanced control on what is done, you should directly
+  use the tools that Kerblam! leverages.
+
+> [!TIP]
+>
+> Kerblam! works *with* you, not *for* you!
 
 ## Opinions
 Kerblam! projects are opinionated:
@@ -93,6 +110,8 @@ Kerblam! projects are opinionated:
   versions of your project.
 - You execute your pipelines in a Docker container, and not in your development
   environment.
+- Most of your input data is remotely downloadable, especially for large and
+  bulky files.
 
 If you don't like this setup, Kerblam! is not for you.
 
@@ -423,6 +442,24 @@ final output of the pipeline is saved locally.
 
 These packages are meant to make pipelines reproducible in the long-term.
 For day-to-day runs, `kerblam run` is still better.
+
+> [!CAUTION]
+> The responsibility of having the resulting docker work in the long-term is
+> up to you, not Kerblam!
+> For most cases, just having `kerblam run` work is enough for the resulting
+> package made by `kerblam package` to work, but depending on your docker
+> files this might not be the case.
+>
+> For example, ubuntu docker containers may need to install `ca-certificates`
+> to allow `kerblam` to fetch the remote data from inside the container.
+>
+> Kerblam! does not test the resulting package - it's up to you to do that.
+
+> [!TIP]
+> Even a broken `kerblam package` is still useful!
+> You can always enter with `--entrypoint bash` and interactively work inside the
+> container later, manually fixing any issues that time or wrong setup might
+> have introduced.
 
 ---
 
