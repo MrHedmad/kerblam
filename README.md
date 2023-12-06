@@ -1,10 +1,12 @@
 ![If you want it, Kerblam it!](docs/images/logo.png)
+<div align="center">
 
-![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square&color=blue)
 ![GitHub License](https://img.shields.io/github/license/MrHedmad/kerblam?style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/MrHedmad/kerblam?style=flat-square&color=yellow)
-
 [![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)
+
+</div>
 
 > [!WARNING]
 >
