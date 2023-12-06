@@ -5,6 +5,7 @@ use std::{
     process::{Command, Stdio},
 };
 
+use crate::utils::find_files;
 use crate::{
     commands::run::{setup_ctrlc_hook, ExecutionStrategy, Executor},
     options::KerblamTomlOptions,
@@ -37,14 +38,33 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: &str, package_name: &str) 
     log::debug!("Building initial context...");
     let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
     let base_container = executor.build_env(sigint_rec)?;
+    log::debug!("Base container name: {base_container:?}");
 
     // We now start from this new docker and add our own layers, copying the
     // precious files and more from the - not ignored - context.
     // We must work in a temporary directory, however.
     log::debug!("Starting to build temporary context...");
     let temp_build_dir = tempfile::tempdir()?;
+    log::debug!("Temporary directory: {temp_build_dir:?}");
     let precious_files = config.precious_files();
+    log::debug!("Files deemed precious: {precious_files:?}");
     for file in precious_files {
+        log::debug!("Adding {file:?} to temporary context.");
+        let target = temp_build_dir.path().join(file.strip_prefix(&here)?);
+        create_dir_all(target.parent().unwrap())?;
+        copy(&file, target)?;
+    }
+    log::debug!("Copying context...");
+    let context_files = find_files(
+        &here,
+        Some(vec![
+            config.input_data_dir(),
+            config.output_data_dir(),
+            config.temporary_data_dir(),
+            config.intermediate_data_dir(),
+        ]),
+    );
+    for file in context_files {
         log::debug!("Adding {file:?} to temporary context.");
         let target = temp_build_dir.path().join(file.strip_prefix(&here)?);
         create_dir_all(target.parent().unwrap())?;
@@ -59,11 +79,11 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: &str, package_name: &str) 
     // Write the dockerfile
     let content = match executor.strategy() {
         ExecutionStrategy::Make => format!(
-            "FROM {}\nCOPY . .\nCMD kerblam fetch && make .",
+            "FROM {}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"./kerblam data fetch && make .\"]",
             base_container
         ),
         ExecutionStrategy::Shell => format!(
-            "FROM {}\nCOPY . .\nCMD kerblam fetch && bash executor",
+            "FROM {}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"./kerblam data fetch && bash executor\"]",
             base_container
         ),
     };
@@ -75,6 +95,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: &str, package_name: &str) 
     let res = Command::new("docker")
         .args([
             "build",
+            "--no-cache",
             "--tag",
             package_name,
             &temp_build_dir.path().as_os_str().to_string_lossy(),

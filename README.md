@@ -9,13 +9,15 @@
 > ```
 >            new      run  data         package   ignore  link tests
 >              |        |     |               |        |     |     |
-> [progress]>####################-----------------------------------<
+> [progress]>###################################--------------------<
 > ```
 
 > [!WARNING]
 >
-> `kerblam run` is complete but still untested. Please do use it,
-> but be careful. Report any problems in the [issues](https://github.com/MrHedmad/kerblam).
+> `kerblam run` and `kerblam package` are complete but still untested.
+> Please do use them, but be careful.
+> Always have a backup of your data and code!
+> Report any problems in the [issues](https://github.com/MrHedmad/kerblam).
 > Thank you kindly!
 
 Kerblam! is a tool that can help you manage data analysis projects.
@@ -56,7 +58,7 @@ file yourself. To learn how, look at the section below.
   local data and can clean it up, preserving only files that must be preserved.
   It also shows you how much local data is on the disk, how much data is remote and
   how much disk space you can free without losing anything important.
-- :construction: `kerblam package` packages your pipeline and exports a `docker`
+- :white_check_mark: `kerblam package` packages your pipeline and exports a `docker`
   image for execution later.
   It's useful for reproducibility purposes as the docker image is primed
   for execution, bundling the kerblam! executable, execution files and non-remote

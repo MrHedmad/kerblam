@@ -242,7 +242,7 @@ impl KerblamTomlOptions {
         let remote_files = self.remote_files();
         self.input_files()
             .into_iter()
-            .filter(|x| remote_files.iter().any(|y| x == &y.path))
+            .filter(|x| !remote_files.iter().any(|y| x == &y.path))
             .collect()
     }
 }
