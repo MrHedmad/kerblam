@@ -1,5 +1,25 @@
 {
-  "projectName": "kerblam!",
+  "projectName": "kerblam",
   "projectOwner": "MrHedmad",
-  "files": ["CONTRIBUTING.md"]
+  "files": [
+    "CONTRIBUTING.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "MrHedmad",
+      "name": "Luca \"Hedmad\" Visentin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46203625?v=4",
+      "profile": "https://mrhedmad.github.io/blog/",
+      "contributions": [
+        "code",
+        "doc",
+        "ideas",
+        "projectManagement",
+        "tutorial"
+      ]
+    }
+  ]
 }
