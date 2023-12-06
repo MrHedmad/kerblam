@@ -31,6 +31,13 @@ by the @all-contributors bot.
 Significant contributions will be recognized by a spot in the maintainers list,
 at the discretion of other maintainers.
 
+### All contributors
+
+Thank you to all of these wonderful people!
+Emojis reflect the specific contribution of that user.
+See [the emoji key](https://allcontributors.org/docs/en/emoji-key)
+(or you can hover with your mouse over each emoji to see its meaning).
+
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
