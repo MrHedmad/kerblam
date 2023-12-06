@@ -3,7 +3,9 @@ name = "kerblam"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+strip = true # Strip symbols from binary to make it smaller
+lto = true # Link time optimizations to make binary smaller
 
 [dependencies]
 anyhow = "1.0.75"

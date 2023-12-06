@@ -10,6 +10,7 @@ mod utils;
 
 use crate::commands::data;
 use crate::commands::new;
+use crate::commands::other;
 use crate::commands::package;
 use crate::commands::run;
 
@@ -50,6 +51,17 @@ enum Command {
         /// The label of the exported docker image
         #[arg(long)]
         name: Option<String>,
+    },
+    /// Add paths and languages to .gitignore
+    Ignore {
+        /// The name of a language or a path to ignore
+        ///
+        /// Supported names can be seen in https://github.com/github/gitignore
+        /// The input is case-sensitive!
+        path_or_name: String,
+        /// Should the gitignore be compressed?
+        #[arg(long, action)]
+        compress: bool,
     },
 }
 
@@ -111,6 +123,12 @@ fn main() -> anyhow::Result<()> {
                 &pipe,
                 &name.unwrap_or(format!("{}_exec", &pipe)),
             )?;
+        }
+        Command::Ignore {
+            path_or_name,
+            compress,
+        } => {
+            other::ignore(&current_dir()?.join(".gitignore"), &path_or_name, compress)?;
         }
     };
 
