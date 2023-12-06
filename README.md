@@ -1,16 +1,10 @@
 ![If you want it, Kerblam it!](docs/images/logo.png)
 
-> [!WARNING]
->
-> **Some of this is not implemented yet.**
-> Consider this README a roadmap of sort of what kerblam! wants to be.
-> Here's a handy progress bar:
->
-> ```
->            new      run  data         package   ignore  link tests
->              |        |     |               |        |     |     |
-> [progress]>###################################--------------------<
-> ```
+![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square)
+![GitHub License](https://img.shields.io/github/license/MrHedmad/kerblam?style=flat-square)
+![GitHub Repo stars](https://img.shields.io/github/stars/MrHedmad/kerblam?style=flat-square&color=yellow)
+
+[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)
 
 > [!WARNING]
 >
@@ -40,16 +34,13 @@ file yourself. To learn how, look at the section below.
 
 # Overview
 
-> [!NOTE]
-> In this early stage, commands with :white_check_mark: are
-> (mostly) implemented, :construction: are being implemented now, and
-> :pushpin: are planned.
+> [!WARNING]
 >
-> More info for implemented commands and commands under implementation are
-> available below. Features missing from implemented commands are issues,
-> so look there to see what's still missing.
->
-> Please imagine that everything is tentative until version `1.0.0`.
+> Some commands are missing some features that would be nice to have.
+> Please take a look at the [issues](https://github.com/MrHedmad/kerblam/issues)
+> and see if what you'd like to do is already proposed and/or being worked on.
+> If you don't find it, open an issue yourself detailing what you think would
+> be a good addition!
 
 - :white_check_mark: `kerblam new` can be used to create a new kerblam!
   project. Kerblam! asks you if you want to use some common programming
@@ -68,12 +59,8 @@ file yourself. To learn how, look at the section below.
   building docker containers as needed.
   Optionally, allows test data or alternative data to be used instead of
   real data, in order to test your pipelines.
-- :construction: `kerblam ignore` can edit your `.gitignore` file by adding files,
+- :white_check_mark: `kerblam ignore` can edit your `.gitignore` file by adding files,
   folders and GitHub's recommended ignores for specific languages in just one command.
-- :pushpin: `kerblam link` can be used to move your `data` folder in some other place,
-  and leave in its way a symlink, so that everything works just like before.
-  This can be useful when your data is particularly bulky and you want to
-  save it on some other drive.
 
 Kerblam! is *not* and does not want to be:
 - A pipeline manager like `snakemake` and `nextflow`: It supports and helps
@@ -126,27 +113,26 @@ root of the project, `./`):
 - `./src/pipes/`: Makefiles and bash build scripts should be saved here.
   They have to be written as if they were saved in `./`.
 - `./src/dockerfiles/`: Dockerfiles should be saved here. 
-- `./env/`: Is the folder where the (eventual) python environment is located.
-- `./requirements.txt`: Is the requirements file needed by `pip`;
-- `./requirements-dev.txt`: Is the requirements file for development tools 
-  needed by `pip`;
-  - Optionally, Kerblam! looks for a `pyproject.toml` file and - upon cloning -
-    installs the Python package with `pip install -e .`.
 
 You can configure all of these paths in `kerblam.toml`, if you so desire.
 This is mostly done for compatibility reasons with non-kerblam! projects.
 
-## Contributing
-Kerblam! is currently not accepting pull requests as it's still in its infancy.
+> [!WARNING]
+> Please take a look at issue #11 before editing your paths.
 
-> [!NOTE]
-> When Kerblam! reaches minimal viability, I'll open PRs.
-> You are still welcome to open issues to discuss code quality / structure
-> and the design of the tool.
+## Contributing
+To contribute, please take a look at [the contributing guide](CONTRIBUTING.md).
+
+Code is not the only thing that you can contribute.
+Written a guide? Considered a new feature? Wrote some docstrings? Found a bug?
+All of these are meaningful and important contributions.
+For this reason, **all** contributors are listed in
+[the contributing guide](CONTRIBUTING.md).
+
+Thank you for taking an interest in Kerblam! Any help is really appreciated.
 
 ## Licensing and citation
 Kerblam! is licensed under the [MIT License](https://github.com/MrHedmad/kerblam/blob/main/LICENSE).
-
 If you wish to cite Kerblam!, please provide a link to this repository.
 
 ## Naming
@@ -196,11 +182,11 @@ Kerblam! will:
 - create all the directories detailed above,
 - make a `.pre-commit-config` file for you,
 - create a `venv` environment, as well as the `requirements.txt` and `requirements-dev.txt`
-  files,
+  files (if you opted to use Python),
 - and setup the `.gitignore` file with appropriate ignores;
 
 > [!TIP]
-> Kerblam! will not do an `Initial commit` for you!
+> Kerblam! will **NOT** do an `Initial commit` for you!
 
 You can now start writing code!
 The rest of this tutorial outlines common tasks with which you can use `kerblam` for.
@@ -381,6 +367,17 @@ and therefore locally expendable for the sake of saving disk size (see the
 You can specify any number of URLs and file names in `[data.remote]`, one for
 each file that you wish to be downloaded.
 
+> [!NOTE]
+> The download directory for all fetched data is `./data/in`, so if you specify
+> `some/nested/dir/file.txt`, kerblam! will save the file in
+> `./data/in/some/nested/dir/file.txt`.
+
+> [!CAUTION]
+> If you write an absolute path (e.g. `/some_file.txt`) kerblam! will treat the
+> path as it should treat it - by making the `/some_file.txt` in the root of
+> the filesystem (and most likely failing to do so).
+> See issue #19 for a discussion on this point.
+
 ### `kerblam data clean` - Free local disk space safely
 If you want to cleanup your data (perhaps you have finished your work, and would
 like to save some disk space), you can run `kerblam data clean`.
@@ -432,6 +429,11 @@ Kerblam! will:
   - Configure the default command to `kerblam fetch && make .`
 - Build the docker container and tag it with `my_process_package`;
 
+> [!TIP]
+> If you don't specify a `--name`, Kerblam! will name the result as `<pipe>_exec`.
+> The `--name` parameter is a docker tag. You can specify a remote repository
+> and push it with `docker push ...` as you would normally do.
+
 After Kerblam! packages your project, you can re-run the analysis with:
 ```bash
 docker run --rm -it -v /some/output/dir:/data/in my_process_package
@@ -463,7 +465,7 @@ For day-to-day runs, `kerblam run` is still better.
 
 ## `kerblam ignore` - Add items to your `.gitignore` quickly
 Oops! You forgot to include your preferred language to your `.gitignore`.
-You now need to google for the template `.gitignore` and copy-paste it in.
+You now need to google for the template `.gitignore`, open the file and copy-paste it in.
 
 With Kerblam! you can do that in just one command. For example:
 ```bash
@@ -478,9 +480,14 @@ kerblam ignore ./src/something_useless.txt
 Kerblam! will add the proper pattern to the `.gitignore` file to filter out
 that specific file.
 
-The optional `--sponge` flag makes Kerblam! check the `.gitignore` file for
+The optional `--compress` flag makes Kerblam! check the `.gitignore` file for
 duplicated entries, and only retain one copy of each pattern.
-This preserves comments and empty lines.
+This also cleans up comments and whitespace in a sensible way.
+
+> [!TIP]
+> The `--compress` flag allows to fix ignoring stuff twice.
+> E.g. `kerblam ignore Rust && kerblam ignore Rust --compress` is the same as
+> running `kerblam ignore Rust` just once.
 
 ---
 
