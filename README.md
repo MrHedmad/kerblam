@@ -88,6 +88,11 @@ Kerblam! is *not* and does not want to be:
 > Kerblam! works *with* you, not *for* you!
 
 ## Opinions
+
+> [!TIP]
+> If you wish to learn more on why these design choices were made, please
+> take a look at [the kerblam! philosophy][docs/philosophy.md].
+
 Kerblam! projects are opinionated:
 - The folder structure of your project adheres to the Kerblam! standard,
   although you may configure it in `kerblam.toml`.
