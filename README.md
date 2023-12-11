@@ -4,7 +4,7 @@
 ![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square&color=blue)
 ![GitHub License](https://img.shields.io/github/license/MrHedmad/kerblam?style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/MrHedmad/kerblam?style=flat-square&color=yellow)
-[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)
+[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](docs/CONTRIBUTING.md)
 
 </div>
 
@@ -123,13 +123,13 @@ This is mostly done for compatibility reasons with non-kerblam! projects.
 > Please take a look at issue #11 before editing your paths.
 
 ## Contributing
-To contribute, please take a look at [the contributing guide](CONTRIBUTING.md).
+To contribute, please take a look at [the contributing guide](docs/CONTRIBUTING.md).
 
 Code is not the only thing that you can contribute.
 Written a guide? Considered a new feature? Wrote some docstrings? Found a bug?
 All of these are meaningful and important contributions.
 For this reason, **all** contributors are listed in
-[the contributing guide](CONTRIBUTING.md).
+[the contributing guide](docs/CONTRIBUTING.md).
 
 Thank you for taking an interest in Kerblam! Any help is really appreciated.
 
