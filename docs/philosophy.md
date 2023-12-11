@@ -1,6 +1,6 @@
 # The Kerblam! philosophy
 
-> ![NOTE]
+> [!NOTE]
 > Hello! This is the maintainer.
 > This is prose about why I chose to make Kerblam! like I did, both for
 > myself to reference in the future and also because others have asked me why
@@ -9,7 +9,7 @@
 > Reading this is not at all necessary to start using Kerblam!.
 > Perhaps you want to [read the tutorial](docs/tutorial.md) instead.
 
-> ![WARNING]
+> [!WARNING]
 > I am an advocate of [open science](https://en.wikipedia.org/wiki/Open_science),
 > [open software](https://en.wikipedia.org/wiki/Open-source_software) and of
 > sharing your work as soon and as openly as possible.
@@ -32,7 +32,7 @@ come across many of the different types of projects that one encounters as a bio
 Points 1 and 2 fall under the term "data analysis", while point 3 is more
 software-development oriented.
 
-> ![NOTE]
+> [!NOTE]
 > I assume that the reader knows how vital version control is when writing software.
 > In case that you do not, I want to briefly outline why you'd want to use a version
 > control system in your work:
