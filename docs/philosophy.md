@@ -42,7 +42,7 @@ come across many of the different types of projects that one encounters as a bio
 The first point is **data analysis**. The second point is **software development**.
 Both require writing software, but they are not exactly the same.
 
-You'd generally work on point 3 like a generalist programmer would.
+You'd generally work on point 2 like a generalist programmer would.
 In terms of *how* you work, there are many different workflow mental schemas
 that you can choose from, each with its following, pros, and cons.
 Simply [search for coding workflow](https://duckduckgo.com/?t=h_&q=coding+workflow)
@@ -64,8 +64,8 @@ have a `cargo.toml` file, a `/src` directory...
 At its core, software is a collection of text files written in a way that the
 computer can understand.
 The process of laying out these files in a logical way in the filesystem is
-what I refer to when I say ***project layout (PL)***.
-A ***project layout system (PLS) *** is a pre-established way to layout these files.
+what I mean when I say ***project layout (PL)***.
+A ***project layout system (PLS)*** is a pre-established way to layout these files.
 Kerblam! is a tool that can help you with general tasks if you follow the
 Kerblam! project layout system.
 
@@ -133,7 +133,7 @@ Our project therefore is a repository of code.
 
 As we said, documentation is important.
 It should be versioned together with the code, as that is what it is
-describing and it should change at the same page.
+describing and it should change at the same pace.
 
 > [!IMPORTANT]
 > **Design principle C: Documentation is good. We should do more of that.**
@@ -330,8 +330,6 @@ There is little that an automated tool can do to help with documentation.
 There are plenty of guides online that deal with the task of documenting a project,
 so I will not cover it further.
 
----
-
 [^pyweird]: Python packaging is a bit weird since there are so many packaging
 engines that create python packages. Most online guides use `setuptools`, but
 modern python (as of Dec 2023) now works with the `build` script with a 
@@ -355,5 +353,3 @@ However, bringing a tank to a fist fight could be a bit too much.
 [^pe]: Be (easily) reproducible.
 
 [^pc]: Documentation is good. We should do more of that.
-
----
