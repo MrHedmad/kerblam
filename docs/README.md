@@ -7,3 +7,4 @@ Welcome to the Kerblam! documentation.
 - [The contributing guide](CONTRIBUTING.md): Information on how to contribute
   to kerblam! and on who already contributed.
 - [The tutorial](tutorial.md), covering what Kerblam! can do for you.
+- [The philosophy behind Kerblam!](philosophy.md).
