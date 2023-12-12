@@ -91,7 +91,7 @@ Kerblam! is *not* and does not want to be:
 
 > [!TIP]
 > If you wish to learn more on why these design choices were made, please
-> take a look at [the kerblam! philosophy][docs/philosophy.md].
+> take a look at [the kerblam! philosophy](docs/philosophy.md).
 
 Kerblam! projects are opinionated:
 - The folder structure of your project adheres to the Kerblam! standard,
