@@ -48,7 +48,14 @@ pub struct CodeOptions {
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
+pub struct Meta {
+    pub version: Option<String>
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct KerblamTomlOptions {
+    pub meta: Option<Meta>,
     pub data: Option<DataOptions>,
     code: Option<CodeOptions>,
 }

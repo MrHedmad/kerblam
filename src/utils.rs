@@ -6,6 +6,10 @@ use std::process::Command;
 use std::str::FromStr;
 
 use walkdir;
+use version_compare::{Cmp, Version};
+
+use crate::VERSION;
+use crate::options::KerblamTomlOptions;
 
 /// Create a directory.
 ///
@@ -263,4 +267,31 @@ pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>
             .map(|x| x.path().to_owned())
             .collect()
     }
+}
+
+pub fn warn_kerblam_version(&config: KerblamTomlOptions) -> () {
+    let version = config.meta.and_then(|x| x.version);
+    let current_ver = Version::from(VERSION);
+
+    let version = match version {
+        None => return (),
+        Some(ver) => ver
+    };
+
+    let version = match Version::from(&version) {
+        Some(x) => x,
+        None => return ()
+    };
+
+    let current_ver = match current_ver {
+        Some(x) => x,
+        None => return ()
+    };
+
+    if version != current_ver {
+        println!(
+            "⚠️  TOML version ({version}) is different from this kerblam version ({current_ver})!",
+        )
+    };
+
 }

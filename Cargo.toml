@@ -21,4 +21,5 @@ serde = { version = "1.0.192", features = ["derive"] }
 tempfile = "3.8.1"
 toml = "0.8.8"
 url = { version = "2.5.0", features = ["serde"] }
+version-compare = "0.1.1"
 walkdir = "2.4.0"
