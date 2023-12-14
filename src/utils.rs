@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
-use version_compare::{Cmp, Version};
+use version_compare::Version;
 use walkdir;
 
 use crate::options::KerblamTomlOptions;
