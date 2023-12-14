@@ -276,4 +276,30 @@ impl KerblamTomlOptions {
 
         find_files(env, None)
     }
+
+    /// Return a message with available executor names
+    pub fn pipes_names_msg(&self) -> String {
+        let pipes = self.pipes_paths();
+        let envs = self.env_paths();
+        let pipes_names: Vec<String> = pipes
+            .into_iter()
+            .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
+            .collect();
+        let envs_names: Vec<String> = envs
+            .into_iter()
+            .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
+            .collect();
+
+        let mut lines: Vec<String> = vec!["Available pipes:".to_string()];
+
+        for pipe in pipes_names {
+            if envs_names.iter().any(|x| *x == pipe) {
+                lines.push(format!("    {pipe} 🐋"));
+            } else {
+                lines.push(format!("    {pipe}"));
+            }
+        }
+
+        lines.join("\n")
+    }
 }
