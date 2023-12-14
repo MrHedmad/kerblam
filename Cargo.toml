@@ -2,10 +2,16 @@
 name = "kerblam"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/MrHedmad/kerblam"
 
 [profile.release]
 strip = true # Strip symbols from binary to make it smaller
 lto = true # Link time optimizations to make binary smaller
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
 
 [dependencies]
 anyhow = "1.0.75"
@@ -23,3 +29,16 @@ toml = "0.8.8"
 url = { version = "2.5.0", features = ["serde"] }
 version-compare = "0.1.1"
 walkdir = "2.4.0"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.5.0"
+# CI backends to support
+ci = ["github"]
+# The installers to generate for each app
+installers = ["shell"]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
