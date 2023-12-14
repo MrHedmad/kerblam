@@ -42,8 +42,8 @@ pub struct DataOptions {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct CodeOptions {
-    env_dir: Option<PathBuf>,
-    pipes_dir: Option<PathBuf>,
+    pub env_dir: Option<PathBuf>,
+    pub pipes_dir: Option<PathBuf>,
 }
 
 #[allow(dead_code)]
@@ -57,7 +57,7 @@ pub struct Meta {
 pub struct KerblamTomlOptions {
     pub meta: Option<Meta>,
     pub data: Option<DataOptions>,
-    code: Option<CodeOptions>,
+    pub code: Option<CodeOptions>,
 }
 
 pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions> {
@@ -253,5 +253,27 @@ impl KerblamTomlOptions {
             .into_iter()
             .filter(|x| !remote_files.iter().any(|y| x == &y.path))
             .collect()
+    }
+
+    /// Return all paths to pipes.
+    pub fn pipes_paths(&self) -> Vec<PathBuf> {
+        let pipes = self
+            .code
+            .clone()
+            .and_then(|x| x.pipes_dir)
+            .unwrap_or_else(|| current_dir().unwrap().join("src/pipes"));
+
+        find_files(pipes, None)
+    }
+
+    /// Return all paths to environments.
+    pub fn env_paths(&self) -> Vec<PathBuf> {
+        let env = self
+            .code
+            .clone()
+            .and_then(|x| x.env_dir)
+            .unwrap_or_else(|| current_dir().unwrap().join("src/dockerfiles"));
+
+        find_files(env, None)
     }
 }
