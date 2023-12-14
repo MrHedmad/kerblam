@@ -5,11 +5,11 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
-use walkdir;
 use version_compare::{Cmp, Version};
+use walkdir;
 
-use crate::VERSION;
 use crate::options::KerblamTomlOptions;
+use crate::VERSION;
 
 /// Create a directory.
 ///
@@ -269,23 +269,25 @@ pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>
     }
 }
 
-pub fn warn_kerblam_version(&config: KerblamTomlOptions) -> () {
-    let version = config.meta.and_then(|x| x.version);
+pub fn warn_kerblam_version(config: &KerblamTomlOptions) -> () {
+    // TODO: is there a way to avoid this clone()? I feel like there should be
+    // but I'm not sure.
+    let version = config.clone().meta.and_then(|x| x.version);
     let current_ver = Version::from(VERSION);
 
     let version = match version {
         None => return (),
-        Some(ver) => ver
+        Some(ver) => String::from(ver),
     };
 
     let version = match Version::from(&version) {
         Some(x) => x,
-        None => return ()
+        None => return (),
     };
 
     let current_ver = match current_ver {
         Some(x) => x,
-        None => return ()
+        None => return (),
     };
 
     if version != current_ver {
@@ -293,5 +295,4 @@ pub fn warn_kerblam_version(&config: KerblamTomlOptions) -> () {
             "⚠️  TOML version ({version}) is different from this kerblam version ({current_ver})!",
         )
     };
-
 }

@@ -7,7 +7,7 @@ use std::{collections::HashMap, path::PathBuf};
 use anyhow::Result;
 use url::Url;
 
-use crate::utils::find_files;
+use crate::utils::{find_files, warn_kerblam_version};
 
 // TODO: Remove the #[allow(dead_code)] calls when we actually use the
 // options here.
@@ -49,7 +49,7 @@ pub struct CodeOptions {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct Meta {
-    pub version: Option<String>
+    pub version: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -65,6 +65,8 @@ pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOpti
     log::debug!("Reading {:?} for TOML options...", toml_file);
     let toml_content = String::from_utf8(fs::read(toml_file)?)?;
     let config: KerblamTomlOptions = toml::from_str(toml_content.as_str())?;
+
+    warn_kerblam_version(&config);
 
     Ok(config)
 }
