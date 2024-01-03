@@ -93,21 +93,9 @@ impl Into<Url> for RemoteFile {
 // quick and dirty to get the job done.
 
 impl KerblamTomlOptions {
-    /// Return the path to the root data directory, e.g. "./data"
-    fn root_data_dir(&self) -> PathBuf {
-        let here = &current_dir().unwrap();
-
-        self.data
-            .clone()
-            .and_then(|x| x.paths)
-            .and_then(|x| x.input.into())
-            .or_else(|| Some(here.join("data")))
-            .unwrap()
-    }
-
     /// Return objects representing remote files specified in the config
     pub fn remote_files(&self) -> Vec<RemoteFile> {
-        let root_data_dir = self.root_data_dir().join("in");
+        let root_data_dir = self.input_data_dir().join("in");
         log::debug!("Remote file save dir is {root_data_dir:?}");
 
         self.data
