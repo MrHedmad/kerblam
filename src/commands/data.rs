@@ -299,10 +299,25 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     }
 }
 
-pub fn clean_data(config: KerblamTomlOptions) -> Result<()> {
-    let inspected_path = current_dir()?.join("data");
-
+pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool) -> Result<()> {
     let cleanable_files = config.volatile_files();
+    let remote_files: Vec<PathBuf> = config
+        .remote_files()
+        .into_iter()
+        .map(|remote| remote.path)
+        .collect();
+
+    let cleanable_files: Vec<PathBuf> = if keep_remote {
+        cleanable_files
+            .into_iter()
+            .filter(|x| {
+                log::debug!("test: {:?}", x);
+                remote_files.iter().all(|remote| x != remote)
+            })
+            .collect()
+    } else {
+        cleanable_files
+    };
 
     if cleanable_files.is_empty() {
         println!("✨ Nothing to clean!");
@@ -336,7 +351,7 @@ pub fn clean_data(config: KerblamTomlOptions) -> Result<()> {
                         .map(|x| {
                             format!(
                                 "\t- {}: {}\n",
-                                normalize_path(x.0.strip_prefix(inspected_path.clone()).unwrap())
+                                normalize_path(x.0.strip_prefix(current_dir().unwrap()).unwrap())
                                     .to_string_lossy(),
                                 x.1.to_string()
                             )

@@ -71,6 +71,7 @@ pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOpti
     Ok(config)
 }
 
+#[derive(Debug)]
 pub struct RemoteFile {
     pub url: Url,
     pub path: PathBuf,
