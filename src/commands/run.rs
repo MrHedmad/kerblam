@@ -142,7 +142,6 @@ impl Executor {
     /// Build the context of this executor and return its tag.
     pub fn build_env(&self, signal_receiver: Receiver<bool>) -> Result<String> {
         let mut cleanup: Vec<PathBuf> = vec![];
-        let env_name = "kerblam_runtime";
 
         if self.env.is_none() {
             bail!("Cannot build environment with no environment file.")
@@ -150,7 +149,17 @@ impl Executor {
 
         // Move the executor file
         cleanup.push(self.target.copy()?);
-        let dockerfile_path = self.env.clone().unwrap().to_str().unwrap().to_string();
+        let dockerfile_path = self.env.clone().unwrap();
+
+        let dockerfile_name = dockerfile_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+        let env_name: String = dockerfile_name.split(".").take(1).collect();
+        let env_name = env_name + "_kerblam_runtime";
+
+        let dockerfile_path = dockerfile_path.as_os_str().to_string_lossy().to_string();
 
         let builder = || {
             Command::new("docker")
@@ -160,7 +169,7 @@ impl Executor {
                     "-f",
                     dockerfile_path.as_str(),
                     "--tag",
-                    env_name,
+                    env_name.as_str(),
                     ".",
                 ])
                 .stdout(Stdio::inherit())
