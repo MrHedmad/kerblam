@@ -1,4 +1,5 @@
 use log;
+use std::env::current_dir;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
@@ -78,20 +79,60 @@ pub struct Executor {
 // The same idea could be used for the FileRenamers, but we'd need to be
 // careful on when they are dropped.
 
+macro_rules! stringify {
+    ( $x:expr ) => {{
+        $x.into_iter().map(|x| x.to_string()).collect()
+    }};
+}
+
+/// Generate a series of strings suitable for -v options to bind the data dirs
+fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
+    let mut result: Vec<String> = vec![];
+    let root = current_dir().unwrap();
+
+    let dirs = vec![
+        config.input_data_dir(),
+        config.output_data_dir(),
+        config.intermediate_data_dir(),
+    ];
+
+    for dir in dirs {
+        // the folder here, in the local file system
+        let local = dir.to_string_lossy().to_string();
+        // the folder in the docker host
+        let host = dir.strip_prefix(root.clone()).unwrap().to_string_lossy();
+
+        result.push(format!("{}:/{}", local, host))
+    }
+
+    result
+}
+
 impl Executor {
     /// Execute this executor based on its data
     ///
     /// Either builds and runs a docker container, or executes make and/or
     /// bash, depending on the strategy.
     ///
+    /// Needs the kerblam config to work, as we need to bind-mount the
+    /// same data paths as locally needed.
+    ///
     /// Destroys itself in the process.
-    pub fn execute(self, signal_receiver: Receiver<bool>) -> Result<()> {
+    pub fn execute(
+        self,
+        signal_receiver: Receiver<bool>,
+        config: &KerblamTomlOptions,
+    ) -> Result<()> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         let command_args = if self.env.is_some() {
             let runtime_name = self.build_env(signal_receiver.clone())?;
-            let partial = vec!["docker", "run", "-it", "-v", "./data:/data"];
-            let mut partial: Vec<String> = partial.into_iter().map(|x| x.to_string()).collect();
+            let mut partial: Vec<String> = stringify![vec!["docker", "run", "-it"]];
+            // We need to bind-mount the same data dirs as specified in the options
+            let mounts = generate_bind_mount_strings(config);
+            for mount in mounts {
+                partial.extend(vec!["-v".to_string(), mount].into_iter())
+            }
             partial.push(runtime_name);
             partial
         } else {
@@ -99,16 +140,16 @@ impl Executor {
             // Move the executor file
             cleanup.push(self.target.copy()?);
             match self.strategy {
-                ExecutionStrategy::Make => vec!["make", "-f", self.target.to.to_str().unwrap()]
-                    .into_iter()
-                    .map(|x| x.to_string())
-                    .collect(),
-                ExecutionStrategy::Shell => vec!["bash", self.target.to.to_str().unwrap()]
-                    .into_iter()
-                    .map(|x| x.to_string())
-                    .collect(),
+                ExecutionStrategy::Make => {
+                    stringify![vec!["make", "-f", self.target.to.to_str().unwrap()]]
+                }
+                ExecutionStrategy::Shell => {
+                    stringify![vec!["bash", self.target.to.to_str().unwrap()]]
+                }
             }
         };
+
+        log::debug!("Executor command arguments: {:?}", command_args);
 
         let mut command = Command::new(&command_args[0]);
 
@@ -341,7 +382,7 @@ fn push_fragment(buffer: impl AsRef<Path>, ext: &str) -> PathBuf {
 }
 
 fn extract_profile_paths(
-    config: KerblamTomlOptions,
+    config: &KerblamTomlOptions,
     profile_name: &str,
     root_dir: impl AsRef<Path>,
 ) -> Result<Vec<FileMover>> {
@@ -351,6 +392,7 @@ fn extract_profile_paths(
     // later on. I'm not sure why this is the case, but separating the
     // calls fixes it.
     let profiles = config
+        .clone()
         .data
         .ok_or(anyhow!("Missing 'data' field!"))?
         .profiles
@@ -445,7 +487,7 @@ pub fn kerblam_run_project(
         // This should mean that there is a profile with the same name in the
         // config...
         let profile_paths =
-            extract_profile_paths(config, profile.as_str(), runtime_dir.join("./data/in/"))?;
+            extract_profile_paths(&config, profile.as_str(), runtime_dir.join("./data/in/"))?;
         // Rename the paths that we found
         let move_results: Vec<Result<FileMover, anyhow::Error>> =
             profile_paths.into_iter().map(|x| x.rename()).collect();
@@ -484,7 +526,7 @@ pub fn kerblam_run_project(
     };
 
     // Execute the executor
-    let runtime_result = executor.execute(sigint_rec);
+    let runtime_result = executor.execute(sigint_rec, &config);
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {
