@@ -38,6 +38,9 @@ enum Command {
         /// Optional data profile to run with
         #[arg(long)]
         profile: Option<String>,
+        /// Do not run in container even if a container is available
+        #[arg(long, short, action)]
+        local: bool,
     },
     /// Manage local data
     Data {
@@ -109,9 +112,10 @@ fn main() -> anyhow::Result<()> {
         Command::Run {
             module_name,
             profile,
+            local,
         } => {
             let config = config.unwrap(); // This is always safe due to the check above.
-            run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile)?;
+            run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile, local)?;
         }
         Command::Data { subcommand } => match subcommand {
             None => {
