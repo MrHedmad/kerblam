@@ -10,11 +10,9 @@
 
 > [!WARNING]
 >
-> `kerblam run` and `kerblam package` are complete but still untested.
-> Please do use them, but be careful.
+> `kerblam run` and `kerblam package` are complete but still without sigificant testing.
 > Always have a backup of your data and code!
 > Report any problems in the [issues](https://github.com/MrHedmad/kerblam).
-> Thank you kindly!
 
 Kerblam! is a tool that can help you manage data analysis projects.
 
@@ -35,14 +33,6 @@ To transform a project to a Kerblam! project just make the kerblam.toml
 file yourself. To learn how, look at the section below.
 
 # Overview
-
-> [!WARNING]
->
-> Some commands are missing some features that would be nice to have.
-> Please take a look at the [issues](https://github.com/MrHedmad/kerblam/issues)
-> and see if what you'd like to do is already proposed and/or being worked on.
-> If you don't find it, open an issue yourself detailing what you think would
-> be a good addition!
 
 - :white_check_mark: `kerblam new` can be used to create a new kerblam!
   project. Kerblam! asks you if you want to use some common programming
@@ -121,11 +111,13 @@ root of the project, `./`):
   They have to be written as if they were saved in `./`.
 - `./src/dockerfiles/`: Dockerfiles should be saved here. 
 
-You can configure all of these paths in `kerblam.toml`, if you so desire.
+You can configure almost all of these paths in `kerblam.toml`, if you so desire.
 This is mostly done for compatibility reasons with non-kerblam! projects.
+New projects that wish to use Kerblam! are strongly encouraged to follow the
+standard folder structure.
 
 > [!WARNING]
-> Please take a look at issue #11 before editing your paths.
+> Please take a look at [issue #11](https://github.com/MrHedmad/kerblam/issues/11) before editing your paths.
 
 ## Contributing
 To contribute, please take a look at [the contributing guide](docs/CONTRIBUTING.md).
@@ -135,6 +127,10 @@ Written a guide? Considered a new feature? Wrote some docstrings? Found a bug?
 All of these are meaningful and important contributions.
 For this reason, **all** contributors are listed in
 [the contributing guide](docs/CONTRIBUTING.md).
+
+If you use Kerblam! or want to add your opinion to the direction it is taking,
+take a look at [the issues labelled with RFC](https://github.com/MrHedmad/kerblam/issues?q=is%3Aissue+is%3Aopen+label%3ARFC).
+They are *requests for comments* where you can say your opinion on new features.
 
 Thank you for taking an interest in Kerblam! Any help is really appreciated.
 
