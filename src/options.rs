@@ -42,8 +42,8 @@ pub struct DataOptions {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct CodeOptions {
-    env_dir: Option<PathBuf>,
-    pipes_dir: Option<PathBuf>,
+    pub env_dir: Option<PathBuf>,
+    pub pipes_dir: Option<PathBuf>,
 }
 
 #[allow(dead_code)]
@@ -57,7 +57,7 @@ pub struct Meta {
 pub struct KerblamTomlOptions {
     pub meta: Option<Meta>,
     pub data: Option<DataOptions>,
-    code: Option<CodeOptions>,
+    pub code: Option<CodeOptions>,
 }
 
 pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions> {
@@ -93,21 +93,9 @@ impl Into<Url> for RemoteFile {
 // quick and dirty to get the job done.
 
 impl KerblamTomlOptions {
-    /// Return the path to the root data directory, e.g. "./data"
-    fn root_data_dir(&self) -> PathBuf {
-        let here = &current_dir().unwrap();
-
-        self.data
-            .clone()
-            .and_then(|x| x.paths)
-            .and_then(|x| x.input.into())
-            .or_else(|| Some(here.join("data")))
-            .unwrap()
-    }
-
     /// Return objects representing remote files specified in the config
     pub fn remote_files(&self) -> Vec<RemoteFile> {
-        let root_data_dir = self.root_data_dir().join("in");
+        let root_data_dir = self.input_data_dir().join("in");
         log::debug!("Remote file save dir is {root_data_dir:?}");
 
         self.data
@@ -253,5 +241,53 @@ impl KerblamTomlOptions {
             .into_iter()
             .filter(|x| !remote_files.iter().any(|y| x == &y.path))
             .collect()
+    }
+
+    /// Return all paths to pipes.
+    pub fn pipes_paths(&self) -> Vec<PathBuf> {
+        let pipes = self
+            .code
+            .clone()
+            .and_then(|x| x.pipes_dir)
+            .unwrap_or_else(|| current_dir().unwrap().join("src/pipes"));
+
+        find_files(pipes, None)
+    }
+
+    /// Return all paths to environments.
+    pub fn env_paths(&self) -> Vec<PathBuf> {
+        let env = self
+            .code
+            .clone()
+            .and_then(|x| x.env_dir)
+            .unwrap_or_else(|| current_dir().unwrap().join("src/dockerfiles"));
+
+        find_files(env, None)
+    }
+
+    /// Return a message with available executor names
+    pub fn pipes_names_msg(&self) -> String {
+        let pipes = self.pipes_paths();
+        let envs = self.env_paths();
+        let pipes_names: Vec<String> = pipes
+            .into_iter()
+            .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
+            .collect();
+        let envs_names: Vec<String> = envs
+            .into_iter()
+            .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
+            .collect();
+
+        let mut lines: Vec<String> = vec!["Available pipes:".to_string()];
+
+        for pipe in pipes_names {
+            if envs_names.iter().any(|x| *x == pipe) {
+                lines.push(format!("    {pipe} 🐋"));
+            } else {
+                lines.push(format!("    {pipe}"));
+            }
+        }
+
+        lines.join("\n")
     }
 }

@@ -3,10 +3,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 
-use crate::commands::new::normalize_path;
 use crate::options::KerblamTomlOptions;
+use crate::utils::find_file_by_name;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
 use ctrlc;
 
@@ -65,7 +65,7 @@ where
 
 pub struct Executor {
     target: FileMover,
-    env: Option<FileMover>,
+    env: Option<PathBuf>,
     strategy: ExecutionStrategy,
     // executor_path
 }
@@ -149,7 +149,7 @@ impl Executor {
 
         // Move the executor file
         cleanup.push(self.target.copy()?);
-        let dockerfile_path = self.env.clone().unwrap().from;
+        let dockerfile_path = self.env.clone().unwrap();
 
         let dockerfile_name = dockerfile_path
             .file_name()
@@ -206,53 +206,51 @@ impl Executor {
         Ok(String::from(env_name))
     }
 
-    pub fn create(project_path: impl AsRef<Path>, module_name: &str) -> Result<Self> {
-        let project_path = project_path.as_ref();
-        let makefile = project_path.join("src/pipes/".to_string() + module_name + ".makefile");
-        let shellfile = project_path.join("src/pipes/".to_string() + module_name + ".sh");
-        let dockerfile =
-            project_path.join("src/dockerfiles/".to_string() + module_name + ".dockerfile");
+    pub fn create(
+        root_path: impl AsRef<Path>,
+        executor: impl AsRef<Path>,
+        environment: Option<impl AsRef<Path>>,
+    ) -> Result<Self> {
+        let executor = executor.as_ref();
+        let root_path = root_path.as_ref().to_path_buf();
+        if !executor.exists() {
+            bail!("Executor file {executor:?} does not exist");
+        }
 
-        let target: PathBuf;
-        let strategy = if makefile.exists() & shellfile.exists() {
-            bail!(
-                "Found both a makefile and a shellfile for module {}. Aborting!",
-                module_name
-            );
-        } else if makefile.exists() {
-            target = makefile;
-            ExecutionStrategy::Make
-        } else if shellfile.exists() {
-            target = shellfile;
-            ExecutionStrategy::Shell
-        } else {
-            bail!(
-                "Could not find either a shellfile or a makefile named {}!",
-                module_name
-            );
+        let target_mover = FileMover {
+            from: executor.to_path_buf(),
+            to: root_path.join("executor"),
         };
 
-        if dockerfile.exists() {
-            Ok(Self {
-                target: FileMover {
-                    from: target,
-                    to: project_path.join("executor"),
-                },
-                env: Some(FileMover {
-                    from: dockerfile,
-                    to: project_path.join("Dockerfile"),
-                }),
-                strategy,
-            })
-        } else {
-            Ok(Self {
-                target: FileMover {
-                    from: target,
-                    to: project_path.join("executor"),
-                },
+        let strategy = match executor.extension() {
+            None => {
+                return Err(anyhow!("Cannot determine execution strategy"))
+                    .with_context(|| "Specified executor has no extension")
+            }
+            Some(x) => match x.to_str().unwrap() {
+                "makefile" => ExecutionStrategy::Make,
+                "sh" => ExecutionStrategy::Shell,
+                ext => {
+                    return Err(anyhow!("Cannot determine execution strategy"))
+                        .with_context(|| format!("Unrecognized extension '{ext}'."))
+                }
+            },
+        };
+
+        match environment {
+            None => Ok(Self {
+                target: target_mover,
                 env: None,
                 strategy,
-            })
+            }),
+            Some(x) => {
+                let x = x.as_ref();
+                Ok(Self {
+                    target: target_mover,
+                    env: Some(x.to_path_buf()),
+                    strategy,
+                })
+            }
         }
     }
 
@@ -415,31 +413,22 @@ pub fn kerblam_run_project(
     runtime_dir: &PathBuf,
     profile: Option<String>,
 ) -> Result<String> {
-    // Check if the paths that we need are present
-    let expected_paths: Vec<PathBuf> = vec!["./data/in", "./src/pipes", "./src/dockerfiles"]
-        .into_iter()
-        .map(|x| runtime_dir.join(x))
-        .collect();
-    let module_file = &mut runtime_dir.join("./src/pipes");
-    module_file.push(module_name.trim().trim_matches('/'));
+    let pipes = config.pipes_paths();
+    let envs = config.env_paths();
+    let executor_file = find_file_by_name(&module_name, &pipes);
+    let environment_file = find_file_by_name(&module_name, &envs);
 
-    if expected_paths
-        .into_iter()
-        .map(|path| {
-            if !path.exists() {
-                println!("🔥 Could not find {:?}", normalize_path(path.as_path()));
-                true // i.e "Please crash"
-            } else {
-                false // i.e "Nothing to see here"
-            }
-        })
-        .any(|x| x)
-    {
-        bail!("Could not find required files.")
-    };
+    if executor_file.is_none() {
+        // We cannot find this executor. Warn the user and stop.
+        bail!(
+            "Could not find specified runtime '{module_name}'\n{}",
+            config.pipes_names_msg()
+        )
+    }
 
     // Create an executor for later.
-    let executor: Executor = Executor::create(runtime_dir, module_name.as_str())?;
+    let executor: Executor =
+        Executor::create(runtime_dir, executor_file.unwrap(), environment_file)?;
 
     // From here on we should not crash. Therefore, we have to catch SIGINTs
     // as the come in.

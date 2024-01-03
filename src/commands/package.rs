@@ -5,7 +5,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::utils::find_files;
+use crate::utils::{find_file_by_name, find_files};
 use crate::{
     commands::run::{setup_ctrlc_hook, ExecutionStrategy, Executor},
     options::KerblamTomlOptions,
@@ -23,8 +23,20 @@ use anyhow::{bail, Result};
 pub fn package_pipe(config: KerblamTomlOptions, pipe: &str, package_name: &str) -> Result<()> {
     log::debug!("Packaging pipe {pipe} as {package_name}");
     let here = current_dir()?;
+    let pipes = config.pipes_paths();
+    let envs = config.env_paths();
+    let executor_file = find_file_by_name(pipe, &pipes);
+    let environment_file = find_file_by_name(pipe, &envs);
+
+    if executor_file.is_none() {
+        // We cannot find this executor. Warn the user and stop.
+        bail!(
+            "Could not find specified runtime '{pipe}'\n{}",
+            config.pipes_names_msg()
+        )
+    }
     // We cannot go on if we are not in a dockerized environment
-    let executor = Executor::create(&here, pipe)?;
+    let executor = Executor::create(&here, executor_file.unwrap(), environment_file)?;
     let myself = current_exe()?;
 
     if !executor.has_env() {
