@@ -146,14 +146,29 @@ although Kerblam! is preferred.
 The Kerblam! logo is written in the [Kwark Font](https://www.1001fonts.com/kwark-font.html) by [tup wanders](https://www.1001fonts.com/users/tup/).
 
 ## Installation
-You can find and download a Kerblam! binary in
+You can find and download a Kerblam! binary for your operating system in
 [the releases tab](https://github.com/mrhedmad/kerblam/releases).
-Download it and drop it somewhere that you `$PATH` points to.
 
+Currently, Kerblam! only supports mac OS (both intel and apple chips) and GNU linux.
+Other linux versions may work. Install them from source with the command below.
+
+### Pre-compiled binary (recommended)
+There are also helpful scripts that automatically download the correct version
+for your specific operating system thanks to [`cargo-dist`](https://github.com/axodotdev/cargo-dist).
+You can install the latest version with:
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/MrHedmad/kerblam/releases/latest/download/kerblam-installer.sh | sh
+```
+You can [click here](https://github.com/MrHedmad/kerblam/releases/latest/download/kerblam-installer.sh)
+to download the same installer script and inspect it before you run it, if you'd like.
+
+### Install from source
 If you want to install from source, install Rust and `cargo`, then run:
 ```bash
 cargo install --git https://github.com/MrHedmad/kerblam.git
 ```
+The `main` branch should always compile on supported platforms with the above command.
+If it does not, please [open an issue](https://github.com/mrhedmad/kerblam/issues/new).
 
 ### Requirements
 Kerblam! requires a Linux (or generally unix-like) OS.
