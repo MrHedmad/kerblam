@@ -67,9 +67,18 @@ enum Command {
 
 #[derive(Subcommand, Debug, PartialEq)]
 enum DataCommands {
+    /// Fetch remote data and save it locally
     Fetch,
-    Clean,
-    Pack { output_path: Option<PathBuf> },
+    /// Clean non-essential data to save disk space
+    Clean {
+        #[arg(long, short, action)]
+        /// Do not delete locally present remote files.
+        keep_remote: bool,
+    },
+    // Pack local data for export to others
+    Pack {
+        output_path: Option<PathBuf>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -111,7 +120,9 @@ fn main() -> anyhow::Result<()> {
                 println!("{}", data_info)
             }
             Some(DataCommands::Fetch) => data::fetch_remote_data(config.unwrap())?,
-            Some(DataCommands::Clean) => data::clean_data(config.unwrap())?,
+            Some(DataCommands::Clean { keep_remote }) => {
+                data::clean_data(config.unwrap(), keep_remote)?
+            }
             Some(DataCommands::Pack { output_path: path }) => data::package_data_to_archive(
                 config.unwrap(),
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
