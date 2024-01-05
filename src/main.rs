@@ -18,7 +18,7 @@ const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser, Debug)]
-#[command(author = "hedmad", about = KERBLAM_LONG_ABOUT)]
+#[command(author = "hedmad", version, about = KERBLAM_LONG_ABOUT)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
