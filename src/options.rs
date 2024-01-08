@@ -96,7 +96,7 @@ impl Into<Url> for RemoteFile {
 impl KerblamTomlOptions {
     /// Return objects representing remote files specified in the config
     pub fn remote_files(&self) -> Vec<RemoteFile> {
-        let root_data_dir = self.input_data_dir().join("in");
+        let root_data_dir = self.input_data_dir();
         log::debug!("Remote file save dir is {root_data_dir:?}");
 
         self.data
