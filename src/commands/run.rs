@@ -451,13 +451,22 @@ fn extract_profile_paths(
 
 pub fn kerblam_run_project(
     config: KerblamTomlOptions,
-    module_name: String,
+    module_name: Option<String>,
     runtime_dir: &PathBuf,
     profile: Option<String>,
     ignore_container: bool,
 ) -> Result<String> {
     let pipes = config.pipes_paths();
     let envs = config.env_paths();
+
+    let module_name = match module_name {
+        None => bail!(
+            "No runtime specified. Available runtimes:\n{}",
+            config.pipes_names_msg()
+        ),
+        Some(name) => name,
+    };
+
     let executor_file = find_file_by_name(&module_name, &pipes);
     let environment_file = if ignore_container {
         log::debug!("Skipping finding env file due to user input.");
@@ -469,7 +478,7 @@ pub fn kerblam_run_project(
     if executor_file.is_none() {
         // We cannot find this executor. Warn the user and stop.
         bail!(
-            "Could not find specified runtime '{module_name}'\n{}",
+            "Could not find specified runtime '{module_name}'. Available pipes:\n{}",
             config.pipes_names_msg()
         )
     }

@@ -279,11 +279,11 @@ impl KerblamTomlOptions {
             .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
             .collect();
 
-        let mut lines: Vec<String> = vec!["Available pipes:".to_string()];
+        let mut lines: Vec<String> = vec![];
 
         for pipe in pipes_names {
             if envs_names.iter().any(|x| *x == pipe) {
-                lines.push(format!("    {pipe} 🐋"));
+                lines.push(format!("    🐋 {pipe}"));
             } else {
                 lines.push(format!("    {pipe}"));
             }
