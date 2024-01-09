@@ -34,7 +34,7 @@ enum Command {
     /// Run a Kerblam! project
     Run {
         /// Name of the module to run
-        module_name: String,
+        module_name: Option<String>,
         /// Optional data profile to run with
         #[arg(long)]
         profile: Option<String>,
@@ -50,7 +50,7 @@ enum Command {
     /// Package for execution later
     Package {
         /// The name of the pipe to package
-        pipe: String,
+        pipe: Option<String>,
         /// The label of the exported docker image
         #[arg(long)]
         name: Option<String>,
@@ -133,11 +133,8 @@ fn main() -> anyhow::Result<()> {
             )?,
         },
         Command::Package { pipe, name } => {
-            package::package_pipe(
-                config.unwrap(),
-                &pipe,
-                &name.unwrap_or(format!("{}_exec", &pipe)),
-            )?;
+            let default_pipe_name = format!("{}_exec", &pipe.clone().unwrap_or("x".to_string()));
+            package::package_pipe(config.unwrap(), pipe, &name.unwrap_or(default_pipe_name))?;
         }
         Command::Ignore {
             path_or_name,

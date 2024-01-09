@@ -20,13 +20,26 @@ use anyhow::{bail, Result};
 /// - `config`: The kerblam config for this execution.
 /// - `pipe`: The name of the pipe to execute
 /// - `package_name`: The name of the docker image built by this execution.
-pub fn package_pipe(config: KerblamTomlOptions, pipe: &str, package_name: &str) -> Result<()> {
-    log::debug!("Packaging pipe {pipe} as {package_name}");
+pub fn package_pipe(
+    config: KerblamTomlOptions,
+    pipe: Option<String>,
+    package_name: &str,
+) -> Result<()> {
+    log::debug!("Packaging pipe {pipe:?} as {package_name}");
     let here = current_dir()?;
     let pipes = config.pipes_paths();
     let envs = config.env_paths();
-    let executor_file = find_file_by_name(pipe, &pipes);
-    let environment_file = find_file_by_name(pipe, &envs);
+
+    let pipe = match pipe {
+        None => bail!(
+            "No runtime specified. Available runtimes:\n{}",
+            config.pipes_names_msg()
+        ),
+        Some(name) => name,
+    };
+
+    let executor_file = find_file_by_name(&pipe, &pipes);
+    let environment_file = find_file_by_name(&pipe, &envs);
 
     if executor_file.is_none() {
         // We cannot find this executor. Warn the user and stop.
