@@ -19,6 +19,7 @@ clap = { version = "4.4.8", features = ["derive"] }
 crossbeam-channel = "0.5.8"
 ctrlc = "3.4.1"
 env_logger = "0.10.1"
+filetime = "0.2.23"
 indicatif = "0.17.7"
 log = "0.4.20"
 rand = "0.8.5"
