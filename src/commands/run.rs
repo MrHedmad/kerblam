@@ -10,6 +10,7 @@ use crate::utils::find_file_by_name;
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
 use ctrlc;
+use filetime::{set_file_mtime, FileTime};
 
 #[allow(dead_code)]
 enum CommandResult {
@@ -322,9 +323,13 @@ struct FileMover {
 
 impl FileMover {
     /// Rename the files, destroying this file mover and making the reverse.
+    ///
+    /// This also updates the last modification time to the present, to
+    /// let `make` know that we must regenerate the files.
     fn rename(self) -> Result<FileMover> {
         log::debug!("Moving {:?} to {:?}", self.from, self.to);
         fs::rename(&self.from, &self.to)?;
+        set_file_mtime(&self.to, FileTime::now())?;
 
         Ok(self.invert())
     }
