@@ -1,12 +1,16 @@
 use serde::Deserialize;
 use std::env::current_dir;
-use std::fs;
+use std::fmt::Display;
+use std::fmt::Write;
+use std::fs::{self, File};
+use std::io::{self, BufRead};
 use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Result;
 use url::Url;
 
+use crate::commands::run::Executor;
 use crate::utils::{find_files, warn_kerblam_version};
 
 // TODO: Remove the #[allow(dead_code)] calls when we actually use the
@@ -86,6 +90,113 @@ impl Into<PathBuf> for RemoteFile {
 impl Into<Url> for RemoteFile {
     fn into(self) -> Url {
         self.url
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Pipe {
+    pub pipe_path: PathBuf,
+    pub env_path: Option<PathBuf>,
+}
+
+pub struct PipeDescription {
+    pub header: String,
+    pub body: Option<String>,
+}
+
+impl PipeDescription {
+    fn from_text_box(text: String) -> Self {
+        let pieces: Vec<&str> = text.split("\n\n").map(|x| x.trim()).collect();
+
+        if pieces.len() == 1 {
+            let header = pieces[0].replace("\n", " ");
+            return PipeDescription { header, body: None };
+        }
+
+        let header = pieces[0].replace("\n", " ");
+        let body: Vec<String> = pieces
+            .into_iter()
+            .skip(1)
+            .map(|x| x.replace("\n", " "))
+            .collect();
+        let body: String = body.join("\n\n");
+
+        PipeDescription {
+            header,
+            body: Some(body),
+        }
+    }
+}
+
+impl Pipe {
+    /// Obtain the name of the pipe
+    pub fn name(&self) -> String {
+        let name = self
+            .pipe_path
+            .file_stem()
+            .expect("Could not extract pipe file name.");
+
+        name.to_string_lossy().into()
+    }
+
+    /// Parse the file to obtain the description field
+    pub fn description(&self) -> Result<Option<PipeDescription>> {
+        let conn = File::open(self.pipe_path.clone())?;
+
+        let lines = io::BufReader::new(conn);
+
+        let mut text_box = String::new();
+        for line in lines.lines() {
+            let line = line?;
+            if line.trim().starts_with("#?") {
+                text_box.write_str(&format!("{}\n", line.trim().trim_start_matches("#?")))?;
+            }
+        }
+
+        if text_box.is_empty() {
+            return Ok(None);
+        }
+
+        Ok(Some(PipeDescription::from_text_box(text_box)))
+    }
+
+    pub fn to_executor(
+        self,
+        execution_dir: impl AsRef<Path>,
+    ) -> std::result::Result<Executor, anyhow::Error> {
+        let execution_dir: PathBuf = execution_dir.as_ref().into();
+        Executor::create(execution_dir, self.pipe_path, self.env_path)
+    }
+
+    /// Drop the environment file from this pipe
+    pub fn drop_env(self) -> Self {
+        Self {
+            pipe_path: self.pipe_path,
+            env_path: None,
+        }
+    }
+}
+
+impl Display for Pipe {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let prefix = if self.env_path.is_none() {
+            "\t"
+        } else {
+            "\t🐋"
+        };
+
+        let desc = self
+            .description()
+            .expect("Could not parse file to look for description.");
+
+        match desc {
+            Some(desc) => {
+                write!(f, "{} {} :: {}", prefix, self.name(), desc.header)
+            }
+            None => {
+                write!(f, "{} {}", prefix, self.name())
+            }
+        }
     }
 }
 
@@ -244,8 +355,48 @@ impl KerblamTomlOptions {
             .collect()
     }
 
+    /// Return all pipes
+    pub fn pipes(&self) -> Vec<Pipe> {
+        let pipes_paths = self.pipes_paths();
+        let env_paths = self.env_paths();
+
+        let pipes_names: Vec<(String, PathBuf)> = pipes_paths
+            .into_iter()
+            .map(|x| (x.file_stem().unwrap().to_string_lossy().to_string(), x))
+            .collect();
+        let envs_names: Vec<(String, PathBuf)> = env_paths
+            .into_iter()
+            .map(|x| (x.file_stem().unwrap().to_string_lossy().to_string(), x))
+            .collect();
+        let mut pipes: Vec<Pipe> = vec![];
+
+        // TODO: I duct-taped this loop with inner clone(), but I'm 76% sure
+        // that we can do it with references.
+
+        for (pipe_name, pipe_path) in pipes_names {
+            let mut found = false;
+            for (env_name, env_path) in envs_names.clone() {
+                if env_name == pipe_name {
+                    pipes.push(Pipe {
+                        pipe_path: pipe_path.clone(),
+                        env_path: Some(env_path),
+                    });
+                    found = true;
+                }
+            }
+            if !found {
+                pipes.push(Pipe {
+                    pipe_path,
+                    env_path: None,
+                })
+            }
+        }
+
+        pipes
+    }
+
     /// Return all paths to pipes.
-    pub fn pipes_paths(&self) -> Vec<PathBuf> {
+    fn pipes_paths(&self) -> Vec<PathBuf> {
         let pipes = self
             .code
             .clone()
@@ -256,7 +407,7 @@ impl KerblamTomlOptions {
     }
 
     /// Return all paths to environments.
-    pub fn env_paths(&self) -> Vec<PathBuf> {
+    fn env_paths(&self) -> Vec<PathBuf> {
         let env = self
             .code
             .clone()
@@ -264,31 +415,5 @@ impl KerblamTomlOptions {
             .unwrap_or_else(|| current_dir().unwrap().join("src/dockerfiles"));
 
         find_files(env, None)
-    }
-
-    /// Return a message with available executor names
-    pub fn pipes_names_msg(&self) -> String {
-        let pipes = self.pipes_paths();
-        let envs = self.env_paths();
-        let pipes_names: Vec<String> = pipes
-            .into_iter()
-            .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
-            .collect();
-        let envs_names: Vec<String> = envs
-            .into_iter()
-            .map(|x| x.file_stem().unwrap().to_string_lossy().to_string())
-            .collect();
-
-        let mut lines: Vec<String> = vec![];
-
-        for pipe in pipes_names {
-            if envs_names.iter().any(|x| *x == pipe) {
-                lines.push(format!("    🐋 {pipe}"));
-            } else {
-                lines.push(format!("    {pipe}"));
-            }
-        }
-
-        lines.join("\n")
     }
 }
