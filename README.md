@@ -116,9 +116,6 @@ This is mostly done for compatibility reasons with non-kerblam! projects.
 New projects that wish to use Kerblam! are strongly encouraged to follow the
 standard folder structure.
 
-> [!WARNING]
-> Please take a look at [issue #11](https://github.com/MrHedmad/kerblam/issues/11) before editing your paths.
-
 ## Contributing
 To contribute, please take a look at [the contributing guide](docs/CONTRIBUTING.md).
 
