@@ -72,6 +72,46 @@ them similarly.
 Kerblam! looks for files ending in the `.makefile` extension for makefiles and 
 `.sh` for shell files.
 
+### Adding descriptions
+If you execute `kerblam run` without specifying a pipe (or you try to run a 
+pipe that does not exist), you will get a message like this:
+```
+Error: no runtime specified. Available runtimes:
+    process_csv
+    🐋 save_plots
+    generate_metrics
+```
+The whale emoji (🐋) represents pipes that have an associated Docker container.
+
+If you wish, you can add additional information to this list by writing a section
+in the makefile/shellfile itself. Using the same example as above:
+```makefile
+#? Calculate the sums of the input metrics
+#?
+#? The script takes the input metrics, then calculates the row-wise sums.
+#? These are important since the metrics refer to the calculation.
+
+./data/out/output.csv: ./data/in/input.csv ./src/calc_sum.py
+    cat $< | ./src/calc_sum.py > $@
+```
+If you add this block of lines starting with `#? `, Kerblam! will use them as
+descriptions.
+The first "block" of text (`#? ` lines not separated by an empty line) will be
+the short descripition.
+The rest of the blocks will be the long description.
+
+Kerblam will parse *all* lines starting with `#? `, although it's preferrable
+to only have a single contiguous description block in each file.
+
+The output of `kerblam run` will now read:
+```
+Error: no runtime specified. Available runtimes:
+    process_csv :: Calculate the sums of the input metrics
+    🐋 save_plots
+    generate_metrics
+```
+Context!
+
 ### Containerized execution
 If Kerblam! finds a Dockerfile of the same name as one of your pipes in the
 `./src/dockerfiles/` folder (e.g. `./src/dockerfiles/process_csv.dockerfile`),
