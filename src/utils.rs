@@ -296,17 +296,3 @@ pub fn warn_kerblam_version(config: &KerblamTomlOptions) -> () {
         )
     };
 }
-
-pub fn find_file_by_name<'a>(name: &str, possibilities: &'a Vec<PathBuf>) -> Option<&'a PathBuf> {
-    for file in possibilities {
-        let stem = file.file_stem();
-        if stem.is_none() {
-            continue;
-        };
-        let stem = stem.unwrap().to_str().unwrap();
-        if stem == name {
-            return Some(file);
-        }
-    }
-    None
-}

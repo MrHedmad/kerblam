@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 
 use crate::options::KerblamTomlOptions;
-use crate::utils::find_file_by_name;
+use crate::options::Pipe;
 
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
@@ -461,36 +461,46 @@ pub fn kerblam_run_project(
     profile: Option<String>,
     ignore_container: bool,
 ) -> Result<String> {
-    let pipes = config.pipes_paths();
-    let envs = config.env_paths();
+    let pipes = config.pipes();
+    let pipes_list = pipes
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
 
     let module_name = match module_name {
+        None => bail!("No runtime specified. Available runtimes:\n{}", pipes_list),
+        Some(name) => name,
+    };
+
+    let pipe = {
+        let mut hit: Option<Pipe> = None;
+        for pipe in pipes {
+            if pipe.name() == module_name {
+                hit = Some(pipe.clone())
+            }
+        }
+
+        hit
+    };
+
+    let pipe = match pipe {
         None => bail!(
-            "No runtime specified. Available runtimes:\n{}",
-            config.pipes_names_msg()
+            "Cannot find pipe {}. Available runtimes:\n{}",
+            module_name,
+            pipes_list
         ),
         Some(name) => name,
     };
 
-    let executor_file = find_file_by_name(&module_name, &pipes);
-    let environment_file = if ignore_container {
-        log::debug!("Skipping finding env file due to user input.");
-        None
+    let pipe = if ignore_container {
+        pipe.drop_env()
     } else {
-        find_file_by_name(&module_name, &envs)
+        pipe
     };
 
-    if executor_file.is_none() {
-        // We cannot find this executor. Warn the user and stop.
-        bail!(
-            "Could not find specified runtime '{module_name}'. Available pipes:\n{}",
-            config.pipes_names_msg()
-        )
-    }
-
     // Create an executor for later.
-    let executor: Executor =
-        Executor::create(runtime_dir, executor_file.unwrap(), environment_file)?;
+    let executor: Executor = pipe.to_executor(runtime_dir)?;
 
     // From here on we should not crash. Therefore, we have to catch SIGINTs
     // as the come in.

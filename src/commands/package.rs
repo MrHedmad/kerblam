@@ -5,7 +5,8 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::utils::{find_file_by_name, find_files};
+use crate::options::Pipe;
+use crate::utils::find_files;
 use crate::{
     commands::run::{setup_ctrlc_hook, ExecutionStrategy, Executor},
     options::KerblamTomlOptions,
@@ -22,38 +23,58 @@ use anyhow::{bail, Result};
 /// - `package_name`: The name of the docker image built by this execution.
 pub fn package_pipe(
     config: KerblamTomlOptions,
-    pipe: Option<String>,
+    pipe_name: Option<String>,
     package_name: &str,
 ) -> Result<()> {
-    log::debug!("Packaging pipe {pipe:?} as {package_name}");
+    log::debug!("Packaging pipe {pipe_name:?} as {package_name}");
+    let pipes = config.pipes();
     let here = current_dir()?;
-    let pipes = config.pipes_paths();
-    let envs = config.env_paths();
 
-    let pipe = match pipe {
+    let pipe_name = match pipe_name {
         None => bail!(
             "No runtime specified. Available runtimes:\n{}",
-            config.pipes_names_msg()
+            pipes
+                .into_iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>()
+                .join("\n")
         ),
         Some(name) => name,
     };
 
-    let executor_file = find_file_by_name(&pipe, &pipes);
-    let environment_file = find_file_by_name(&pipe, &envs);
+    let pipe = {
+        let mut hit: Option<Pipe> = None;
+        for pipe in pipes.clone() {
+            if pipe.name() == pipe_name {
+                hit = Some(pipe.clone())
+            }
+        }
 
-    if executor_file.is_none() {
-        // We cannot find this executor. Warn the user and stop.
-        bail!(
-            "Could not find specified runtime '{pipe}'\n{}",
-            config.pipes_names_msg()
-        )
-    }
-    // We cannot go on if we are not in a dockerized environment
-    let executor = Executor::create(&here, executor_file.unwrap(), environment_file)?;
+        hit
+    };
+
+    let pipe = match pipe {
+        None => bail!(
+            "Cannot find pipe {}. Available runtimes:\n{}",
+            pipe_name,
+            pipes
+                .into_iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>()
+                .join("\n")
+        ),
+        Some(name) => name,
+    };
+
+    // Create an executor for later.
+    let executor: Executor = pipe.to_executor(&here)?;
     let myself = current_exe()?;
 
     if !executor.has_env() {
-        bail!("Cannot proceed! Pipe {} has no related dockerfile.", pipe)
+        bail!(
+            "Cannot proceed! Pipe {:?} has no related dockerfile.",
+            pipe_name
+        )
     };
 
     // We have to setup the directory to be ready to be executed.
@@ -132,7 +153,7 @@ pub fn package_pipe(
         .expect("Could not launch program!");
 
     if res.status.success() {
-        println!("✅ Packaged pipe ({}) as {}!", &pipe, &package_name);
+        println!("✅ Packaged pipe ({}) as {}!", pipe_name, &package_name);
         Ok(())
     } else {
         bail!("Failed to package pipe!")
