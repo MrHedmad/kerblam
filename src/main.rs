@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 use anyhow::*;
+use openssl_probe::init_ssl_cert_env_vars;
 use options::parse_kerblam_toml;
 use std::{env::current_dir, path::PathBuf};
 
@@ -89,6 +90,8 @@ fn main() -> anyhow::Result<()> {
     // an Err, also calling `eprintln!(error)` for you.
     // So, we can just return the `StopError` when we get them.
     env_logger::init();
+    init_ssl_cert_env_vars();
+
     let here = &current_dir().unwrap();
     let args = Cli::parse();
 
