@@ -89,6 +89,7 @@ fn main() -> anyhow::Result<()> {
     // an Err, also calling `eprintln!(error)` for you.
     // So, we can just return the `StopError` when we get them.
     env_logger::init();
+
     let here = &current_dir().unwrap();
     let args = Cli::parse();
 
