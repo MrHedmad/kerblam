@@ -1,4 +1,5 @@
 use log;
+use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -386,28 +387,54 @@ fn push_fragment(buffer: impl AsRef<Path>, ext: &str) -> PathBuf {
     path.into()
 }
 
+fn infer_test_data(paths: Vec<PathBuf>) -> HashMap<PathBuf, PathBuf> {
+    let mut matches: HashMap<PathBuf, PathBuf> = HashMap::new();
+
+    for path in paths.clone() {
+        let file_name = path.file_name().unwrap().to_string_lossy();
+        if file_name.starts_with("test_") {
+            let slug = file_name.trim_start_matches("test_");
+            let potential_target = path.clone().with_file_name(slug);
+            if paths.iter().find(|x| **x == potential_target).is_some() {
+                matches.insert(potential_target, path);
+            }
+        }
+    }
+
+    matches
+}
+
 fn extract_profile_paths(
     config: &KerblamTomlOptions,
     profile_name: &str,
-    root_dir: impl AsRef<Path>,
 ) -> Result<Vec<FileMover>> {
-    let root_dir = root_dir.as_ref();
+    let root_dir = config.input_data_dir();
     // The call here was broken in 2 because the last `ok_or` makes a temporary
     // reference that does not live enough until the 'profile.iter()' call
     // later on. I'm not sure why this is the case, but separating the
     // calls fixes it.
-    let profiles = config
+    let mut profiles = config
         .clone()
         .data
         .ok_or(anyhow!("Missing 'data' field!"))?
         .profiles
         .ok_or(anyhow!("Missing 'profiles' field!"))?;
 
+    // add the default 'test' profile
+    if profiles.keys().find(|x| *x == "test").is_none() {
+        let input_files = config.input_files();
+        let inferred_test = infer_test_data(input_files);
+        if !inferred_test.is_empty() {
+            log::debug!("Inserted inferred test profile: {inferred_test:?}");
+            profiles.insert("test".to_string(), inferred_test);
+        }
+    }
+
     let profile = profiles
         .get(profile_name)
         .ok_or(anyhow!("Could not find {} profile", profile_name))?;
 
-    // Check if the sources exist, otherwise we crash now, and not leter
+    // Check if the sources exist, otherwise we crash now, and not later
     // when we actually move the files.
     let exist_check: Vec<anyhow::Error> = profile
         .iter()
@@ -478,8 +505,7 @@ pub fn kerblam_run_project(
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile {
         // This should mean that there is a profile with the same name in the
         // config...
-        let profile_paths =
-            extract_profile_paths(&config, profile.as_str(), runtime_dir.join("./data/in/"))?;
+        let profile_paths = extract_profile_paths(&config, profile.as_str())?;
         // Rename the paths that we found
         let move_results: Vec<Result<FileMover, anyhow::Error>> =
             profile_paths.into_iter().map(|x| x.rename()).collect();
