@@ -81,6 +81,9 @@ enum DataCommands {
         #[arg(long, short, action)]
         /// Do not delete locally present remote files.
         keep_remote: bool,
+        #[arg(long, short('d'), action)]
+        /// Do not delete locally present directories.
+        keep_dirs: bool,
     },
     // Pack local data for export to others
     Pack {
@@ -135,9 +138,10 @@ fn main() -> anyhow::Result<()> {
                 println!("{}", data_info)
             }
             Some(DataCommands::Fetch) => data::fetch_remote_data(config.unwrap())?,
-            Some(DataCommands::Clean { keep_remote }) => {
-                data::clean_data(config.unwrap(), keep_remote)?
-            }
+            Some(DataCommands::Clean {
+                keep_remote,
+                keep_dirs,
+            }) => data::clean_data(config.unwrap(), keep_remote, keep_dirs)?,
             Some(DataCommands::Pack { output_path: path }) => data::package_data_to_archive(
                 config.unwrap(),
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
