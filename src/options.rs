@@ -175,15 +175,39 @@ impl Pipe {
             env_path: None,
         }
     }
+
+    /// Generate a long description for this pipe
+    pub fn long_description(self) -> String {
+        let desc = self
+            .description()
+            .expect("Could not parse description file");
+        let header = format!("{}", self);
+        let header = header.trim();
+
+        match desc {
+            Some(desc) => match desc.body {
+                Some(body) => format!("{}\n{}", header, body),
+                None => format!("{}", header),
+            },
+            None => "No description found.".to_string(),
+        }
+    }
 }
 
 impl Display for Pipe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let prefix = if self.env_path.is_none() {
-            "\t"
+        let docker_prefix = if self.env_path.is_none() { "" } else { "🐋 " };
+        let desc_prefix = if self
+            .description()
+            .expect("Could not parse description file")
+            .is_none()
+        {
+            ""
         } else {
-            "\t🐋"
+            "📜 "
         };
+
+        let prefix = [docker_prefix, desc_prefix].concat();
 
         let desc = self
             .description()
@@ -191,10 +215,10 @@ impl Display for Pipe {
 
         match desc {
             Some(desc) => {
-                write!(f, "{} {} :: {}", prefix, self.name(), desc.header)
+                write!(f, "{}{} :: {}", prefix, self.name(), desc.header)
             }
             None => {
-                write!(f, "{} {}", prefix, self.name())
+                write!(f, "{}{}", prefix, self.name())
             }
         }
     }
