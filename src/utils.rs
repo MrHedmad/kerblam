@@ -98,6 +98,10 @@ where
 {
     loop {
         let t = ask(format!("{} [{}]: ", prompt, T::as_options())).unwrap();
+        if t.is_empty() {
+            println!("Please choose one option.");
+            continue;
+        }
         match T::try_from(t.to_ascii_lowercase().chars().next().unwrap()) {
             Ok(value) => return value,
             Err(_) => println!("'{}' is not in {}", t, T::as_options().as_str()),
