@@ -13,6 +13,7 @@ use crate::commands::new;
 use crate::commands::other;
 use crate::commands::package;
 use crate::commands::run;
+use crate::utils::find_pipe_by_name;
 
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -116,7 +117,8 @@ fn main() -> anyhow::Result<()> {
             local,
         } => {
             let config = config.unwrap(); // This is always safe due to the check above.
-            run::kerblam_run_project(config, module_name, &current_dir().unwrap(), profile, local)?;
+            let pipe = find_pipe_by_name(&config, module_name)?;
+            run::kerblam_run_project(config, pipe, &current_dir().unwrap(), profile, local)?;
         }
         Command::Data { subcommand } => match subcommand {
             None => {
@@ -135,7 +137,9 @@ fn main() -> anyhow::Result<()> {
         },
         Command::Package { pipe, name } => {
             let default_pipe_name = format!("{}_exec", &pipe.clone().unwrap_or("x".to_string()));
-            package::package_pipe(config.unwrap(), pipe, &name.unwrap_or(default_pipe_name))?;
+            let config = config.unwrap();
+            let pipe = find_pipe_by_name(&config, pipe)?;
+            package::package_pipe(config, pipe, &name.unwrap_or(default_pipe_name))?;
         }
         Command::Ignore {
             path_or_name,

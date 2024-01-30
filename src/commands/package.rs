@@ -21,50 +21,10 @@ use anyhow::{bail, Result};
 /// - `config`: The kerblam config for this execution.
 /// - `pipe`: The name of the pipe to execute
 /// - `package_name`: The name of the docker image built by this execution.
-pub fn package_pipe(
-    config: KerblamTomlOptions,
-    pipe_name: Option<String>,
-    package_name: &str,
-) -> Result<()> {
-    log::debug!("Packaging pipe {pipe_name:?} as {package_name}");
-    let pipes = config.pipes();
+pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) -> Result<()> {
+    let pipe_name = pipe.name();
+    log::debug!("Packaging pipe {pipe_name} as {package_name}...");
     let here = current_dir()?;
-
-    let pipe_name = match pipe_name {
-        None => bail!(
-            "No runtime specified. Available runtimes:\n{}",
-            pipes
-                .into_iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<String>>()
-                .join("\n")
-        ),
-        Some(name) => name,
-    };
-
-    let pipe = {
-        let mut hit: Option<Pipe> = None;
-        for pipe in pipes.clone() {
-            if pipe.name() == pipe_name {
-                hit = Some(pipe.clone())
-            }
-        }
-
-        hit
-    };
-
-    let pipe = match pipe {
-        None => bail!(
-            "Cannot find pipe {}. Available runtimes:\n{}",
-            pipe_name,
-            pipes
-                .into_iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<String>>()
-                .join("\n")
-        ),
-        Some(name) => name,
-    };
 
     // Create an executor for later.
     let executor: Executor = pipe.to_executor(&here)?;

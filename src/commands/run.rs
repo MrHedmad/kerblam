@@ -456,43 +456,11 @@ fn extract_profile_paths(
 
 pub fn kerblam_run_project(
     config: KerblamTomlOptions,
-    module_name: Option<String>,
+    pipe: Pipe,
     runtime_dir: &PathBuf,
     profile: Option<String>,
     ignore_container: bool,
 ) -> Result<String> {
-    let pipes = config.pipes();
-    let pipes_list = pipes
-        .iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    let module_name = match module_name {
-        None => bail!("No runtime specified. Available runtimes:\n{}", pipes_list),
-        Some(name) => name,
-    };
-
-    let pipe = {
-        let mut hit: Option<Pipe> = None;
-        for pipe in pipes {
-            if pipe.name() == module_name {
-                hit = Some(pipe.clone())
-            }
-        }
-
-        hit
-    };
-
-    let pipe = match pipe {
-        None => bail!(
-            "Cannot find pipe {}. Available runtimes:\n{}",
-            module_name,
-            pipes_list
-        ),
-        Some(name) => name,
-    };
-
     let pipe = if ignore_container {
         pipe.drop_env()
     } else {

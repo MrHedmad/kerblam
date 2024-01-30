@@ -8,7 +8,7 @@ use std::str::FromStr;
 use version_compare::Version;
 use walkdir;
 
-use crate::options::KerblamTomlOptions;
+use crate::options::{KerblamTomlOptions, Pipe};
 use crate::VERSION;
 
 /// Create a directory.
@@ -295,4 +295,41 @@ pub fn warn_kerblam_version(config: &KerblamTomlOptions) -> () {
             "⚠️  TOML version ({version}) is different from this kerblam version ({current_ver})!",
         )
     };
+}
+
+/// Find a pipe by name or die trying
+pub fn find_pipe_by_name(config: &KerblamTomlOptions, pipe_name: Option<String>) -> Result<Pipe> {
+    let pipes = config.pipes();
+    let pipes_list = pipes
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    let pipe_name = match pipe_name {
+        None => bail!("No runtime specified. Available runtimes:\n{}", pipes_list),
+        Some(name) => name,
+    };
+
+    let pipe = {
+        let mut hit: Option<Pipe> = None;
+        for pipe in pipes {
+            if pipe.name() == pipe_name {
+                hit = Some(pipe.clone())
+            }
+        }
+
+        hit
+    };
+
+    let pipe = match pipe {
+        None => bail!(
+            "Cannot find pipe {}. Available runtimes:\n{}",
+            pipe_name,
+            pipes_list
+        ),
+        Some(name) => name,
+    };
+
+    Ok(pipe)
 }
