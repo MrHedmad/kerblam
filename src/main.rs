@@ -39,6 +39,9 @@ enum Command {
         /// Optional data profile to run with
         #[arg(long)]
         profile: Option<String>,
+        /// Show pipe description and exit
+        #[arg(long, short, action)]
+        desc: bool,
         /// Do not run in container even if a container is available
         #[arg(long, short, action)]
         local: bool,
@@ -115,9 +118,14 @@ fn main() -> anyhow::Result<()> {
             module_name,
             profile,
             local,
+            desc,
         } => {
             let config = config.unwrap(); // This is always safe due to the check above.
             let pipe = find_pipe_by_name(&config, module_name)?;
+            if desc {
+                eprintln!("{}", pipe.long_description());
+                return Ok(());
+            }
             run::kerblam_run_project(config, pipe, &current_dir().unwrap(), profile, local)?;
         }
         Command::Data { subcommand } => match subcommand {
