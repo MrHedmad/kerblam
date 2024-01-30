@@ -7,7 +7,7 @@ use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use crate::new::normalize_path;
-use crate::options::KerblamTomlOptions;
+use crate::options::{KerblamTomlOptions, RemoteFile};
 use crate::utils::{ask_for, run_command, YesNo};
 
 use anyhow::{anyhow, bail, Result};
@@ -207,6 +207,31 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     if remote_files.is_empty() {
         println!("No remote files to fetch!");
         return Ok(());
+    }
+
+    // Check if any remote files will be saved somewhere else than the
+    // input data dir. If so, warn the user before continuing.
+    let data_dir = config.input_data_dir();
+    let non_canonical_files: Vec<&RemoteFile> = remote_files
+        .iter()
+        .filter(|x| !x.path.starts_with(&data_dir))
+        .collect();
+    if !non_canonical_files.is_empty() {
+        let msg = non_canonical_files
+            .into_iter()
+            .map(|x| x.path.clone().into_os_string().into_string().unwrap())
+            .map(|x| format!("\t- {}", x))
+            .reduce(|x, y| format!("{}\n{}", x, y))
+            .unwrap();
+        eprintln!(
+            "⚠️  Some target paths are not inside the input data directory:\n{}",
+            msg
+        );
+
+        let approve = ask_for::<YesNo>("Continue?");
+        if matches!(approve, YesNo::No) {
+            return Ok(());
+        }
     }
 
     let mut success = true;
