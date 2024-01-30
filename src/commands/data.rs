@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use crate::new::normalize_path;
 use crate::options::{KerblamTomlOptions, RemoteFile};
-use crate::utils::{ask_for, run_command, YesNo};
+use crate::utils::{ask_for, find_dirs, run_command, YesNo};
 
 use anyhow::{anyhow, bail, Result};
 use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
@@ -324,7 +324,43 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     }
 }
 
-pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool) -> Result<()> {
+fn delete_files(files: Vec<PathBuf>) -> Result<()> {
+    let progress = ProgressBar::new(files.len() as u64);
+
+    let mut failures: Vec<(PathBuf, std::io::Error)> = vec![];
+    for file in progress.wrap_iter(files.into_iter()) {
+        if file.metadata().unwrap().is_file() {
+            if let Err(e) = fs::remove_file(&file) {
+                failures.push((file, e));
+            }
+        } else {
+            if let Err(e) = fs::remove_dir(&file) {
+                failures.push((file, e))
+            }
+        }
+    }
+
+    if !failures.is_empty() {
+        bail!(
+            "Failed to clean some files:\n {}",
+            failures
+                .into_iter()
+                .map(|x| {
+                    format!(
+                        "\t- {}: {}\n",
+                        normalize_path(x.0.strip_prefix(current_dir().unwrap()).unwrap())
+                            .to_string_lossy(),
+                        x.1.to_string()
+                    )
+                })
+                .collect::<String>()
+        )
+    };
+
+    Ok(())
+}
+
+pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool, keep_dirs: bool) -> Result<()> {
     let cleanable_files = config.volatile_files();
     let remote_files: Vec<PathBuf> = config
         .remote_files()
@@ -332,6 +368,7 @@ pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool) -> Result<()> {
         .map(|remote| remote.path)
         .collect();
 
+    // Filter out the remote files if we so say
     let cleanable_files: Vec<PathBuf> = if keep_remote {
         cleanable_files
             .into_iter()
@@ -344,51 +381,81 @@ pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool) -> Result<()> {
         cleanable_files
     };
 
-    if cleanable_files.is_empty() {
-        println!("✨ Nothing to clean!");
+    log::debug!("Files to clean: {:?}", cleanable_files);
+
+    if !cleanable_files.is_empty() {
+        let question = format!(
+            "🧹 About to delete {} files ({}). Continue?",
+            cleanable_files.len(),
+            unsafe_path_filesize_conversion(&cleanable_files)
+                .into_iter()
+                .sum::<FileSize>()
+        );
+
+        match ask_for::<YesNo>(question.as_str()) {
+            YesNo::Yes => delete_files(cleanable_files.clone())?,
+            YesNo::No => {
+                bail!("Aborted!");
+            }
+        };
+    }
+
+    // After we cleanup the files, we can cleanup the directories
+    if keep_dirs {
+        if cleanable_files.is_empty() {
+            println!("✨ Nothing to clean!")
+        }
         return Ok(());
     }
 
-    let question = format!(
-        "🧹 About to delete {} files ({}). Continue?",
-        cleanable_files.len(),
-        unsafe_path_filesize_conversion(&cleanable_files)
+    // A tiny utility to get rid of filter paths that overlap
+    fn remove_useless_filters(target: &Path, filters: Vec<PathBuf>) -> Vec<PathBuf> {
+        filters
             .into_iter()
-            .sum::<FileSize>()
-    );
+            .filter(|x| !target.starts_with(x))
+            .collect()
+    }
 
-    let progress = ProgressBar::new(cleanable_files.len() as u64);
+    let dirs = [
+        find_dirs(
+            config.output_data_dir(),
+            Some(remove_useless_filters(
+                config.output_data_dir().as_ref(),
+                vec![config.input_data_dir(), config.intermediate_data_dir()],
+            )),
+        ),
+        find_dirs(
+            config.intermediate_data_dir(),
+            Some(remove_useless_filters(
+                config.intermediate_data_dir().as_ref(),
+                vec![config.input_data_dir(), config.output_data_dir()],
+            )),
+        ),
+    ]
+    .concat();
 
-    match ask_for::<YesNo>(question.as_str()) {
-        YesNo::Yes => {
-            let mut failures: Vec<(PathBuf, std::io::Error)> = vec![];
-            for file in progress.wrap_iter(cleanable_files.into_iter()) {
-                if let Err(e) = fs::remove_file(file.clone()) {
-                    failures.push((file.clone(), e));
-                }
-            }
+    // Remove the root directories we DO NOT want to clean.
+    let mut dirs: Vec<PathBuf> = dirs
+        .into_iter()
+        .filter(|x| *x != config.output_data_dir() && *x != config.intermediate_data_dir())
+        .collect();
 
-            if !failures.is_empty() {
-                bail!(
-                    "Failed to clean some files:\n {}",
-                    failures
-                        .into_iter()
-                        .map(|x| {
-                            format!(
-                                "\t- {}: {}\n",
-                                normalize_path(x.0.strip_prefix(current_dir().unwrap()).unwrap())
-                                    .to_string_lossy(),
-                                x.1.to_string()
-                            )
-                        })
-                        .collect::<String>()
-                )
-            };
+    // We need to sort the dirs from deepest to shallowest in order to
+    // delete them in order, or else `delete_files` just dies.
+    dirs.sort_unstable_by_key(|i| i.ancestors().count());
+    dirs.reverse();
+    log::debug!("Dirs to clean: {:?}", dirs);
+
+    if !dirs.is_empty() {
+        println!("🧹 Removing empty directories left behind...");
+        // This dies if the directory is not empty. So it's generally safe
+        // even if some bug introduces an error here.
+        delete_files(dirs)?;
+    } else {
+        if cleanable_files.is_empty() {
+            println!("✨ Nothing to clean!")
         }
-        YesNo::No => {
-            bail!("Aborted!");
-        }
-    };
+    }
 
     Ok(())
 }

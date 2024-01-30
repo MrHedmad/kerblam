@@ -6,7 +6,7 @@ use std::process::Command;
 use std::str::FromStr;
 
 use version_compare::Version;
-use walkdir;
+use walkdir::{self, DirEntry};
 
 use crate::options::{KerblamTomlOptions, Pipe};
 use crate::VERSION;
@@ -244,14 +244,24 @@ pub fn fetch_gitignore(name: &str) -> Result<String> {
     Ok(response)
 }
 
-pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
+fn find_path_items_with_filter(
+    inspected_path: impl AsRef<Path>,
+    top_level_filter: fn(&DirEntry) -> bool,
+    filters: Option<Vec<PathBuf>>,
+) -> Vec<PathBuf> {
     let inspected_path = inspected_path.as_ref();
 
     if let Some(filters) = filters {
+        // The filters are here to get rid of items that *might* be included
+        // by accident, especially when finding data paths.
+        //
+        // For example, if we want all files in /data/out but we want to
+        // preserve the files in /data/, we can add the /data/ filter.
         walkdir::WalkDir::new(inspected_path)
             .into_iter()
             .filter_map(|i| i.ok())
             .filter(|x| {
+                // If filter returns true, we return this path
                 let mut p = true;
                 for path in filters.clone() {
                     if x.path().starts_with(path) {
@@ -260,7 +270,7 @@ pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>
                 }
                 p
             })
-            .filter(|path| path.metadata().unwrap().is_file())
+            .filter(top_level_filter)
             .map(|x| x.path().to_owned())
             .collect()
     } else {
@@ -271,6 +281,14 @@ pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>
             .map(|x| x.path().to_owned())
             .collect()
     }
+}
+
+pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
+    find_path_items_with_filter(inspected_path, |x| x.metadata().unwrap().is_file(), filters)
+}
+
+pub fn find_dirs(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
+    find_path_items_with_filter(inspected_path, |x| x.metadata().unwrap().is_dir(), filters)
 }
 
 pub fn warn_kerblam_version(config: &KerblamTomlOptions) -> () {
