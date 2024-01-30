@@ -124,6 +124,7 @@ impl Executor {
         self,
         signal_receiver: Receiver<bool>,
         config: &KerblamTomlOptions,
+        env_vars: HashMap<String, String>,
     ) -> Result<()> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
@@ -161,6 +162,7 @@ impl Executor {
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .stdin(Stdio::inherit())
+                .envs(env_vars)
                 .spawn()
                 .expect("Cannot retrieve command output!")
         };
@@ -502,7 +504,7 @@ pub fn kerblam_run_project(
     let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
 
     // Handle renaming the input files if we are in a profile
-    let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile {
+    let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile.clone() {
         // This should mean that there is a profile with the same name in the
         // config...
         let profile_paths = extract_profile_paths(&config, profile.as_str())?;
@@ -543,8 +545,15 @@ pub fn kerblam_run_project(
         vec![]
     };
 
+    // Build the extra env vars that we want to set during the execution
+    let env_vars: HashMap<String, String> = if profile.is_some() {
+        HashMap::from([("KERBLAM_PROFILE".to_string(), profile.unwrap())])
+    } else {
+        HashMap::new()
+    };
+
     // Execute the executor
-    let runtime_result = executor.execute(sigint_rec, &config);
+    let runtime_result = executor.execute(sigint_rec, &config, env_vars);
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {
