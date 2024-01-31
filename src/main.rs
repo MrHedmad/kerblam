@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 
 use anyhow::*;
 use options::parse_kerblam_toml;
+use std::env::set_current_dir;
 use std::{env::current_dir, path::PathBuf};
 
 mod commands;
@@ -13,6 +14,7 @@ use crate::commands::new;
 use crate::commands::other;
 use crate::commands::package;
 use crate::commands::run;
+use crate::utils::find_kerblam_toml;
 use crate::utils::find_pipe_by_name;
 
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
@@ -97,18 +99,21 @@ fn main() -> anyhow::Result<()> {
     // So, we can just return the `StopError` when we get them.
     env_logger::init();
 
-    let here = &current_dir().unwrap();
     let args = Cli::parse();
+    let toml_file = find_kerblam_toml();
+
+    match toml_file {
+        // If we find a toml file, move the current working directory there.
+        Some(path) => set_current_dir(path.parent().unwrap())?,
+        None => (),
+    }
+    let here = &current_dir().unwrap();
 
     log::debug!("Kerblam is starting in {:?}", here);
 
     let config = parse_kerblam_toml(current_dir().unwrap().join("kerblam.toml"));
 
     if !matches!(args.command, Command::New { .. }) && config.is_err() {
-        // We cannot go forward with any command if we are not in
-        // a kerblam! project.
-        // TODO: Maybe we could check parent directories for a kerblam.toml
-        // file and run as if we were there.
         return Err(anyhow!("Failed to read the kerblam.toml file!").context(config.unwrap_err()));
     }
 
