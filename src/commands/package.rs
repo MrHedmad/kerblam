@@ -88,12 +88,13 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     let workdir = workdir.to_string_lossy();
     let content = match executor.strategy() {
         ExecutionStrategy::Make => format!(
-            "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && make {workdir}\"]"
+            "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && make -C {workdir} -f {workdir}/executor\"]"
         ),
         ExecutionStrategy::Shell => format!(
             "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && bash {workdir}/executor\"]"
         ),
     };
+    log::debug!("Execution string: {content}");
     let new_container_file_path = temp_build_dir.path().join("Containerfile");
     let mut new_container_file = File::create(&new_container_file_path)?;
     new_container_file.write_all(content.as_bytes())?;
