@@ -1,3 +1,4 @@
+use core::panic;
 use log;
 use std::collections::HashMap;
 use std::env::current_dir;
@@ -5,6 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 
+use crate::commands::new::normalize_path;
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
 
@@ -98,13 +100,18 @@ fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
         config.intermediate_data_dir(),
     ];
 
+    let host_workdir = config.execution.workdir.clone();
+
     for dir in dirs {
         // the folder here, in the local file system
         let local = dir.to_string_lossy().to_string();
         // the folder in the docker host
         let host = dir.strip_prefix(root.clone()).unwrap().to_string_lossy();
+        let host = host_workdir.join(format!("./{}", host));
+        let host = normalize_path(host.as_ref());
+        let host = host.to_string_lossy();
 
-        result.push(format!("{}:/{}", local, host))
+        result.push(format!("{}:{}", local, host))
     }
 
     result

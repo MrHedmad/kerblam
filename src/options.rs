@@ -71,6 +71,8 @@ pub struct KerblamTomlOptions {
 pub struct ExecutionOptions {
     #[serde(default)]
     pub backend: ContainerBackend,
+    #[serde(default = "_default_container_workdir")]
+    pub workdir: PathBuf,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -93,6 +95,11 @@ impl Into<String> for ContainerBackend {
             Self::Podman => "podman".into(),
         }
     }
+}
+
+// This exists only to circumvent Serde's weird #[default] behaviour
+fn _default_container_workdir() -> PathBuf {
+    PathBuf::from("/")
 }
 
 pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions> {
