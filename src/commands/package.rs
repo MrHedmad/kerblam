@@ -84,14 +84,14 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     log::debug!("Writing wrapper dockerfile.");
 
     // Write the dockerfile
+    let workdir = config.execution.workdir.clone();
+    let workdir = workdir.to_string_lossy();
     let content = match executor.strategy() {
         ExecutionStrategy::Make => format!(
-            "FROM {}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"./kerblam data fetch && make .\"]",
-            base_container
+            "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && make {workdir}\"]"
         ),
         ExecutionStrategy::Shell => format!(
-            "FROM {}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"./kerblam data fetch && bash executor\"]",
-            base_container
+            "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && bash {workdir}/executor\"]"
         ),
     };
     let mut new_dockerfile = File::create(temp_build_dir.path().join("Dockerfile"))?;
