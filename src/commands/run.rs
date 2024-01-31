@@ -136,6 +136,7 @@ impl Executor {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         let command_args = if self.env.is_some() {
+            // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
             let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
             let mut partial: Vec<String> = stringify![vec![&backend, "run", "-it"]];
