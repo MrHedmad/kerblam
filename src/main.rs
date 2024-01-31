@@ -57,7 +57,7 @@ enum Command {
     Package {
         /// The name of the pipe to package
         pipe: Option<String>,
-        /// The label of the exported docker image
+        /// The label of the exported container image
         #[arg(long)]
         name: Option<String>,
     },

@@ -105,7 +105,7 @@ fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
     for dir in dirs {
         // the folder here, in the local file system
         let local = dir.to_string_lossy().to_string();
-        // the folder in the docker host
+        // the folder in the host container
         let host = dir.strip_prefix(root.clone()).unwrap().to_string_lossy();
         let host = host_workdir.join(format!("./{}", host));
         let host = normalize_path(host.as_ref());
@@ -120,7 +120,7 @@ fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
 impl Executor {
     /// Execute this executor based on its data
     ///
-    /// Either builds and runs a docker container, or executes make and/or
+    /// Either builds and runs a container, or executes make and/or
     /// bash, depending on the strategy.
     ///
     /// Needs the kerblam config to work, as we need to bind-mount the
@@ -226,17 +226,17 @@ impl Executor {
 
         // Move the executor file
         cleanup.push(self.target.copy()?);
-        let dockerfile_path = self.env.clone().unwrap();
+        let containerfile_path = self.env.clone().unwrap();
 
-        let dockerfile_name = dockerfile_path
+        let containerfile_name = containerfile_path
             .file_name()
             .unwrap()
             .to_string_lossy()
             .to_string();
-        let env_name: String = dockerfile_name.split(".").take(1).collect();
+        let env_name: String = containerfile_name.split(".").take(1).collect();
         let env_name = env_name + "_kerblam_runtime";
 
-        let dockerfile_path = dockerfile_path.as_os_str().to_string_lossy().to_string();
+        let containerfile_path = containerfile_path.as_os_str().to_string_lossy().to_string();
 
         let builder = || {
             Command::new(backend)
@@ -244,7 +244,7 @@ impl Executor {
                 .args([
                     "build",
                     "-f",
-                    dockerfile_path.as_str(),
+                    containerfile_path.as_str(),
                     "--tag",
                     env_name.as_str(),
                     ".",
@@ -264,7 +264,7 @@ impl Executor {
 
         if !success {
             // Cleanup early.
-            log::debug!("Failed to build docker environment. Unwinding early.");
+            log::debug!("Failed to build container environment. Unwinding early.");
 
             for file in cleanup {
                 // The idea is that this cleanup should not fail, and anyway
