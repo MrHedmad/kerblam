@@ -145,20 +145,43 @@ impl Executor {
             for mount in mounts {
                 partial.extend(vec!["-v".to_string(), mount].into_iter())
             }
-            partial.push(runtime_name);
+
+            // Add the correct entrypoint override
+            let workdir = config.execution.workdir.clone();
+            let workdir = workdir.to_string_lossy();
+            let execution_command: Vec<String> = match self.strategy {
+                ExecutionStrategy::Make => stringify!(vec![
+                    "--entrypoint",
+                    "make",
+                    &runtime_name,
+                    "-f",
+                    &format!("{}/executor", workdir)
+                ]),
+                ExecutionStrategy::Shell => stringify!(vec![
+                    "--entrypoint",
+                    "bash",
+                    &runtime_name,
+                    &format!("{}/executor", workdir)
+                ]),
+            };
+
+            partial.extend(execution_command);
+
             partial
         } else {
             // This is a normal run.
             // Move the executor file
             cleanup.push(self.target.copy()?);
-            match self.strategy {
+            let execution_command = match self.strategy {
                 ExecutionStrategy::Make => {
                     stringify![vec!["make", "-f", self.target.to.to_str().unwrap()]]
                 }
                 ExecutionStrategy::Shell => {
                     stringify![vec!["bash", self.target.to.to_str().unwrap()]]
                 }
-            }
+            };
+
+            execution_command
         };
 
         log::debug!("Executor command arguments: {:?}", command_args);
