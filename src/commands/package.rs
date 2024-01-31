@@ -43,7 +43,8 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
 
     log::debug!("Building initial context...");
     let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
-    let base_container = executor.build_env(sigint_rec)?;
+    let backend: String = config.execution.backend.clone().into();
+    let base_container = executor.build_env(sigint_rec, &backend)?;
     log::debug!("Base container name: {base_container:?}");
 
     // We now start from this new docker and add our own layers, copying the
@@ -98,7 +99,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
 
     log::debug!("Packaging...");
     // Build this new container and tag it...
-    let res = Command::new("docker")
+    let res = Command::new(&backend)
         .args([
             "build",
             "--no-cache",

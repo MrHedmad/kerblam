@@ -129,8 +129,9 @@ impl Executor {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         let command_args = if self.env.is_some() {
-            let runtime_name = self.build_env(signal_receiver.clone())?;
-            let mut partial: Vec<String> = stringify![vec!["docker", "run", "-it"]];
+            let backend: String = config.execution.backend.clone().into();
+            let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
+            let mut partial: Vec<String> = stringify![vec![&backend, "run", "-it"]];
             // We need to bind-mount the same data dirs as specified in the options
             let mounts = generate_bind_mount_strings(config);
             for mount in mounts {
@@ -185,7 +186,7 @@ impl Executor {
     }
 
     /// Build the context of this executor and return its tag.
-    pub fn build_env(&self, signal_receiver: Receiver<bool>) -> Result<String> {
+    pub fn build_env(&self, signal_receiver: Receiver<bool>, backend: &str) -> Result<String> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         if self.env.is_none() {
@@ -207,7 +208,7 @@ impl Executor {
         let dockerfile_path = dockerfile_path.as_os_str().to_string_lossy().to_string();
 
         let builder = || {
-            Command::new("docker")
+            Command::new(backend)
                 // If the `self.env` path is not UTF-8 I'll eat my hat.
                 .args([
                     "build",
