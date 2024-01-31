@@ -62,6 +62,37 @@ pub struct KerblamTomlOptions {
     pub meta: Option<Meta>,
     pub data: Option<DataOptions>,
     pub code: Option<CodeOptions>,
+    #[serde(default)]
+    pub execution: ExecutionOptions,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct ExecutionOptions {
+    #[serde(default)]
+    pub backend: ContainerBackend,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum ContainerBackend {
+    Docker,
+    Podman,
+}
+
+impl Default for ContainerBackend {
+    fn default() -> Self {
+        Self::Docker
+    }
+}
+
+impl Into<String> for ContainerBackend {
+    fn into(self) -> String {
+        match self {
+            Self::Docker => "docker".into(),
+            Self::Podman => "podman".into(),
+        }
+    }
 }
 
 pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions> {
