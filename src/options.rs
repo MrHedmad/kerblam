@@ -234,7 +234,7 @@ impl Pipe {
 
 impl Display for Pipe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let docker_prefix = if self.env_path.is_none() { "" } else { "🐋 " };
+        let container_prefix = if self.env_path.is_none() { "" } else { "🐋 " };
         let desc_prefix = if self
             .description()
             .expect("Could not parse description file")
@@ -245,7 +245,7 @@ impl Display for Pipe {
             "📜 "
         };
 
-        let prefix = [docker_prefix, desc_prefix].concat();
+        let prefix = [container_prefix, desc_prefix].concat();
 
         let desc = self
             .description()

@@ -20,7 +20,7 @@ use anyhow::{bail, Result};
 ///
 /// - `config`: The kerblam config for this execution.
 /// - `pipe`: The name of the pipe to execute
-/// - `package_name`: The name of the docker image built by this execution.
+/// - `package_name`: The name of the container image built by this execution.
 pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) -> Result<()> {
     let pipe_name = pipe.name();
     log::debug!("Packaging pipe {pipe_name} as {package_name}...");
@@ -32,7 +32,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
 
     if !executor.has_env() {
         bail!(
-            "Cannot proceed! Pipe {:?} has no related dockerfile.",
+            "Cannot proceed! Pipe {:?} has no related container_file.",
             pipe_name
         )
     };
@@ -47,7 +47,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     let base_container = executor.build_env(sigint_rec, &backend)?;
     log::debug!("Base container name: {base_container:?}");
 
-    // We now start from this new docker and add our own layers, copying the
+    // We now start from this new container and add our own layers, copying the
     // precious files and more from the - not ignored - context.
     // We must work in a temporary directory, however.
     log::debug!("Starting to build temporary context...");
@@ -81,9 +81,9 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     log::debug!("Copying kerblam! executable to context...");
     copy(&myself, temp_build_dir.path().join("kerblam"))?;
 
-    log::debug!("Writing wrapper dockerfile.");
+    log::debug!("Writing wrapper container_file.");
 
-    // Write the dockerfile
+    // Write the container_file
     let workdir = config.execution.workdir.clone();
     let workdir = workdir.to_string_lossy();
     let content = match executor.strategy() {
@@ -94,14 +94,17 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
             "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && bash {workdir}/executor\"]"
         ),
     };
-    let mut new_dockerfile = File::create(temp_build_dir.path().join("Dockerfile"))?;
-    new_dockerfile.write_all(content.as_bytes())?;
+    let new_container_file_path = temp_build_dir.path().join("Containerfile");
+    let mut new_container_file = File::create(&new_container_file_path)?;
+    new_container_file.write_all(content.as_bytes())?;
 
     log::debug!("Packaging...");
     // Build this new container and tag it...
     let res = Command::new(&backend)
         .args([
             "build",
+            "-f",
+            &new_container_file_path.to_string_lossy(),
             "--no-cache",
             "--tag",
             package_name,
