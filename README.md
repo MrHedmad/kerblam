@@ -1,4 +1,4 @@
-![If you want it, Kerblam it!](docs/images/logo.png)
+![If you want it, Kerblam it!](https://raw.githubusercontent.com/MrHedmad/kerblam/main/docs/images/logo.png)
 <div align="center">
 
 ![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square&color=blue)

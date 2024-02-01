@@ -3,6 +3,20 @@ name = "kerblam"
 version = "0.3.0"
 edition = "2021"
 repository = "https://github.com/MrHedmad/kerblam"
+license = "MIT"
+description = "A project management tool for data science and bioinformatics"
+homepage = "https://github.com/MrHedmad/kerblam"
+authors = ["MrHedmad <luca.visentin@unito.it>"]
+readme = "README.md"
+keywords = ["data-science", "execution", "container", "command"]
+categories = ["command-line-utilities", "development-tools", "science", "virtualization"]
+exclude = [
+    "docs/", ".gitignore", ".github", ".all-contributorsrc",
+    ".pre-commit-config.yaml", "trun"
+]
+
+[badges]
+maintenance = {status = "actively-developed"}
 
 [profile.release]
 strip = true # Strip symbols from binary to make it smaller
