@@ -234,18 +234,21 @@ impl Pipe {
 
 impl Display for Pipe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let container_prefix = if self.env_path.is_none() { "" } else { "🐋 " };
+        let container_prefix = if self.env_path.is_none() { "" } else { "🐋" };
         let desc_prefix = if self
             .description()
             .expect("Could not parse description file")
-            .is_none()
+            .is_some_and(|x| x.body.is_some())
         {
-            ""
+            "📜"
         } else {
-            "📜 "
+            ""
         };
 
-        let prefix = [container_prefix, desc_prefix].concat();
+        let mut prefix = [container_prefix, desc_prefix].concat();
+        if !prefix.is_empty() {
+            prefix.push(' ');
+        }
 
         let desc = self
             .description()
