@@ -27,6 +27,11 @@ Kerblam! will:
 You can now start writing code!
 The rest of this tutorial outlines common tasks with which you can use `kerblam` for.
 
+> [!TIP]
+> Akin to `git`, kerblam! will look in parent directories for a `kerblam.toml`
+> file and run there if you call it from a project sub-folder.
+> Efficiency!
+
 ## Executing code - `kerblam run`
 Kerblam can be used to manage how your project is executed, where and on
 what input files.
@@ -51,8 +56,8 @@ structure and just one execution pipeline.
 Imagine however that you have to change your pipeline to run two different
 jobs which share a lot of code and input data but have slightly (or dramatically)
 different execution.
-You might modify your pipe to accept `if` statements, or perhaps write many of
-them and run them separately.
+You might modify your pipe to accept `if` statements, use environment variables
+or perhaps write many of them and run them separately.
 In any case, having a single file that has the job of running all the different
 pipelines is hard, adds complexity and makes managing the different execution
 scripts harder than it needs to be.
@@ -106,30 +111,41 @@ to only have a single contiguous description block in each file.
 The output of `kerblam run` will now read:
 ```
 Error: no runtime specified. Available runtimes:
-    process_csv :: Calculate the sums of the input metrics
+    📜 process_csv :: Calculate the sums of the input metrics
     🐋 save_plots
     generate_metrics
 ```
+The 📜 emoji appears when Kerblam! notices a long description.
+You can show the full description for such pipes with `kerblam run process_csv --desc`.
+
 Context!
 
 ### Containerized execution
-If Kerblam! finds a Dockerfile of the same name as one of your pipes in the
-`./src/dockerfiles/` folder (e.g. `./src/dockerfiles/process_csv.dockerfile`),
-it will:
-- Copy the dockerfile to the top folder, as `Dockerfile`;
-- Run `docker build --tag kerblam_runtime .` to build the container;
-- Run `docker run --rm -it -v ./data:/data kerblam_runtime`.
+If Kerblam! finds a container recipe (such as a Dockerfile) of the same name
+as one of your pipes in the `./src/dockerfiles/` folder
+(e.g. `./src/dockerfiles/process_csv.dockerfile`), it will use it automatically
+when you execute `kerblam run process_csv`.
+Specifically, it will:
+- Copy the pipeline to the root of the directory (as usual), as `./executor`;
+- Run `docker build -f ./src/dockerfiles/process_csv.dockerfile --tag process_csv_kerblam_runtime .` to build the container;
+- Run `docker run --rm -it -v ./data:/data --entrypoint make kerblam_runtime -f /executor`.
 
-If you have your docker container `COPY . .` and have `ENTRYPOINT make`
-(or `ENTRYPOINT bash`), you can then effectively have Kerblam! run your projects
-in docker environments, so you can tweak your dependencies and tooling
-(which might be different than your dev environment) and execute in a protected,
-reproducible environment.
+This last command runs the container, telling it to execute `make` with
+target file `-f /executor`.
+
+If you have your docker container `COPY . .`, you can then effectively have
+Kerblam! run your projects in docker environments, so you can tweak your
+dependencies and tooling (which might be different than your dev environment)
+and execute in a protected, reproducible environment.
 
 > [!IMPORTANT]
-> Kerblam! will build the docker environments without moving the dockerfiles.
+> Kerblam! will build the container images without moving the recipies around.
+> (this is what the `-f` flag does).
 > This means that you **have to write `.dockerignore` files in the `./src/dockerfiles`
 > directory instead of the root of the repository**.
+> The `dockerignore` and recipes will be executed as if they are in the root
+> of the repository (e.g. next to the `kerblam.toml` file), just as you would
+> if they were the only container recipe in your project.
 > 
 > As an added bonus, you can write custom dockerignores for each of your
 > docker containers as `pipe.dockerfile.dockerignore`.\
@@ -139,66 +155,72 @@ reproducible environment.
 > Neat!
 
 You can write dockerfiles for both `make` and `sh` pipes.
+Kerblam! configures automatically the correct entrypoint and arguments to run
+the pipe in the container.
 
-### Specifying data to run on
-By default, Kerblam! will use your `./data/in/` folder as-is when executing pipes.
-If you want the same pipes to run on different sets of input data, Kerblam! can
-temporarily swap out your real data with this 'substitute' data during execution.
+For example, you can have the following Dockerfile:
+```dockerfile
+# ./src/dockerfiles/process_csv.dockerfile
 
-For example, your `process_csv.makefile` requires an input `./data/in/input.csv` file.
-However, you might want to run the same pipe on another, `different_input.csv` file.
-You could copy and paste the first pipe, modify it on every file you wish to
-run differently. However, you then have to maintain two essentially identical
-pipelines, and you are prone to adding errors while you do so.
-You can use `kerblam` to do the same, but in a declarative, easy way.
+FROM ubuntu:latest
 
-Define in your `kerblam.toml` file a new section under `data.profiles`:
+RUN apt-get install python, python-pip \
+    pip install pandas
+
+COPY . .
+```
+and this dockerignore file:
+```dockerfile
+# ./src/dockerfiles/.dockerignore
+.git
+/data/out
+```
+and simply run `kerblam run process_csv` to build the container and run
+your code inside it.
+
+#### Switching backends
+Kerblam! runs containers by default with Docker, but you can tell it to use
+[Podman](https://podman.io/) instead by setting the `execution > backend`
+option in your `kerblam.toml`:
 ```toml
-# You can use any ASCII name in place of 'alternate'.
-[data.profiles.alternate]
-# The quotes are important!
-"input.csv" = "different_input.csv"
+[execution]
+backend = "podman" # by default "docker"
 ```
-You can then run the same makefile with the new data with:
+
+Podman is slightly harder to set up but has a few benefits, mainly not having
+to run in root mode, and being a FOSS program.
+For 90% of usecases, you can use `podman` instead of `docker` and it will 
+work exactly the same.
+Podman and Docker images are interchangeable, so you can use Podman with
+dockerhub with no issues.
+
+#### Setting the container working directory
+Kerblam! does not parse your dockerfile or add any magic to the calls that it
+makes based on heuristics.
+This means that if you wish to save your code not in the root of the container,
+you must tell kerblam! about it.
+
+For instance, this recipe copies the contents of the analysis in a folder
+called "`/app`":
+```dockerfile
+COPY . /app/
 ```
-kerblam run process_csv --profile alternate
+This one does the same by using the `WORKDIR` directive:
+```dockerfile
+WORKDIR /app
+COPY . .
 ```
-Under the hood, Kerblam! will:
-- Rename `input.csv` to `input.csv.original`;
-- Symlink `different_input.csv` to `input.csv`;
-- Run the analysis as normal;
-- When the run ends (or the analysis crashes), Kerblam! will remove the symlink
-  and rename `<hex>_input.csv` back to `input.csv`.
-
-This effectively causes the makefile run with different input data in this
-alternate run.
-
-> [!WARNING]
-> Careful that the *output* data will (most likely) be saved as the
-> same file names as a "normal" run! Kerblam! does not look into where the
-> output files are saved or what they are saved as.
-
-> [!WARNING]
-> Careful! As of now, kerblam! has no problem overwriting existing
-> files (e.g. `input.csv.original`) while running. See issue [#9](https://github.com/MrHedmad/kerblam/issues/9).
-
-This is most commonly useful to run the pipelines on test data that is faster to
-process or that produces pre-defined outputs. For example, you could define
-something similar to:
+If you change the working directory, let kerblam know by setting the
+`execution > workdir` option in `kerblam.toml`:
 ```toml
-[data.profiles.test]
-"input.csv" = "test_input.csv"
-"configs/config_file.yaml" = "configs/test_config_file.yaml"
+[execution]
+workdir = "/app"
 ```
-And execute your test run with `kerblam run pipe --profile test`.
+In this way, Kerblam! will run the containers with the proper paths.
 
-File paths specified under the `profiles` tab must be relative to the `./data/in/`
-folder.
-
-> [!TIP]
-> Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
-> delete temporary files, etc...) when you use `kerblam run`, even if the pipe
-> fails, and even if you kill your pipe with `CTRL-C`.
+> [!IMPORTANT]
+> This option applies to *ALL* containers managed by kerblam!
+> One for all, all for one!
 
 ## Managing local and remote data
 Kerblam! can help you retrieve remote data and manage your local data.
@@ -243,7 +265,7 @@ and therefore locally expendable for the sake of saving disk size (see the
 You can specify any number of URLs and file names in `[data.remote]`, one for
 each file that you wish to be downloaded.
 
-> [!NOTE]
+> [!TIP]
 > The download directory for all fetched data is `./data/in`, so if you specify
 > `some/nested/dir/file.txt`, kerblam! will save the file in
 > `./data/in/some/nested/dir/file.txt`.
@@ -252,7 +274,8 @@ each file that you wish to be downloaded.
 > If you write an absolute path (e.g. `/some_file.txt`) kerblam! will treat the
 > path as it should treat it - by making the `/some_file.txt` in the root of
 > the filesystem (and most likely failing to do so).
-> See issue #19 for a discussion on this point.
+> It will, however, warn you before acting that it is about to do something
+> potentially unwanted, giving you the chance to abort.
 
 ### `kerblam data clean` - Free local disk space safely
 If you want to cleanup your data (perhaps you have finished your work, and would
@@ -261,16 +284,29 @@ Kerblam! will remove:
 - All temporary files in `./data/`;
 - All output files in `./data/out`;
 - All input files that can be downloaded remotely in `./data/in`.
+- All empty (even nested) folders in `./data/` and `./data/out`.
 This essentially only leaves input data that cannot be retrieved remotely on
 disk.
 
 Kerblam! will consider as "remotely available" files that are present in the
 `data.remote` section of `kerblam.toml`.
 
+> [!TIP]
+> If you wish to preserve the remote data (perhaps you merely want to "reset"
+> the pipelines but start again quickly) you can use the `--keep-remote` flag to do so.
+
+> [!TIP]
+> If you want to preserve the empty folders left behind after cleaning,
+> pass the `--keep-dirs` flag to do just that.
+
 ### `kerblam data pack` - Package and export your local data
 Say that you wish to send all your data folder to a colleague for inspection.
 You can `tar -czvf exported_data.tar.gz ./data/` and send your whole data folder,
-but you might want to only pick the output and non-remotely available inputs.
+but you might want to only pick the output and non-remotely available inputs,
+and leave re-downloading the (potentially bulky) remote data to your colleague.
+
+> [!WARNING]
+> It is widely known that remembering `tar` commands is impossible.
 
 If you run `kerblam data pack` you can do just that.
 Kerblam! will create a `exported_data.tar.gz` file and save it locally with the
@@ -278,6 +314,81 @@ non-remotely-available `.data/in` files and the files in `./data/out`.
 You can also pass the `--cleanup` flag to also delete them after packing.
 
 You can then share the data pack with others.
+
+### Specifying data to run on
+By default, Kerblam! will use your `./data/in/` folder as-is when executing pipes.
+If you want the same pipes to run on different sets of input data, Kerblam! can
+temporarily swap out your real data with this 'substitute' data during execution.
+
+For example, your `process_csv.makefile` requires an input `./data/in/input.csv` file.
+However, you might want to run the same pipe on another, `different_input.csv` file.
+You could copy and paste the first pipe, modify it on every file you wish to
+run differently. However, you then have to maintain two essentially identical
+pipelines, and you are prone to adding errors while you do so.
+You can use `kerblam` to do the same, but in a declarative, easy way.
+
+Define in your `kerblam.toml` file a new section under `data.profiles`:
+```toml
+# You can use any ASCII name in place of 'alternate'.
+[data.profiles.alternate]
+# The quotes are important!
+"input.csv" = "different_input.csv"
+```
+You can then run the same makefile with the new data with:
+```
+kerblam run process_csv --profile alternate
+```
+Under the hood, Kerblam! will:
+- Rename `input.csv` to `input.csv.original`;
+- Move `different_input.csv` to `input.csv`;
+- Run the analysis as normal;
+- When the run ends (or the analysis crashes), Kerblam! will undo the move
+  and rename `input.csv.original` back to `input.csv`.
+
+This effectively causes the makefile run with different input data in this
+alternate run.
+
+> [!WARNING]
+> Careful that the *output* data will (most likely) be saved as the
+> same file names as a "normal" run! Kerblam! does not look into where the
+> output files are saved or what they are saved as.
+
+> [!WARNING]
+> Careful! As of now, kerblam! has no problem accidentally overwriting files that end in
+> `.original` in the input data directory (e.g. `input.csv.original`) while running.
+> See issue [#9](https://github.com/MrHedmad/kerblam/issues/9).
+> This is not a problem generally, but just so you know.
+
+This is most commonly useful to run the pipelines on test data that is faster to
+process or that produces pre-defined outputs. For example, you could define
+something similar to:
+```toml
+[data.profiles.test]
+"input.csv" = "test_input.csv"
+"configs/config_file.yaml" = "configs/test_config_file.yaml"
+```
+And execute your test run with `kerblam run pipe --profile test`.
+
+The profiles feature is used so commonly for test data that Kerblam! will
+automatically make a `test` profile for you, swapping all input files in the
+`./data/in` folder that start with `test_xxx` with their "regular" counterparts `xxx`.
+For example, the profile above is redundant!
+
+> [!TIP]
+> If you write a `[data.profiles.test]` profile yourself, Kerblam! will not
+> modify it in any way, effectively disabling the automatic test profile feature above.
+
+File paths specified under the `profiles` tab must be relative to the `./data/in/`
+folder.
+
+> [!TIP]
+> Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
+> delete temporary files, etc...) when you use `kerblam run`, even if the pipe
+> fails, and even if you kill your pipe with `CTRL-C`.
+
+Kerblam! will run the pipelines with the environment variable `KERBLAM_PROFILE`
+set to whatever the name of the profile is.
+In this way, you can detect from inside the pipeline if you are in a profile or not.
 
 ## `kerblam package` - Export an executable version of pipelines
 The `kerblam package` command is one of the most useful features of Kerblam!
@@ -297,12 +408,17 @@ If you execute
 kerblam package process --name my_process_package
 ```
 Kerblam! will:
-- Clone the `process` pipe to the root of the project;
-- Clone the `process.dockerfile` to the root of the project;
-- Edit the `Dockerfile`:
-  - Copy the non-remote input files to `/data/in` (i.e. the `precious.txt` file);
-  - Copy the Kerblam! executable to the root of the dockerfile;
-  - Configure the default command to `kerblam fetch && make .`
+- Create a temporary context;
+- Copy all precious files to the temporary context;
+- Copy all the `./src/` folder in the temporary context;
+- Move the pipe to the root of the project, naming it `executor` (as it does
+  when using `kerblam run`;
+- Build the specified dockerfile as normal, but using this temporary context;
+- Create a new `Dockerfile` that:
+  - Inherits from the image built before;
+  - Copies the Kerblam! executable to the root of the dockerfile;
+  - Configure the default execution command to something suitable for execution
+    (just like `kerblam run` does, but "baked in").
 - Build the docker container and tag it with `my_process_package`;
 
 > [!TIP]
@@ -314,7 +430,8 @@ After Kerblam! packages your project, you can re-run the analysis with:
 ```bash
 docker run --rm -it -v /some/output/dir:/data/in my_process_package
 ```
-In the container, Kerblam! fetches remote files and then the pipeline is triggered.
+In the container, Kerblam! fetches remote files (i.e. runs `kerblam data fetch`)
+and then the pipeline is triggered.
 Since the output folder is attached to the output directory on disk, the 
 final output of the pipeline is saved locally.
 
@@ -328,16 +445,18 @@ For day-to-day runs, `kerblam run` is still better.
 > package made by `kerblam package` to work, but depending on your docker
 > files this might not be the case.
 >
-> For example, ubuntu docker containers may need to install `ca-certificates`
-> to allow `kerblam` to fetch the remote data from inside the container.
->
 > Kerblam! does not test the resulting package - it's up to you to do that.
+> It's best to try your packaged pipeline once before shipping it off.
 
 > [!TIP]
 > Even a broken `kerblam package` is still useful!
 > You can always enter with `--entrypoint bash` and interactively work inside the
 > container later, manually fixing any issues that time or wrong setup might
 > have introduced.
+
+> [!TIP]
+> Kerblam! respects your choices of `execution` options when it packages,
+> changing backend or working directory as you'd expect.
 
 ## `kerblam ignore` - Add items to your `.gitignore` quickly
 Oops! You forgot to include your preferred language to your `.gitignore`.
