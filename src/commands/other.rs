@@ -20,8 +20,7 @@ fn compress_whitespace(items: Vec<&str>) -> Vec<&str> {
     let mut compressed: Vec<&str> = Vec::with_capacity(items.len());
     let mut previous = items
         .iter()
-        .skip_while(|x| is_whitespace(x))
-        .next()
+        .find(|x| !is_whitespace(x))
         .unwrap_or(&items[0]);
     let mut iter = items.iter().skip_while(|x| is_whitespace(x));
     iter.next();

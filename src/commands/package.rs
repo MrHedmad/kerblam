@@ -27,7 +27,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     let here = current_dir()?;
 
     // Create an executor for later.
-    let executor: Executor = pipe.to_executor(&here)?;
+    let executor: Executor = pipe.into_executor(&here)?;
     let myself = current_exe()?;
 
     if !executor.has_env() {
