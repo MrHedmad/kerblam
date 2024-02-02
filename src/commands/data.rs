@@ -10,11 +10,13 @@ use crate::options::{KerblamTomlOptions, RemoteFile};
 use crate::utils::normalize_path;
 use crate::utils::{ask_for, find_dirs, run_command, YesNo};
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
 use reqwest::blocking::Client;
+use url::Url;
 
 #[derive(Debug, Clone)]
+/// Wrapper to interpret a usize as a File size.
 struct FileSize {
     size: usize,
 }
@@ -74,11 +76,13 @@ impl Display for FileSize {
         let mut res_size = self.size;
 
         // I want to reduce the size only if the number is greater than 1
-        // of the next size
+        // of the next size.
+        // These are "traditional" bytes, so it's 1024 for each filesize
         while res_size > 1024 {
             symbol += 1;
             res_size /= 1024;
             if symbol > 4 {
+                // If we get to petabytes, it's best if we stop now.
                 break;
             };
         }
@@ -199,6 +203,10 @@ fn unsafe_path_filesize_conversion(items: &[PathBuf]) -> Vec<FileSize> {
         .collect()
 }
 
+/// Fetch the remote files specified in the options
+///
+/// Shows a pretty download bar for each, and gracefully handles files
+/// that are already there to begin with.
 pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     // I work with this instead of undownloaded_files() to show a message
     // when the file is already there, but it's a choice I guess.
@@ -235,9 +243,36 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     }
 
     let mut success = true;
-
     let client = Client::new();
 
+    for file in remote_files {
+        // Stop if the file is already there
+        if file.path.exists() {
+            let filename = file.path.file_name().unwrap().to_string_lossy();
+            println!("✅ file {} exists!", filename);
+            continue;
+        }
+
+        if let Err(msg) = fetch_remote_file(&client, file.url, file.path) {
+            eprintln!("{}", msg);
+            success = false;
+        }
+    }
+
+    if !success {
+        bail!("Something failed to be retrieved.")
+    }
+
+    Ok(())
+}
+
+/// Fetch a remote file `url` and save it to `target` using `client`
+///
+/// The fetching is nicely wrapped up into a progress bar that shows
+/// the download progress.
+/// If the download fails, the progress bar is cleaned up an this function
+/// returns the error.
+fn fetch_remote_file(client: &Client, url: Url, target: PathBuf) -> Result<()> {
     let spinner_bar_style =
         ProgressStyle::with_template("⬇️  [{binary_bytes_per_sec}] {msg} {spinner} ({elapsed})")
             .unwrap();
@@ -245,85 +280,67 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
         "⬇️  [{binary_bytes_per_sec}] {msg} {wide_bar} {eta} ({elapsed})",
     )
     .unwrap();
+    let filename = target.file_name().unwrap().to_string_lossy();
+    let created_msg = format!("Created {}!", filename);
+    let bar_msg = format!("Fetching {}", filename);
 
-    for file in remote_files {
-        // Stop if the file is already there
-        let filename = file.path.file_name().unwrap().to_string_lossy();
-
-        if file.path.exists() {
-            println!("✅ file {} exists!", filename);
-            continue;
+    let mut result = match client.get(url).send() {
+        Ok(res) => res,
+        Err(e) => {
+            bail!("Failed to fetch {}! {}", target.to_string_lossy(), e);
         }
+    };
+    // See if we have the content size
+    let size = result
+        .headers()
+        .get("content-length")
+        .and_then(|val| val.to_str().unwrap().parse::<u64>().ok());
 
-        let created_msg = format!("Created {}!", filename);
-        let bar_msg = format!("Fetching {}", filename);
+    let progress = match size {
+        None => ProgressBar::new_spinner()
+            .with_style(spinner_bar_style.clone())
+            .with_message(bar_msg)
+            .with_finish(ProgressFinish::WithMessage(Cow::from(created_msg))),
+        Some(val) => ProgressBar::new(val)
+            .with_style(bar_style.clone())
+            .with_message(bar_msg)
+            .with_finish(ProgressFinish::WithMessage(Cow::from(created_msg))),
+    };
 
-        let mut result = match client.get(file.url).send() {
-            Ok(res) => res,
-            Err(e) => {
-                println!("Failed to fetch {}! {}", filename, e);
-                success = false;
-                continue;
-            }
-        };
-        // See if we have the content size
-        let size = result
-            .headers()
-            .get("content-length")
-            .and_then(|val| val.to_str().unwrap().parse::<u64>().ok());
+    if !result.status().is_success() {
+        progress.finish_and_clear();
+        bail!(
+            "❌ Failed retrieving {}! {} ({})",
+            filename,
+            result.status().canonical_reason().unwrap(),
+            result.status().as_str()
+        );
+    }
 
-        let progress = match size {
-            None => ProgressBar::new_spinner()
-                .with_style(spinner_bar_style.clone())
-                .with_message(bar_msg)
-                .with_finish(ProgressFinish::WithMessage(Cow::from(created_msg))),
-            Some(val) => ProgressBar::new(val)
-                .with_style(bar_style.clone())
-                .with_message(bar_msg)
-                .with_finish(ProgressFinish::WithMessage(Cow::from(created_msg))),
-        };
-
-        if !result.status().is_success() {
+    // Create the container dir and open a file connection
+    let _ = create_dir_all(target.parent().unwrap());
+    let writer = match fs::File::create(target) {
+        Ok(f) => f,
+        Err(e) => {
+            // We are failing but we still clear the bar as normal
             progress.finish_and_clear();
-            eprintln!(
-                "❌ Failed retrieving {}! {} ({})",
-                filename,
-                result.status().canonical_reason().unwrap(),
-                result.status().as_str()
-            );
-            success = false;
-            continue;
+            bail!("Failed to create output file! {e:?}")
         }
+    };
 
-        // Create the container dir and open a file connection
-        let _ = create_dir_all(file.path.parent().unwrap());
-        let writer = match fs::File::create(file.path) {
-            Ok(f) => f,
-            Err(e) => {
-                progress.abandon_with_message(Cow::from(format!(
-                    " ❌ Failed to create output file! {e:?}"
-                )));
-                success = false;
-                continue;
-            }
-        };
+    match result.copy_to(&mut progress.wrap_write(writer)) {
+        Ok(_) => progress.finish_using_style(),
+        Err(e) => {
+            bail!(" ❌ Failed to write to output buffer: {e}");
+        }
+    };
 
-        match result.copy_to(&mut progress.wrap_write(writer)) {
-            Ok(_) => progress.finish_using_style(),
-            Err(e) => {
-                println!(" ❌ Failed to write to output buffer: {e}");
-                success = false;
-            }
-        };
-    }
-
-    if success {
-        Ok(())
-    } else {
-        Err(anyhow!("Something failed to be retrieved."))
-    }
+    Ok(())
 }
 
+/// Delete a list of files
+///
+/// This shows a nice progress bar while the deletion is in progress.
 fn delete_files(files: Vec<PathBuf>) -> Result<()> {
     let progress = ProgressBar::new(files.len() as u64);
 
