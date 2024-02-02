@@ -6,14 +6,15 @@ use std::env::{set_current_dir, Args};
 use std::{env::current_dir, path::PathBuf};
 
 mod commands;
+mod execution;
 mod options;
 mod utils;
 
-use crate::commands::data;
-use crate::commands::new;
-use crate::commands::other;
-use crate::commands::package;
-use crate::commands::run;
+use commands::{
+    clean_data, create_kerblam_project, fetch_remote_data, get_data_status, ignore,
+    kerblam_run_project, package_data_to_archive, package_pipe,
+};
+
 use crate::utils::find_kerblam_toml;
 use crate::utils::find_pipe_by_name;
 
@@ -99,7 +100,7 @@ pub fn kerblam(arguments: Args) -> anyhow::Result<()> {
 
     if let Command::New { path } = args.command {
         eprintln!("Creating a new project in {:?}!", path);
-        new::create_kerblam_project(&path)?;
+        create_kerblam_project(&path)?;
         return Ok(());
     };
 
@@ -135,19 +136,19 @@ pub fn kerblam(arguments: Args) -> anyhow::Result<()> {
                 eprintln!("{}", pipe.long_description());
                 return Ok(());
             }
-            run::kerblam_run_project(config, pipe, &current_dir().unwrap(), profile, local)?;
+            kerblam_run_project(config, pipe, &current_dir().unwrap(), profile, local)?;
         }
         Command::Data { subcommand } => match subcommand {
             None => {
-                let data_info = data::get_data_status(config)?;
+                let data_info = get_data_status(config)?;
                 println!("{}", data_info)
             }
-            Some(DataCommands::Fetch) => data::fetch_remote_data(config)?,
+            Some(DataCommands::Fetch) => fetch_remote_data(config)?,
             Some(DataCommands::Clean {
                 keep_remote,
                 keep_dirs,
-            }) => data::clean_data(config, keep_remote, keep_dirs)?,
-            Some(DataCommands::Pack { output_path: path }) => data::package_data_to_archive(
+            }) => clean_data(config, keep_remote, keep_dirs)?,
+            Some(DataCommands::Pack { output_path: path }) => package_data_to_archive(
                 config,
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
@@ -155,13 +156,14 @@ pub fn kerblam(arguments: Args) -> anyhow::Result<()> {
         Command::Package { pipe, name } => {
             let default_pipe_name = format!("{}_exec", &pipe.clone().unwrap_or("x".to_string()));
             let pipe = find_pipe_by_name(&config, pipe)?;
-            package::package_pipe(config, pipe, &name.unwrap_or(default_pipe_name))?;
+            package_pipe(config, pipe, &name.unwrap_or(default_pipe_name))?;
         }
         Command::Ignore {
             path_or_name,
             compress,
         } => {
-            other::ignore(current_dir()?.join(".gitignore"), &path_or_name, compress)?;
+            let gitignore_path = here.join(".gitignore");
+            ignore(gitignore_path, &path_or_name, compress)?;
         }
     };
 

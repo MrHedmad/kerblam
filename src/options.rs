@@ -10,11 +10,8 @@ use std::{collections::HashMap, path::PathBuf};
 use anyhow::Result;
 use url::Url;
 
-use crate::commands::run::Executor;
+use crate::execution::Executor;
 use crate::utils::{find_files, warn_kerblam_version};
-
-// TODO: Remove the #[allow(dead_code)] calls when we actually use the
-// options here.
 
 // Note: i keep all the fields that are not used to private until we
 // actually support their usage.
@@ -25,16 +22,13 @@ use crate::utils::{find_files, warn_kerblam_version};
 //      most of this code by allowing access to nested 'Option'-heavy structs
 //      but for the love of god I can't get it to work.
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct DataPaths {
     input: Option<PathBuf>,
     output: Option<PathBuf>,
     intermediate: Option<PathBuf>,
-    temporary: Option<PathBuf>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct DataOptions {
     pub paths: Option<DataPaths>,
@@ -43,20 +37,17 @@ pub struct DataOptions {
     pub remote: Option<HashMap<Url, PathBuf>>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct CodeOptions {
     pub env_dir: Option<PathBuf>,
     pub pipes_dir: Option<PathBuf>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct Meta {
     pub version: Option<String>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct KerblamTomlOptions {
     pub meta: Option<Meta>,
@@ -66,7 +57,6 @@ pub struct KerblamTomlOptions {
     pub execution: ExecutionOptions,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct ExecutionOptions {
     #[serde(default)]

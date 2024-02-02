@@ -6,8 +6,8 @@ use std::iter::Sum;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
-use crate::new::normalize_path;
 use crate::options::{KerblamTomlOptions, RemoteFile};
+use crate::utils::normalize_path;
 use crate::utils::{ask_for, find_dirs, run_command, YesNo};
 
 use anyhow::{anyhow, bail, Result};
