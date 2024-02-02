@@ -13,6 +13,20 @@ use crossbeam_channel::{bounded, Receiver};
 use ctrlc;
 use filetime::{set_file_mtime, FileTime};
 
+// TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
+// functions can be simplified a lot.
+// E.g. make a "cleanup: Option<Vec<PathBuf>>" to the Executor and remove
+// (without returing the fail) the files specified in the vector (if any)
+// so that we can stop at any time and still be sure to cleanup.
+// The same idea could be used for the FileRenamers, but we'd need to be
+// careful on when they are dropped.
+
+/// Create a recevier that emits `true` when a SIGINT is received
+///
+/// The receiver queue is of 2 slots. If two signals are sent but not received,
+/// the function panics.
+/// This is to allow many SIGINTS to actually immediately kill this program
+/// if the user really wants to.
 pub fn setup_ctrlc_hook() -> Result<Receiver<bool>> {
     let (sender, receiver) = bounded(2);
 
@@ -28,21 +42,20 @@ pub fn setup_ctrlc_hook() -> Result<Receiver<bool>> {
     Ok(receiver)
 }
 
+/// Encapsulate what file to execute and how to execute it
+///
+/// Fields must be private as they depend on eachother.
 pub struct Executor {
+    /// A `FileMover` that targets the file to execute.
+    /// The analysis will be based on the `to` field.
     target: FileMover,
+    /// Optionally, the path to the container file to execute inside of
     env: Option<PathBuf>,
+    /// The execution strategy. Depends on which target to execute.
     strategy: ExecutionStrategy,
-    // executor_path
 }
 
-// TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
-// functions can be simplified a lot.
-// E.g. make a "cleanup: Option<Vec<PathBuf>>" to the Executor and remove
-// (without returing the fail) the files specified in the vector (if any)
-// so that we can stop at any time and still be sure to cleanup.
-// The same idea could be used for the FileRenamers, but we'd need to be
-// careful on when they are dropped.
-
+/// Stringify a something that can be iterated upon of non-strings.
 macro_rules! stringify {
     ( $x:expr ) => {{
         $x.into_iter().map(|x| x.to_string()).collect()
@@ -50,6 +63,12 @@ macro_rules! stringify {
 }
 
 /// Generate a series of strings suitable for -v options to bind the data dirs
+///
+/// This generates a binding for each of the input/output/intermediate data
+/// dirs and makes a `-v` argument that can be passed to the backend in order
+/// to mimick the local file system in the container.
+///
+/// Returns a vector of strings with the various `-v source:sink` options.
 fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
     let mut result: Vec<String> = vec![];
     let root = current_dir().unwrap();
@@ -64,11 +83,11 @@ fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
 
     for dir in dirs {
         // the folder here, in the local file system
-        let local = dir.to_string_lossy().to_string();
+        let local = dir.to_string_lossy();
         // the folder in the host container
-        let host = dir.strip_prefix(root.clone()).unwrap().to_string_lossy();
+        let host = dir.strip_prefix(&root).unwrap().to_string_lossy();
         let host = host_workdir.join(format!("./{}", host));
-        let host = normalize_path(host.as_ref());
+        let host = normalize_path(&host);
         let host = host.to_string_lossy();
 
         result.push(format!("{}:{}", local, host))
@@ -81,12 +100,13 @@ impl Executor {
     /// Execute this executor based on its data
     ///
     /// Either builds and runs a container, or executes make and/or
-    /// bash, depending on the strategy.
+    /// bash, depending on the execution strategy.
     ///
-    /// Needs the kerblam config to work, as we need to bind-mount the
-    /// same data paths as locally needed.
+    /// Needs the kerblam config to work, as we need to bind-mount the local
+    /// paths in the containers as locally needed and follow other settings.
     ///
-    /// Destroys itself in the process.
+    /// Destroys itself in the process, as it might change the state of the
+    /// filesystem and therefore invalidate itself during execution.
     pub fn execute(
         self,
         signal_receiver: Receiver<bool>,
@@ -176,6 +196,8 @@ impl Executor {
     }
 
     /// Build the context of this executor and return its tag.
+    ///
+    /// If the executor has no environment file, this function fails.
     pub fn build_env(&self, signal_receiver: Receiver<bool>, backend: &str) -> Result<String> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
@@ -183,13 +205,13 @@ impl Executor {
             bail!("Cannot build environment with no environment file.")
         }
 
-        // Move the executor file
+        // Move the executor file and register it for cleanup
         cleanup.push(self.target.copy()?);
         let containerfile_path = self.env.clone().unwrap();
 
         let containerfile_name = containerfile_path
             .file_name()
-            .unwrap()
+            .unwrap() // Should be safe
             .to_string_lossy()
             .to_string();
         let env_name: String = containerfile_name.split('.').take(1).collect();
@@ -216,7 +238,7 @@ impl Executor {
         };
 
         let success = match run_protected_command(builder, signal_receiver.clone()) {
-            Ok(CommandResult::Exited { res: _ }) => true,
+            Ok(CommandResult::Exited { res }) => res.success(),
             Ok(CommandResult::Killed) => false,
             Err(_) => false,
         };
@@ -242,6 +264,17 @@ impl Executor {
         Ok(env_name)
     }
 
+    /// Create a new executor
+    ///
+    /// The execution strategy is inferred from the name of the executor file
+    /// and if an environment is passed.
+    ///
+    /// # Arguments
+    /// - `root_path`: The folder where this executor will be executed
+    /// - `executor`: The file to execute.
+    ///   If `*.makefile`, use `ExecutionStrategy::Make`.
+    ///   If `*.sh`, use `ExecutionStrategy::Shell`
+    /// - `environment`: The containerfile to run this executor with, if any.
     pub fn create(
         root_path: impl AsRef<Path>,
         executor: impl AsRef<Path>,
@@ -249,9 +282,6 @@ impl Executor {
     ) -> Result<Self> {
         let executor = executor.as_ref();
         let root_path = root_path.as_ref().to_path_buf();
-        if !executor.exists() {
-            bail!("Executor file {executor:?} does not exist");
-        }
 
         let target_mover = FileMover {
             from: executor.to_path_buf(),
@@ -310,6 +340,9 @@ pub enum ExecutionStrategy {
 impl Copy for ExecutionStrategy {}
 
 #[derive(Debug, Clone)]
+/// Struct to conveniently move, copy or symlink two files
+///
+/// Has convenience methods to move files around and undo these moves if needed.
 pub struct FileMover {
     from: PathBuf,
     to: PathBuf,
@@ -318,8 +351,8 @@ pub struct FileMover {
 impl FileMover {
     /// Rename the files, destroying this file mover and making the reverse.
     ///
-    /// This also updates the last modification time to the present, to
-    /// let `make` know that we must regenerate the files.
+    /// Works identically to `mv`, but returns a new `FileMover` that can be
+    /// used to quickly undo the move.
     pub fn rename(self) -> Result<FileMover> {
         log::debug!("Moving {:?} to {:?}", self.from, self.to);
         fs::rename(&self.from, &self.to)?;
@@ -351,7 +384,16 @@ impl FileMover {
 
     /// Invert this object, creating a new one with swapped from/to fields.
     ///
-    /// Takes ownership of itself, therefore destroying the original.
+    /// This function destroys this original object.
+    ///
+    /// ```rust
+    /// let original = FileMover {
+    ///     from : PathBuf::from("/from.txt"),
+    ///     to: PathBuf::from("/to.txt")
+    /// };
+    ///
+    /// assert_eq(original, original.clone().invert().invert());
+    /// ```
     pub fn invert(self) -> Self {
         Self {
             from: self.to,
@@ -369,21 +411,28 @@ impl<F: Into<PathBuf>, T: Into<PathBuf>> From<(F, T)> for FileMover {
     }
 }
 
-#[allow(dead_code)]
 enum CommandResult {
     Exited { res: ExitStatus },
     Killed,
 }
 
+/// Run a command but keep listening to events.
+///
+/// Takes whatever command is executed by `cmd_builder` and runs it.
+/// While the child is running, listens every 50ms to `receiver` for a `true` signal.
+/// Upon receiving such a signal, kill the child early and return.
+///
+/// Useful to catch external events such as SIGKILL or SIGINT during the
+/// execution of a command and redirect them to kill the children, and not
+/// the currently running process.
+///
+/// Returns an error if the child cannot be killed.
+/// Panics if something really bad happens and the kernel cannot get a handle
+/// on what the child is doing.
 fn run_protected_command<F>(cmd_builder: F, receiver: Receiver<bool>) -> Result<CommandResult>
 where
     F: FnOnce() -> Child,
 {
-    // check if we have to kill the child even before being spawned
-    if let Ok(true) = receiver.try_recv() {
-        bail!("Not starting with pending SIGINT!")
-    };
-
     let mut child = cmd_builder();
 
     loop {

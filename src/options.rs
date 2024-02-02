@@ -255,12 +255,10 @@ impl Display for Pipe {
     }
 }
 
-// TODO: These methods are repetitive, verbose and ugly
-// There must be better ways to do this, but I'm looking for something
-// quick and dirty to get the job done.
-
 impl KerblamTomlOptions {
-    /// Return objects representing remote files specified in the config
+    /// Return all paths representing remote files specified in the config
+    ///
+    /// This includes **all** the files, including those not yet downloaded.
     pub fn remote_files(&self) -> Vec<RemoteFile> {
         let root_data_dir = self.input_data_dir();
         log::debug!("Remote file save dir is {root_data_dir:?}");
@@ -276,10 +274,10 @@ impl KerblamTomlOptions {
                     })
                     .collect()
             })
-            .unwrap_or_default()
+            .unwrap_or_default() // The default vec is just empty
     }
 
-    // Return the path to the input data directory
+    /// Return the path of the input data directory
     pub fn input_data_dir(&self) -> PathBuf {
         current_dir().unwrap().join(
             self.data
@@ -289,6 +287,8 @@ impl KerblamTomlOptions {
                 .unwrap_or(PathBuf::from("data/in")),
         )
     }
+
+    /// Return the path of the output data directory
     pub fn output_data_dir(&self) -> PathBuf {
         current_dir().unwrap().join(
             self.data
@@ -298,6 +298,8 @@ impl KerblamTomlOptions {
                 .unwrap_or(PathBuf::from("data/out")),
         )
     }
+
+    /// Return the path of the intermediate data directory
     pub fn intermediate_data_dir(&self) -> PathBuf {
         current_dir().unwrap().join(
             self.data
@@ -307,21 +309,14 @@ impl KerblamTomlOptions {
                 .unwrap_or(PathBuf::from("data")),
         )
     }
-    pub fn temporary_data_dir(&self) -> PathBuf {
-        current_dir().unwrap().join(
-            self.data
-                .clone()
-                .and_then(|x| x.paths)
-                .and_then(|x| x.input)
-                .unwrap_or(PathBuf::from("/tmp")),
-        )
-    }
 
+    /// Extract the content of input/output/intermediate directories
+    ///
+    /// The `target` is a folder.
     fn extract_dir(&self, target: PathBuf) -> Vec<PathBuf> {
         let filter_dirs = vec![
             self.input_data_dir(),
             self.intermediate_data_dir(),
-            self.temporary_data_dir(),
             self.output_data_dir(),
         ];
 
@@ -347,14 +342,6 @@ impl KerblamTomlOptions {
     /// This filters out input, temporary and intermediate files from the call
     pub fn output_files(&self) -> Vec<PathBuf> {
         self.extract_dir(self.output_data_dir())
-    }
-
-    #[allow(dead_code)]
-    /// Return all the locally present temporary files
-    ///
-    /// This filters out output, input and intermediate files from the call
-    pub fn temporary_files(&self) -> Vec<PathBuf> {
-        self.extract_dir(self.temporary_data_dir())
     }
 
     /// Return all the locally present intermediate files
