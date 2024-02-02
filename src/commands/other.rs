@@ -20,10 +20,10 @@ fn compress_whitespace(items: Vec<&str>) -> Vec<&str> {
     let mut compressed: Vec<&str> = Vec::with_capacity(items.len());
     let mut previous = items
         .iter()
-        .skip_while(|x| is_whitespace(*x))
-        .nth(0)
+        .skip_while(|x| is_whitespace(x))
+        .next()
         .unwrap_or(&items[0]);
-    let mut iter = items.iter().skip_while(|x| is_whitespace(*x));
+    let mut iter = items.iter().skip_while(|x| is_whitespace(x));
     iter.next();
     for item in iter {
         if is_whitespace(previous) & is_whitespace(item) {
@@ -63,11 +63,11 @@ fn test_compression() {
 
 #[test]
 fn test_whitespace() {
-    assert_eq!(is_whitespace("   "), true);
-    assert_eq!(is_whitespace("  something  "), false);
-    assert_eq!(is_whitespace("\n\n"), true);
-    assert_eq!(is_whitespace("\t"), true);
-    assert_eq!(is_whitespace("\t\n"), true);
+    assert!(is_whitespace("   "));
+    assert!(!is_whitespace("  something  "));
+    assert!(is_whitespace("\n\n"));
+    assert!(is_whitespace("\t"));
+    assert!(is_whitespace("\t\n"));
 }
 
 pub fn ignore(target: impl AsRef<Path>, pattern: &str, compress: bool) -> Result<()> {
@@ -84,7 +84,7 @@ pub fn ignore(target: impl AsRef<Path>, pattern: &str, compress: bool) -> Result
         log::debug!("Adding as path");
         // This is a path. Add it in, but globbed
         let blob = pattern.trim();
-        let blob = blob.strip_suffix("/").unwrap_or(blob);
+        let blob = blob.strip_suffix('/').unwrap_or(blob);
         let blob = blob.strip_prefix("./").unwrap_or(blob);
 
         blob.to_string() + "\n"
@@ -103,7 +103,7 @@ pub fn ignore(target: impl AsRef<Path>, pattern: &str, compress: bool) -> Result
         log::debug!("Compressing gitignore...");
         // Remove all duplicates except for empty lines and comments
         let mut checks: Vec<&str> = vec![];
-        let splits: Vec<&str> = new.split('\n').into_iter().collect();
+        let splits: Vec<&str> = new.split('\n').collect();
         let mut filtered: Vec<&str> = Vec::with_capacity(splits.len());
         for line in splits {
             if line.is_empty() {
@@ -118,8 +118,8 @@ pub fn ignore(target: impl AsRef<Path>, pattern: &str, compress: bool) -> Result
                 continue;
             };
 
-            checks.push(&line);
-            filtered.push(&line);
+            checks.push(line);
+            filtered.push(line);
         }
 
         let compressed = compress_whitespace(filtered).join("\n");

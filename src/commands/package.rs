@@ -79,7 +79,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     }
 
     log::debug!("Copying kerblam! executable to context...");
-    copy(&myself, temp_build_dir.path().join("kerblam"))?;
+    copy(myself, temp_build_dir.path().join("kerblam"))?;
 
     log::debug!("Writing wrapper container_file.");
 

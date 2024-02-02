@@ -88,11 +88,11 @@ impl Default for ContainerBackend {
     }
 }
 
-impl Into<String> for ContainerBackend {
-    fn into(self) -> String {
-        match self {
-            Self::Docker => "docker".into(),
-            Self::Podman => "podman".into(),
+impl From<ContainerBackend> for String {
+    fn from(val: ContainerBackend) -> Self {
+        match val {
+            ContainerBackend::Docker => "docker".into(),
+            ContainerBackend::Podman => "podman".into(),
         }
     }
 }
@@ -119,15 +119,15 @@ pub struct RemoteFile {
     pub path: PathBuf,
 }
 
-impl Into<PathBuf> for RemoteFile {
-    fn into(self) -> PathBuf {
-        self.path
+impl From<RemoteFile> for PathBuf {
+    fn from(val: RemoteFile) -> Self {
+        val.path
     }
 }
 
-impl Into<Url> for RemoteFile {
-    fn into(self) -> Url {
-        self.url
+impl From<RemoteFile> for Url {
+    fn from(val: RemoteFile) -> Self {
+        val.url
     }
 }
 
@@ -147,15 +147,15 @@ impl PipeDescription {
         let pieces: Vec<&str> = text.split("\n\n").map(|x| x.trim()).collect();
 
         if pieces.len() == 1 {
-            let header = pieces[0].replace("\n", " ");
+            let header = pieces[0].replace('\n', " ");
             return PipeDescription { header, body: None };
         }
 
-        let header = pieces[0].replace("\n", " ");
+        let header = pieces[0].replace('\n', " ");
         let body: Vec<String> = pieces
             .into_iter()
             .skip(1)
-            .map(|x| x.replace("\n", " "))
+            .map(|x| x.replace('\n', " "))
             .collect();
         let body: String = body.join("\n\n");
 
@@ -225,7 +225,7 @@ impl Pipe {
         match desc {
             Some(desc) => match desc.body {
                 Some(body) => format!("{}\n{}", header, body),
-                None => format!("{}", header),
+                None => header.to_string(),
             },
             None => "No description found.".to_string(),
         }
@@ -278,17 +278,15 @@ impl KerblamTomlOptions {
         self.data
             .clone()
             .and_then(|x| x.remote)
-            .and_then(|y| {
-                Some(
-                    y.iter()
-                        .map(|pairs| RemoteFile {
-                            url: pairs.0.clone(),
-                            path: root_data_dir.join(pairs.1),
-                        })
-                        .collect(),
-                )
+            .map(|y| {
+                y.iter()
+                    .map(|pairs| RemoteFile {
+                        url: pairs.0.clone(),
+                        path: root_data_dir.join(pairs.1),
+                    })
+                    .collect()
             })
-            .unwrap_or(vec![])
+            .unwrap_or_default()
     }
 
     // Return the path to the input data directory
@@ -345,7 +343,7 @@ impl KerblamTomlOptions {
 
         log::debug!("Extracting {target:?} with filters {filter_dirs:?}");
 
-        find_files(target, (!filter_dirs.is_empty()).then(|| filter_dirs))
+        find_files(target, (!filter_dirs.is_empty()).then_some(filter_dirs))
     }
 
     /// Return all the locally present input files
