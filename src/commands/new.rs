@@ -1,8 +1,9 @@
-use crate::utils::fetch_gitignore;
-use crate::utils::{self, GitCloneMethod, YesNo};
-use crate::VERSION;
+use std::path::PathBuf;
+
 use anyhow::Result;
-use std::path::{Component, Path, PathBuf};
+
+use crate::utils::{self, fetch_gitignore, normalize_path, GitCloneMethod, YesNo};
+use crate::VERSION;
 
 pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let dirs_to_create: Vec<&str> = vec![
@@ -151,32 +152,4 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     }
 
     Ok(())
-}
-
-// This is stolen from Cargo
-pub fn normalize_path(path: &Path) -> PathBuf {
-    let mut components = path.components().peekable();
-    let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
-        components.next();
-        PathBuf::from(c.as_os_str())
-    } else {
-        PathBuf::new()
-    };
-
-    for component in components {
-        match component {
-            Component::Prefix(..) => unreachable!(),
-            Component::RootDir => {
-                ret.push(component.as_os_str());
-            }
-            Component::CurDir => {}
-            Component::ParentDir => {
-                ret.pop();
-            }
-            Component::Normal(c) => {
-                ret.push(c);
-            }
-        }
-    }
-    ret
 }

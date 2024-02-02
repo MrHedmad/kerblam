@@ -1,5 +1,13 @@
-pub mod data;
-pub mod new;
-pub mod other;
-pub mod package;
-pub mod run;
+mod data;
+mod new;
+mod other;
+mod package;
+mod run;
+
+// Re-export only the functions that execute commands
+pub use data::{clean_data, fetch_remote_data, get_data_status, package_data_to_archive};
+
+pub use new::create_kerblam_project;
+pub use other::ignore;
+pub use package::package_pipe;
+pub use run::kerblam_run_project;
