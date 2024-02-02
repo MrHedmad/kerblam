@@ -292,25 +292,25 @@ pub fn find_dirs(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>
     find_path_items_with_filter(inspected_path, |x| x.metadata().unwrap().is_dir(), filters)
 }
 
-pub fn warn_kerblam_version(config: &KerblamTomlOptions) -> () {
+pub fn warn_kerblam_version(config: &KerblamTomlOptions) {
     // TODO: is there a way to avoid this clone()? I feel like there should be
     // but I'm not sure.
     let version = config.clone().meta.and_then(|x| x.version);
     let current_ver = Version::from(VERSION);
 
     let version = match version {
-        None => return (),
-        Some(ver) => String::from(ver),
+        None => return,
+        Some(ver) => ver,
     };
 
     let version = match Version::from(&version) {
         Some(x) => x,
-        None => return (),
+        None => return,
     };
 
     let current_ver = match current_ver {
         Some(x) => x,
-        None => return (),
+        None => return,
     };
 
     if version != current_ver {

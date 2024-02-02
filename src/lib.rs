@@ -161,7 +161,7 @@ pub fn kerblam(arguments: Args) -> anyhow::Result<()> {
             path_or_name,
             compress,
         } => {
-            other::ignore(&current_dir()?.join(".gitignore"), &path_or_name, compress)?;
+            other::ignore(current_dir()?.join(".gitignore"), &path_or_name, compress)?;
         }
     };
 

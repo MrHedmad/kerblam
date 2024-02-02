@@ -172,16 +172,15 @@ impl Executor {
             // This is a normal run.
             // Move the executor file
             cleanup.push(self.target.copy()?);
-            let execution_command = match self.strategy {
+
+            match self.strategy {
                 ExecutionStrategy::Make => {
                     stringify![vec!["make", "-f", self.target.to.to_str().unwrap()]]
                 }
                 ExecutionStrategy::Shell => {
                     stringify![vec!["bash", self.target.to.to_str().unwrap()]]
                 }
-            };
-
-            execution_command
+            }
         };
 
         log::debug!("Executor command arguments: {:?}", command_args);
@@ -233,7 +232,7 @@ impl Executor {
             .unwrap()
             .to_string_lossy()
             .to_string();
-        let env_name: String = containerfile_name.split(".").take(1).collect();
+        let env_name: String = containerfile_name.split('.').take(1).collect();
         let env_name = env_name + "_kerblam_runtime";
 
         let containerfile_path = containerfile_path.as_os_str().to_string_lossy().to_string();
@@ -280,7 +279,7 @@ impl Executor {
             let _ = fs::remove_file(file);
         }
 
-        Ok(String::from(env_name))
+        Ok(env_name)
     }
 
     pub fn create(
@@ -429,7 +428,7 @@ fn infer_test_data(paths: Vec<PathBuf>) -> HashMap<PathBuf, PathBuf> {
         if file_name.starts_with("test_") {
             let slug = file_name.trim_start_matches("test_");
             let potential_target = path.clone().with_file_name(slug);
-            if paths.iter().find(|x| **x == potential_target).is_some() {
+            if paths.iter().any(|x| *x == potential_target) {
                 matches.insert(potential_target, path);
             }
         }
@@ -455,7 +454,7 @@ fn extract_profile_paths(
         .ok_or(anyhow!("Missing 'profiles' field!"))?;
 
     // add the default 'test' profile
-    if profiles.keys().find(|x| *x == "test").is_none() {
+    if !profiles.keys().any(|x| x == "test") {
         let input_files = config.input_files();
         let inferred_test = infer_test_data(input_files);
         if !inferred_test.is_empty() {

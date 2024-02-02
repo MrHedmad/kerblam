@@ -71,13 +71,13 @@ impl DataStatus {
 impl Display for FileSize {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut symbol: i8 = 0;
-        let mut res_size = self.size.clone();
+        let mut res_size = self.size;
 
         // I want to reduce the size only if the number is greater than 1
         // of the next size
         while res_size > 1024 {
             symbol += 1;
-            res_size = res_size / 1024;
+            res_size /= 1024;
             if symbol > 4 {
                 break;
             };
@@ -333,10 +333,8 @@ fn delete_files(files: Vec<PathBuf>) -> Result<()> {
             if let Err(e) = fs::remove_file(&file) {
                 failures.push((file, e));
             }
-        } else {
-            if let Err(e) = fs::remove_dir(&file) {
-                failures.push((file, e))
-            }
+        } else if let Err(e) = fs::remove_dir(&file) {
+            failures.push((file, e))
         }
     }
 
@@ -350,7 +348,7 @@ fn delete_files(files: Vec<PathBuf>) -> Result<()> {
                         "\t- {}: {}\n",
                         normalize_path(x.0.strip_prefix(current_dir().unwrap()).unwrap())
                             .to_string_lossy(),
-                        x.1.to_string()
+                        x.1
                     )
                 })
                 .collect::<String>()
@@ -451,10 +449,8 @@ pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool, keep_dirs: bool
         // This dies if the directory is not empty. So it's generally safe
         // even if some bug introduces an error here.
         delete_files(dirs)?;
-    } else {
-        if cleanable_files.is_empty() {
-            println!("✨ Nothing to clean!")
-        }
+    } else if cleanable_files.is_empty() {
+        println!("✨ Nothing to clean!")
     }
 
     Ok(())
@@ -491,7 +487,7 @@ pub fn package_data_to_archive(
             .to_path_buf()
             .join(file.strip_prefix(&root_path)?);
         log::debug!("Moving {file:?} to {target_file:?}");
-        create_dir_all(&target_file.parent().unwrap())?;
+        create_dir_all(target_file.parent().unwrap())?;
         fs::copy(&file, &target_file)?;
     }
 
