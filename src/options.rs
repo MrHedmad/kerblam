@@ -198,7 +198,7 @@ impl Pipe {
         Ok(Some(PipeDescription::from_text_box(text_box)))
     }
 
-    pub fn to_executor(
+    pub fn into_executor(
         self,
         execution_dir: impl AsRef<Path>,
     ) -> std::result::Result<Executor, anyhow::Error> {

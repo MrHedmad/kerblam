@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::env::current_dir;
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 use std::fs::{self, create_dir_all};
 use std::iter::Sum;
 use std::os::unix::fs::MetadataExt;
@@ -191,10 +191,10 @@ pub fn get_data_status(config: KerblamTomlOptions) -> Result<DataStatus> {
 /// This is unsafe as the path might not exist, so there is a dangerous
 /// 'unwrap' in here. Use it only when it's fairly certain that the file
 /// is there.
-fn unsafe_path_filesize_conversion(items: &Vec<PathBuf>) -> Vec<FileSize> {
+fn unsafe_path_filesize_conversion(items: &[PathBuf]) -> Vec<FileSize> {
     items
-        .to_owned()
-        .into_iter()
+        .iter()
+        .cloned()
         .map(|x| x.try_into().unwrap())
         .collect()
 }
@@ -341,17 +341,16 @@ fn delete_files(files: Vec<PathBuf>) -> Result<()> {
     if !failures.is_empty() {
         bail!(
             "Failed to clean some files:\n {}",
-            failures
-                .into_iter()
-                .map(|x| {
-                    format!(
-                        "\t- {}: {}\n",
-                        normalize_path(x.0.strip_prefix(current_dir().unwrap()).unwrap())
-                            .to_string_lossy(),
-                        x.1
-                    )
-                })
-                .collect::<String>()
+            failures.into_iter().fold(String::new(), |mut previous, x| {
+                let _ = writeln!(
+                    previous,
+                    "\t- {}: {}",
+                    normalize_path(x.0.strip_prefix(current_dir().unwrap()).unwrap())
+                        .to_string_lossy(),
+                    x.1
+                );
+                previous
+            })
         )
     };
 

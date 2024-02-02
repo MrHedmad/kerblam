@@ -528,7 +528,7 @@ pub fn kerblam_run_project(
     };
 
     // Create an executor for later.
-    let executor: Executor = pipe.to_executor(runtime_dir)?;
+    let executor: Executor = pipe.into_executor(runtime_dir)?;
 
     // From here on we should not crash. Therefore, we have to catch SIGINTs
     // as the come in.
@@ -577,8 +577,8 @@ pub fn kerblam_run_project(
     };
 
     // Build the extra env vars that we want to set during the execution
-    let env_vars: HashMap<String, String> = if profile.is_some() {
-        HashMap::from([("KERBLAM_PROFILE".to_string(), profile.unwrap())])
+    let env_vars: HashMap<String, String> = if let Some(profile) = profile {
+        HashMap::from([("KERBLAM_PROFILE".to_string(), profile)])
     } else {
         HashMap::new()
     };
