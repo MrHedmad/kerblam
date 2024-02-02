@@ -65,7 +65,6 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
         Some(vec![
             config.input_data_dir(),
             config.output_data_dir(),
-            config.temporary_data_dir(),
             config.intermediate_data_dir(),
         ]),
     );
