@@ -1,12 +1,11 @@
 use anyhow::{anyhow, bail, Result};
-use core::cmp;
 use std::env::current_dir;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
-use termimad::MadSkin;
+use termimad::{minimad, MadSkin};
 
 use version_compare::Version;
 use walkdir::{self, DirEntry};
@@ -407,24 +406,21 @@ pub fn normalize_path(path: &Path) -> PathBuf {
 }
 
 fn get_termimad_skin() -> MadSkin {
-    termimad::MadSkin::default_dark()
+    let mut skin = termimad::MadSkin::default_dark();
+    skin.set_headers_fg(termimad::crossterm::style::Color::Yellow);
+
+    skin
 }
 
-pub fn print_markdown(text: String) {
-    let termsize::Size { rows, cols } = termsize::get().unwrap();
+pub fn print_md(s: &str) {
+    let options = minimad::Options::default()
+        .clean_indentations(true)
+        .continue_spans(true);
+    print_text(minimad::parse_text(s, options));
+}
 
+fn print_text(text: minimad::Text) {
     let skin = get_termimad_skin();
-
-    eprintln!(
-        "{}",
-        skin.area_text(
-            &text,
-            &termimad::Area {
-                left: 0,
-                top: 0,
-                width: cmp::min(120, cols),
-                height: rows
-            }
-        )
-    )
+    let fmt_text = termimad::FmtText::from_text(&skin, text, None);
+    println!("{fmt_text}");
 }
