@@ -22,7 +22,6 @@ version = "0.4.0"
 input: "./data/in"
 output: "./data/out"
 intermediate: "./data"
-temporary: "/tmp" # This field is ignored by kerblam! but still parsed.
 
 [data.profiles] # Specify profiles here
 profile_name = {

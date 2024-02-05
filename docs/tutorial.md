@@ -178,6 +178,14 @@ and this dockerignore file:
 and simply run `kerblam run process_csv` to build the container and run
 your code inside it.
 
+> [!TIP]
+> Kerblam! will look for a `default.dockerfile` if it cannot find a container
+> recipe for the specific pipe (e.g. `pipe.dockerfile`), and use that instead.
+> You can use this to write a generalistic dockerfile that works for your
+> most simple pipelines.
+> The :whale: emoji in the list of pipes will be replaced by a :fish: for
+> pipes that use the default container, so you can identify them at a glance.
+
 #### Switching backends
 Kerblam! runs containers by default with Docker, but you can tell it to use
 [Podman](https://podman.io/) instead by setting the `execution > backend`
@@ -352,12 +360,6 @@ alternate run.
 > Careful that the *output* data will (most likely) be saved as the
 > same file names as a "normal" run! Kerblam! does not look into where the
 > output files are saved or what they are saved as.
-
-> [!WARNING]
-> Careful! As of now, kerblam! has no problem accidentally overwriting files that end in
-> `.original` in the input data directory (e.g. `input.csv.original`) while running.
-> See issue [#9](https://github.com/MrHedmad/kerblam/issues/9).
-> This is not a problem generally, but just so you know.
 
 This is most commonly useful to run the pipelines on test data that is faster to
 process or that produces pre-defined outputs. For example, you could define
