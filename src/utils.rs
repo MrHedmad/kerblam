@@ -1,10 +1,12 @@
 use anyhow::{anyhow, bail, Result};
+use core::cmp;
 use std::env::current_dir;
 use std::fs;
 use std::io::{self, ErrorKind, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+use termimad::MadSkin;
 
 use version_compare::Version;
 use walkdir::{self, DirEntry};
@@ -402,4 +404,27 @@ pub fn normalize_path(path: &Path) -> PathBuf {
         }
     }
     ret
+}
+
+fn get_termimad_skin() -> MadSkin {
+    termimad::MadSkin::default_dark()
+}
+
+pub fn print_markdown(text: String) {
+    let termsize::Size { rows, cols } = termsize::get().unwrap();
+
+    let skin = get_termimad_skin();
+
+    eprintln!(
+        "{}",
+        skin.area_text(
+            &text,
+            &termimad::Area {
+                left: 0,
+                top: 0,
+                width: cmp::min(120, cols),
+                height: rows
+            }
+        )
+    )
 }
