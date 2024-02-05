@@ -93,6 +93,32 @@ fn extract_profile_paths(
         )
     }
 
+    // Also check if the targets do NOT exist, so we don't overwrite anything
+    let exist_check: Vec<anyhow::Error> = profile
+        .iter()
+        .flat_map(|(a, b)| [a, b])
+        .map(|file| {
+            let f = &root_dir.join(push_fragment(file, ".original"));
+            log::debug!("Checking if {f:?} destroys files...");
+            if f.exists() {
+                bail!("\t- {:?} would be destroyed by {:?}!", f, file)
+            };
+            Ok(())
+        })
+        .filter_map(|x| x.err())
+        .collect();
+
+    if !exist_check.is_empty() {
+        let mut missing: Vec<String> = Vec::with_capacity(exist_check.len());
+        for item in exist_check {
+            missing.push(item.to_string());
+        }
+        bail!(
+            "Some profile temporary files would overwrite real files:\n{}",
+            missing.join("\n")
+        )
+    }
+
     Ok(profile
         .iter()
         .flat_map(|(original, profile)| {
