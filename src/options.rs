@@ -219,7 +219,15 @@ impl Pipe {
 
 impl Display for Pipe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let container_prefix = if self.env_path.is_none() { "" } else { "🐋" };
+        let container_prefix = if self.env_path.is_none() {
+            ""
+        } else {
+            if self.env_path.clone().unwrap().file_stem().unwrap() == "default" {
+                "🐟"
+            } else {
+                "🐋"
+            }
+        };
         let desc_prefix = if self
             .description()
             .expect("Could not parse description file")
@@ -408,6 +416,11 @@ impl KerblamTomlOptions {
         // TODO: I duct-taped this loop with inner clone(), but I'm 76% sure
         // that we can do it with references.
 
+        let default_dockerfile: Option<PathBuf> = envs_names
+            .iter()
+            .find(|(name, _)| name == "default")
+            .and_then(|(_, path)| Some(path.to_owned()));
+
         for (pipe_name, pipe_path) in pipes_names {
             let mut found = false;
             for (env_name, env_path) in envs_names.clone() {
@@ -422,10 +435,12 @@ impl KerblamTomlOptions {
             if !found {
                 pipes.push(Pipe {
                     pipe_path,
-                    env_path: None,
+                    env_path: default_dockerfile.clone(),
                 })
             }
         }
+
+        log::debug!("Found pipes: {pipes:?}");
 
         pipes
     }
