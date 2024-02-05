@@ -142,12 +142,7 @@ impl PipeDescription {
         }
 
         let header = pieces[0].replace('\n', " ");
-        let body: Vec<String> = pieces
-            .into_iter()
-            .skip(1)
-            .map(|x| x.replace('\n', " "))
-            .collect();
-        let body: String = body.join("\n\n");
+        let body: String = pieces[1..].join("\n");
 
         PipeDescription {
             header,

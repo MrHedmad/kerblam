@@ -15,8 +15,8 @@ use commands::{
     kerblam_run_project, package_data_to_archive, package_pipe,
 };
 
-use crate::utils::find_kerblam_toml;
 use crate::utils::find_pipe_by_name;
+use crate::utils::{find_kerblam_toml, print_markdown};
 
 const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -133,7 +133,7 @@ pub fn kerblam(arguments: Args) -> anyhow::Result<()> {
         } => {
             let pipe = find_pipe_by_name(&config, module_name)?;
             if desc {
-                eprintln!("{}", pipe.long_description());
+                print_markdown(pipe.long_description());
                 return Ok(());
             }
             kerblam_run_project(config, pipe, &current_dir().unwrap(), profile, local)?;

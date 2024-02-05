@@ -40,6 +40,8 @@ rand = "^0.8"
 reqwest = { version = "^0.11", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "^1.0", features = ["derive"] }
 tempfile = "^3.8"
+termimad = "0.29.0"
+termsize = "0.1.6"
 toml = "^0.8"
 url = { version = "^2.5", features = ["serde"] }
 version-compare = "^0.1"
