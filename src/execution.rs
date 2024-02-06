@@ -112,7 +112,7 @@ impl Executor {
         signal_receiver: Receiver<bool>,
         config: &KerblamTomlOptions,
         env_vars: HashMap<String, String>,
-    ) -> Result<()> {
+    ) -> Result<Option<ExitStatus>> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         let command_args = if self.env.is_some() {
@@ -178,12 +178,16 @@ impl Executor {
                 .expect("Cannot retrieve command output!")
         };
 
-        match run_protected_command(builder, signal_receiver) {
-            Ok(CommandResult::Exited { res: _ }) => (), // We don't care if it succeeded.
+        let return_value = match run_protected_command(builder, signal_receiver) {
+            Ok(CommandResult::Exited { res }) => Ok(Some(res)), // We don't care if it succeeded.
             Ok(CommandResult::Killed) => {
-                eprintln!("\nChild process exited early. Continuing to cleanup...")
+                eprintln!("\nChild process exited early. Continuing to cleanup...");
+                Ok(None)
             }
-            Err(e) => eprintln!("\nChild process failure: {}\nContinuing to cleanup...", e),
+            Err(e) => {
+                eprintln!("\nChild process failure: {}\nContinuing to cleanup...", e);
+                Err(e)
+            }
         };
 
         for file in cleanup {
@@ -192,7 +196,7 @@ impl Executor {
             let _ = fs::remove_file(file);
         }
 
-        Ok(())
+        return_value
     }
 
     /// Build the context of this executor and return its tag.

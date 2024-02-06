@@ -227,7 +227,16 @@ pub fn kerblam_run_project(
     // Return either an error or OK, if the pipeline finished appropriately
     // or crashed and burned.
     if runtime_result.is_ok() {
-        Ok(String::from("Done!"))
+        match runtime_result.unwrap() {
+            Some(res) => {
+                if res.success() {
+                    Ok("Done!".into())
+                } else {
+                    Err(anyhow!("Process exited with error."))
+                }
+            }
+            None => Err(anyhow!("Process killed.")),
+        }
     } else {
         Err(anyhow!("Process exited."))
     }

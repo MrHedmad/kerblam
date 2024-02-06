@@ -25,6 +25,11 @@ mkdir -p ./data/out/
 cat ./data/in/input_data.txt | wc -l > ./data/out/line_count.txt
 "#;
 
+static TEST_ERROR_SHELL_PIPE: &'static str = r#"
+echo "Running error shell pipe"
+exit 1
+"#;
+
 static TEST_MAKE_PIPE: &'static str = r#"
 .RECIPEPREFIX = > 
 all: ./data/out/line_count.txt
@@ -48,6 +53,7 @@ fn get_default_files() -> Vec<File> {
         File::new("src/pipes/make_pipe.makefile", TEST_MAKE_PIPE),
         File::new("src/pipes/shell_pipe.sh", TEST_SHELL_PIPE),
         File::new("src/dockerfiles/default.dockerfile", TEST_DOCKER_FILE),
+        File::new("src/pipes/error.sh", TEST_ERROR_SHELL_PIPE),
     ]
 }
 
@@ -74,5 +80,19 @@ rusty_fork_test! {
 
         assert_ok(kerblam(vec!["", "data", "fetch"].iter()));
         assert_ok(kerblam(vec!["", "run", "make_pipe", "--local"].iter()));
+    }
+}
+
+rusty_fork_test! {
+    #[test]
+    #[should_panic]
+    fn test_erroring_pipe() {
+        init_log();
+        let default_files = get_default_files();
+        let temp_dir = setup_workdir(default_files.iter());
+        let _flag = chwd::ChangeWorkingDirectory::change(&temp_dir).unwrap();
+
+        assert_ok(kerblam(vec!["", "data", "fetch"].iter()));
+        assert_ok(kerblam(vec!["", "run", "error", "--local"].iter()));
     }
 }
