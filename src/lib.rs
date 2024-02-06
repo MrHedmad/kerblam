@@ -2,7 +2,8 @@ use clap::{Parser, Subcommand};
 
 use anyhow::*;
 use options::parse_kerblam_toml;
-use std::env::{set_current_dir, Args};
+use std::env::set_current_dir;
+use std::ffi::OsString;
 use std::{env::current_dir, path::PathBuf};
 
 mod commands;
@@ -95,7 +96,13 @@ enum DataCommands {
 }
 
 /// Run Kerblam! with a certain arguments list.
-pub fn kerblam(arguments: Args) -> anyhow::Result<()> {
+pub fn kerblam<'a, I, T>(arguments: I) -> anyhow::Result<()>
+where
+    I: Iterator<Item = T>,
+    T: Into<OsString> + Clone,
+{
+    let here = current_dir()?;
+    log::debug!("Kerblam! invoked in {here:?}");
     let args = Cli::try_parse_from(arguments)?;
 
     if let Command::New { path } = args.command {

@@ -147,6 +147,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chwd"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd4a924c3a2029ba42e3306049602fd4708717418b01738b1605459cefc3002e"
+
+[[package]]
 name = "clap"
 version = "4.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -683,6 +689,7 @@ name = "kerblam"
 version = "0.4.0"
 dependencies = [
  "anyhow",
+ "chwd",
  "clap",
  "crossbeam-channel",
  "ctrlc",
@@ -691,7 +698,9 @@ dependencies = [
  "indicatif",
  "log",
  "reqwest",
+ "rusty-fork",
  "serde",
+ "similar",
  "tempfile",
  "termimad",
  "toml",
@@ -898,6 +907,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-error"
+version = "1.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
+
+[[package]]
 name = "quote"
 version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1050,6 +1065,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusty-fork"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb3dcc6e454c328bb824492db107ab7c0ae8fcffe4ad210136ef014458c1bc4f"
+dependencies = [
+ "fnv",
+ "quick-error",
+ "tempfile",
+ "wait-timeout",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1161,6 +1188,12 @@ checksum = "d8229b473baa5980ac72ef434c4415e70c4b5e71b423043adb4ba059f89c99a1"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "similar"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32fea41aca09ee824cc9724996433064c89f7777e60762749a4170a14abbfa21"
 
 [[package]]
 name = "slab"
@@ -1488,6 +1521,15 @@ name = "version-compare"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "579a42fc0b8e0c63b76519a339be31bed574929511fa53c1a3acae26eb258f29"
+
+[[package]]
+name = "wait-timeout"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f200f5b12eb75f8c1ed65abd4b2db8a6e1b138a20de009dacee265a2498f3f6"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "walkdir"

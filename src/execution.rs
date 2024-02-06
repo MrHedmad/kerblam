@@ -385,15 +385,6 @@ impl FileMover {
     /// Invert this object, creating a new one with swapped from/to fields.
     ///
     /// This function destroys this original object.
-    ///
-    /// ```rust
-    /// let original = FileMover {
-    ///     from : PathBuf::from("/from.txt"),
-    ///     to: PathBuf::from("/to.txt")
-    /// };
-    ///
-    /// assert_eq(original, original.clone().invert().invert());
-    /// ```
     pub fn invert(self) -> Self {
         Self {
             from: self.to,
