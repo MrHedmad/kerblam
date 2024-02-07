@@ -52,7 +52,7 @@ fn get_default_files() -> Vec<File> {
         File::new("kerblam.toml", TEST_KERBLAM_TOML),
         File::new("src/pipes/make_pipe.makefile", TEST_MAKE_PIPE),
         File::new("src/pipes/shell_pipe.sh", TEST_SHELL_PIPE),
-        File::new("src/dockerfiles/default.dockerfile", TEST_DOCKER_FILE),
+        File::new("src/containers/default.dockerfile", TEST_DOCKER_FILE),
         File::new("src/pipes/error.sh", TEST_ERROR_SHELL_PIPE),
     ]
 }
