@@ -462,7 +462,7 @@ impl KerblamTomlOptions {
             .code
             .clone()
             .and_then(|x| x.env_dir)
-            .unwrap_or_else(|| current_dir().unwrap().join("src/dockerfiles"));
+            .unwrap_or_else(|| current_dir().unwrap().join("src/containers"));
 
         find_files(env, None)
     }
