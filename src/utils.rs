@@ -180,6 +180,9 @@ impl AsQuestion for GitCloneMethod {
     }
 }
 
+/// A small wrapper to run a certain shell command with some args
+///
+/// Provides none of the lower-level control of `run_protected_command`.
 pub fn run_command(
     location: Option<impl AsRef<Path>>,
     command: &str,
@@ -210,30 +213,6 @@ pub fn run_command(
             String::from_utf8(output.stderr).expect("Could not parse command output as UTF-8"),
         ))
     }
-}
-
-#[allow(dead_code)]
-pub fn clone_repo(
-    target: Option<impl AsRef<Path>>,
-    repo: &str,
-    method: GitCloneMethod,
-) -> Result<String> {
-    let target = target.map(|path| path.as_ref().to_path_buf());
-    let head = match method {
-        GitCloneMethod::Ssh => "git@github.com:",
-        GitCloneMethod::Https => "https://github.com/",
-    };
-
-    let path = match target {
-        None => ".".to_string(),
-        Some(ref path) => path.to_string_lossy().to_string(),
-    };
-
-    run_command(
-        target,
-        "git",
-        vec!["clone", format!("{}{}", head, repo).as_str(), &path],
-    )
 }
 
 pub fn fetch_gitignore(name: &str) -> Result<String> {
