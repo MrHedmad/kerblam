@@ -5,6 +5,7 @@
 ![GitHub License](https://img.shields.io/github/license/MrHedmad/kerblam?style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/MrHedmad/kerblam?style=flat-square&color=yellow)
 [![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](docs/CONTRIBUTING.md)
+[![DOI](https://zenodo.org/badge/720446939.svg?style=flat-square)](https://zenodo.org/doi/10.5281/zenodo.10664806)
 
 </div>
 
