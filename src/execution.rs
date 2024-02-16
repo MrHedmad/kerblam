@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 
 use crate::options::KerblamTomlOptions;
-use crate::utils::normalize_path;
 
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
@@ -79,19 +78,24 @@ fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
         config.intermediate_data_dir(),
     ];
 
-    let host_workdir = config.execution.workdir.clone();
+    let host_workdir = match config.execution.workdir.clone() {
+        Some(p) => format!("{}", p.to_string_lossy()),
+        None => "/".into(),
+    };
+
+    log::debug!("Host workdir set to {host_workdir:?}");
 
     for dir in dirs {
         // the folder here, in the local file system
         let local = dir.to_string_lossy();
         // the folder in the host container
         let host = dir.strip_prefix(&root).unwrap().to_string_lossy();
-        let host = host_workdir.join(format!("./{}", host));
-        let host = normalize_path(&host);
-        let host = host.to_string_lossy();
+        let host = format!("{host_workdir}/{host}");
 
         result.push(format!("{}:{}", local, host))
     }
+
+    log::debug!("Generated bind mount strings: {:?}", result);
 
     result
 }
@@ -128,6 +132,10 @@ impl Executor {
 
             // Add the correct entrypoint override
             let workdir = config.execution.workdir.clone();
+            let workdir = match workdir {
+                Some(p) => p,
+                None => PathBuf::from("/"),
+            };
             let workdir = workdir.to_string_lossy();
             let execution_command: Vec<String> = match self.strategy {
                 ExecutionStrategy::Make => stringify!(vec![
