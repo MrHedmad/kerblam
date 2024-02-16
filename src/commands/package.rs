@@ -82,7 +82,10 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
 
     // Write the container_file
     let workdir = config.execution.workdir.clone();
-    let workdir = workdir.to_string_lossy();
+    let workdir = match workdir {
+        Some(p) => format!("{}", p.to_string_lossy()),
+        None => "/".into(),
+    };
     let content = match executor.strategy() {
         ExecutionStrategy::Make => format!(
             "FROM {base_container}\nCOPY . .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && make -C {workdir} -f {workdir}/executor\"]"
