@@ -9,28 +9,28 @@
 
 </div>
 
-> [!WARNING]
->
-> Kerblam! is still unreleased. Expect some bugs, glitches or breaking changes.
-> Always have a backup of your data and code!
-> Report any problems in the [issues](https://github.com/MrHedmad/kerblam).
-> Thank you for using Kerblam!
+<div align="center">
+
+[🚀 Read the full Kerblam Documentation 🚀](https://kerblam.dev)
+
+</div>
 
 Kerblam! is a tool that can help you manage data analysis projects.
 
 A Kerblam! project has a `kerblam.toml` file in its root.
 Kerblam! then allows you to:
-- Access remote data quickly, by just specifying URLs to fetch from;
-- Package and export data in order to share the project with colleagues;
 - Manage and run multiple makefiles or shellfiles for different tasks;
-- Clean up intermediate and output files quickly;
 - Manage containers and run code in them for you.
+- Create reproducible containers to replay your work or share it with others;
+- Access remote data quickly, by just specifying URLs to fetch from;
+- Specify test or alternative data and quickly use it instead of real data.
+- Package and export data in order to share the project with colleagues;
+- Clean up intermediate and output files quickly;
 - Manage the content of your `.gitignore` for you, allowing to add files, 
   directories and even whole languages in one command.
-- Specify test or alternative data and quickly use it instead of real data.
 
-To transform a project to a Kerblam! project just make the kerblam.toml
-file yourself. To learn how, look at the section below.
+To transform a project to a Kerblam! project you can just make the `kerblam.toml`
+file yourself. [Read the documentation to learn how](https://kerblam.dev/)
 
 <div align="center">
 
@@ -86,7 +86,7 @@ Kerblam! is *not* and does not want to be:
 Kerblam! projects are opinionated:
 - The folder structure of your project adheres to the Kerblam! standard,
   although you may configure it in `kerblam.toml`.
-  Read about it below.
+  Read more about it [here](https://kerblam.dev/quickstart.md)
 - You use `make` or bash scripts as your pipeline manager.
   - Kerblam! natively uses `make`, but nothing stops you writing
     shell files that execute other tools, like `snakemake`.
@@ -104,74 +104,25 @@ If you don't like this setup, Kerblam! is probably not for you.
 > take a look at [the kerblam! philosophy](docs/philosophy.md).
 
 ### Folder structure
-Kerblam!, by default, requires the following folder structure (relative to the
-location of the `kerblam.toml` file):
-- `./kerblam.toml`: This file contains the options for Kerblam!. It is often empty.
-- `./data/`: This is a directory for the data. Intermediate data files are saved here.
-- `./data/in/`: Input data files are saved and should be looked for here.
-- `./data/out/`: Output data files are saved and should be looked for here.
-- `./src/`: Code you want to be executed should be saved here.
-- `./src/pipes/`: Makefiles and bash build scripts should be saved here.
-  They have to be written as if they were saved in `./`.
-- `./src/dockerfiles/`: Container build scripts should be saved here. 
-
-You can configure almost all of these paths in `kerblam.toml`, if you so desire.
-This is mostly done for compatibility reasons with non-kerblam! projects.
-New projects that wish to use Kerblam! are strongly encouraged to follow the
-standard folder structure, however.
 
 ## Documentation
-The full Kerblam! documentation is in the [`/docs` folder](docs/README.md).
+The full Kerblam! documentation is online at [kerblam.dev](https://kerblam.dev).
 Please take a look there for more information on what Kerblam! can do.
-For example, you might find [the tutorial](docs/tutorial.md) interesting.
+For example, you might find [the tutorial](https://kerblam.dev/quickstart.html) interesting.
 
 ## Installation
-Currently, Kerblam! only supports mac OS (both intel and apple chips) and GNU linux.
-Other unix/linux versions may work. Install them from source with the commands below.
 
-### Requirements
-Kerblam! requires a Linux (or generally unix-like) OS.
-It also uses binaries that it assumes are already installed:
-- GNU `make`: https://www.gnu.org/software/make/
-- `git`: https://git-scm.com/
-- Docker (as `docker`) and/or Podman (as `podman`): https://www.docker.com/ and https://podman.io/
-- `tar`.
+[✨ Read the full installation guide in the docs ✨](https://kerblam.dev/install.html)
 
-If you can use `git`, `make`, `tar` and `docker` or `podman` from your CLI, you should be good.
-
-### Pre-compiled binary (recommended)
-You can find and download a Kerblam! binary for your operating system in
-[the releases tab](https://github.com/mrhedmad/kerblam/releases).
-
-There are also helpful scripts that automatically download the correct version
-for your specific operating system thanks to [`cargo-dist`](https://github.com/axodotdev/cargo-dist).
-You can always install or update to the latest version with:
+In short, either: 
 ```bash
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/MrHedmad/kerblam/releases/latest/download/kerblam-installer.sh | sh
 ```
-You can [click here](https://github.com/MrHedmad/kerblam/releases/latest/download/kerblam-installer.sh)
-to download the same installer script and inspect it before you run it, if you'd like.
-
-### Install from source
-If you want to install the latest version from source, install Rust and `cargo`, then run:
+or, alternatively
 ```bash
 cargo install kerblam
 ```
-If you wish to instead use the latest development version, run:
-```bash
-cargo install --git https://github.com/MrHedmad/kerblam.git
-```
-The `main` branch should always compile on supported platforms with the above command.
-If it does not, please [open an issue](https://github.com/mrhedmad/kerblam/issues/new).
-
-## Adding the Kerblam! badge
-You can add a Kerblam! badge in the README of your project to show that you use Kerblam!
-Just copy the following code and add it to the README:
-```markdown
-![Kerblam!](https://img.shields.io/badge/Kerblam!-v0.4.0-blue?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAMAAAANxBKoAAABlVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADW1tYNDHwcnNLKFBQgIB/ExMS1tbWMjIufDQ3S0tLOzs6srKyioqJRUVFSS0o0MjIBARqPj48MC3pqaWkIB2MtLS1ybm3U1NS6uroXirqpqamYmJiSkpIPZ4yHh4eFhIV8fHwLWnuBe3kMC3cLCnIHBlwGBlgFBU8EBEVPRkICAi4ADRa+EhIAAAwJCQmJiYnQ0NDKysoZkMK2trYWhLOjo6MTeKMTd6KgoKCbm5uKiIaAgIAPDHhubm4JT20KCW0KCWoIS2cHBUxBQUEEAz9IQT4DAz0DKTpFPTgCAjcCASoBASAXFxcgGRa5ERG1ERGzEBCpDw+hDg4fFA2WDAyLCgouAQFaWloFO1MBHStWBATnwMkoAAAAK3RSTlMA7zRmHcOuDQYK52IwJtWZiXJWQgXw39q2jYBgE/j2187JubKjoJNLSvmSt94WZwAAAvlJREFUSMeF1GdXGkEUgOGliIgIorFH0+u7JBIChEgJamyJvWt6783eS8rvzszAusACvp88x4d7hsvsaqdU57h8oQnobGmtb6xMzwbOkV9jJdvWBRwf7e9uLyzs7B3+o7487miC+AjcvZ3rkNZyttolbKxPv2fyPVrKYKcPhp7oIpPv0FkGN5N5rmd7afAFKH0MH99DihrTK2j3RTICF/Pt0trPUr9AxXyXpkJ3xu6o97tgQJDQm+Xlt6E8vs+FfNrg6kQ1pOuREVSPoydf9YjLpg14gMW1X0IInGZ+9PWr0Xl+R43pxzgM3NgCiekvqfE50hFdT7Ly8Jbo2R/xWYNTl8Ptwk6lgsHUD+Ji2NMlBFZ8ntzZRziXW5kLZsaDom/0yH/G+CSkapS3CvfFCWTxJZgMyqbYVLtLMmzoVywrHaPrrNJX4IHCDyCmF+nXhHXRkzhtCncY+PMig3pu0FfzJG900RBNarTTxrTCEwne69miGV5k8cPst3wOHSfrmJmcCH6Y42NEzzXIX8EFXmFE/q4ZXJrKW4VsY13uzqivF74OD39CbT/0HV/1yQW9Xn8e1O0w+WAG0VJS4P4Mzc7CK+2B7jt6XtFYMhl7Kv4YWMKnsJkXZiW3NgQXxTEKamM2fL8EjzwGv1srykZveBULj6bBZX2Bwbs03cXTQ3HAb9FOGNsS4wt5fw9zv0q9oZo54Gf4UQ95PLbJj/E1HFZ9DRgTuMecPgjfUqlF7Jo1B9wX+JFxmMh7mAoGv9B1pkg2tDoVl7i3G8mjH1mUN3PaspJaqM1NH/sJq2L6QJzEZ4FTCRosuKomdxjYSofDs8DcRPZh8hQd5IbE3qt1ih+MveuVeP2DxOMJAlphgSs1mt3GVWO6yMNGUDZDi1uzJLDNqxbZDLab3mqQB5mExtLYrtU45L10qlfMeSbVQ91eFlfRmnclZyR2VcB5y7pOYhouuSvg2rxHCZG/HHZnsVkVtg7NmkdirS6LzbztTq1EPo9dXRWxqtP7D+wL5neoEOq/AAAAAElFTkSuQmCC&link=https%3A%2F%2Fgithub.com%2FMrHedmad%2Fkerblam)
-```
-> [!WARNING]
-> The code is very long - this is because the Kerblam! logo is baked in as a `base64` image.
+You will need `git`, `make`, `tar` and `docker` or `podman` installed.
 
 ## Contributing
 To contribute, please take a look at [the contributing guide](docs/CONTRIBUTING.md).

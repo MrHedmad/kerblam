@@ -4,7 +4,6 @@ The `kerblam.toml` file is the control center of kerblam!
 All of its configuration is found there.
 Here is what fields are available, and what they do.
 
-> [!IMPORTANT]
 > Extra fields not found here are silently ignored.
 > This means that you must be careful of typos!
 
@@ -16,12 +15,11 @@ version = "0.4.0"
 # if you are not running the same executable.
 # To save you headaches!
 
-##### --- #####
-[data] # Data paths, profiles, etc...
+# The [data] section has options regarding... well, data.
 [data.paths]
-input: "./data/in"
-output: "./data/out"
-intermediate: "./data"
+input = "./data/in"
+output = "./data/out"
+intermediate = "./data"
 
 [data.profiles] # Specify profiles here
 profile_name = {
@@ -33,11 +31,13 @@ profile_name = {
 [data.profiles.profile_name]
 "original_name" = "profile_name"
 "other_name" = "other_profile_name"
-# Any number of profiles can be specified.
+# Any number of profiles can be specified, but stick to just one of these
+# two methods of defining them.
 
 [data.remote] # Specify how to fetch remote data
 "url_to_fetch" = "file_to_save_to"
 # there can be any number of "url" = "file" entries here.
+# Files are saved inside `[data.paths.input]`
 
 ##### --- #####
 [code] # Where to look for containers and pipes
@@ -50,3 +50,4 @@ workdir = "/" # The working directory inside all built containers
 ```
 
 Note that this does not want to be a valid TOML, just a reference.
+Don't expect to copy-paste it and obtain a valid Kerblam! configuration.

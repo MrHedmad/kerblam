@@ -1,30 +1,22 @@
 # The Kerblam! philosophy
 
-> [!NOTE]
-> Hello! This is the maintainer.
-> This article covers the design principles behind how Kerblam! functions.
-> It is both targeted at myself - to remind me why I did what I did - and to 
-> anyone who is interested in the topic of managing data analysis projects.
->
-> Reading this is not at all necessary to start using Kerblam!.
-> Perhaps you want to [read the tutorial](docs/tutorial.md) instead.
+Hello! This is the maintainer.
+This article covers the design principles behind how Kerblam! functions.
+It is both targeted at myself - to remind me why I did what I did - and to 
+anyone who is interested in the topic of managing data analysis projects.
 
-> [!WARNING]
-> I am an advocate of [open science](https://en.wikipedia.org/wiki/Open_science),
-> [open software](https://en.wikipedia.org/wiki/Open-source_software) and of
-> sharing your work as soon and as openly as possible.
-> I also believe that documenting your code is even more important than the code itself.
->
-> I make excessive use of these text boxes as I'm terribly bad at not including asides.
-> Sorry!
-> 
-> Keep this in mind when reading this article, as it is strongly opinionated.
+Reading this is not at all necessary to start using Kerblam!.
+Perhaps you want to [read the tutorial](tutorial/quickstart.html) instead.
 
-> [!TIP]
-> The first time I use an acronym I'll make it ***bold italics*** so you can
-> have an easier time finding it if you forget what it means.
-> 
-> I try to keep acronyms to a minimum.
+I am an advocate of [open science](https://en.wikipedia.org/wiki/Open_science),
+[open software](https://en.wikipedia.org/wiki/Open-source_software) and of
+sharing your work as soon and as openly as possible.
+I also believe that documenting your code is even more important than the code itself.
+Keep this in mind when reading this article, as it is strongly opinionated.
+
+The first time I use an acronym I'll try to make it ***bold italics*** so you can
+have an easier time finding it if you forget what it means.
+However, I try to keep acronyms to a minimum.
 
 ## Introduction
 After three years doing bioinformatics work as my actual job, I think I have
@@ -50,13 +42,12 @@ to find a plethora of different styles, methods and types of way you can use
 to manage what to do and when while you code.
 
 In any case, while working with a specific programming language, you usually
-have only one PL.
+have only one possible way to layout your files.
 A python project uses a [quite specific structure](https://docs.python-guide.org/writing/structure/):
 you have a `pyproject.toml`/`setup.py`, a module directory[^pyweird]...
 Similarly, when you work on a Rust project, you use `cargo`, and therefore
 have a `cargo.toml` file, a `/src` directory...
 
-> [!NOTE]
 > The topic of structuring the code itself is even deeper, with different ways to
 > think of your coding problem: object oriented vs functional vs procedural, 
 > monolithic vs microservices, etcetera, but it's out of the scope of this piece.
@@ -69,7 +60,6 @@ A ***project layout system (PLS)*** is a pre-established way to layout these fil
 Kerblam! is a tool that can help you with general tasks if you follow the
 Kerblam! project layout system.
 
-> [!TIP]
 > There are also project *management* systems, that are tasked with managing
 > what has to be done while writing code.
 > They are not the subject of this piece, however.
@@ -99,13 +89,12 @@ Version control generally does not affect the PL meaningfully.
 However, version control often does not work well with large files, especially
 binary files.
 
-> [!IMPORTANT]
 > **Design principle A: We must use a version control system.**<br>
+>
 > **Design principle B: Big binary blobs bad[^proud]!**
 
 [^proud]: I'm very proud of this pun. Please don't take it from me.
 
-> [!NOTE]
 > I assume that the reader knows how vital version control is when writing software.
 > In case that you do not, I want to briefly outline why you'd want to use a version
 > control system in your work:
@@ -135,7 +124,6 @@ As we said, documentation is important.
 It should be versioned together with the code, as that is what it is
 describing and it should change at the same pace.
 
-> [!IMPORTANT]
 > **Design principle C: Documentation is good. We should do more of that.**
 
 Code is [read more times than it is written](https://www.goodreads.com/quotes/835238-indeed-the-ratio-of-time-spent-reading-versus-writing-is),
@@ -145,7 +133,6 @@ arrange them in a way that makes sense when you or a stranger looks through them
 To be obvious, the categorization and the choice of folder and file names should
 make sense at a glance (e.g. the '`scripts`' directory is for scripts, not for data).
 
-> [!IMPORTANT]
 > **Design principle D: Be logical, obvious and predictable**
 
 Scientific computing needs to be reproduced by others.
@@ -162,7 +149,6 @@ eyes of the reader.
 This has a lot of benefits, of course, with the main one being that you are more
 resilient to backlash in the inevitable case that you commit an error.
 
-> [!IMPORTANT]
 > **Design principle E: Be (easily) reproducible.**
 
 ## Structuring data analysis
@@ -189,9 +175,6 @@ pieces of code that run many steps of the analysis).
 
 This complexity results in a plethora of different ways to structure the code
 and the data during the project.
-There are many examples of data analysis projects out in the wild, with wildly
-different structures:
-- // TODO: Add examples
 
 I will not say that the Kerblam! way is the one-and-only, cover-all way to
 structure your project, but I will say that it is a sensible default.
@@ -225,7 +208,6 @@ Other than input, output, temporary and intermediate data, kerblam! also conside
   little repercussion (i.e. you just re-download it or re-run the pipeline to
   obtain it again.
 
-> [!NOTE]
 > Practically, data can be input/output/temp/intermediate, either fragile
 > or precious and either local or remote.
 

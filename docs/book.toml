@@ -1,0 +1,6 @@
+[book]
+authors = ["Luca Visentin"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Kerblam Docs"
