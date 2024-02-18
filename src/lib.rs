@@ -88,6 +88,9 @@ enum DataCommands {
         #[arg(long, short('d'), action)]
         /// Do not delete locally present directories.
         keep_dirs: bool,
+        #[arg(long, short, action)]
+        /// Do not ask for any confirmation.
+        yes: bool,
     },
     // Pack local data for export to others
     Pack {
@@ -154,7 +157,8 @@ where
             Some(DataCommands::Clean {
                 keep_remote,
                 keep_dirs,
-            }) => clean_data(config, keep_remote, keep_dirs)?,
+                yes,
+            }) => clean_data(config, keep_remote, keep_dirs, yes)?,
             Some(DataCommands::Pack { output_path: path }) => package_data_to_archive(
                 config,
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
