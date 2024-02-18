@@ -23,6 +23,32 @@ Any complex parts of the code should be commented and propely explained.
 If you are unsure on what something does, and cannot decypher the code, please
 open an issue - the code probably needs some refactoring if you feel that way.
 
+## Testing
+Tests are of two types, integration or unit tests. Both are run with `cargo test`.
+Unit tests are your standard doc tests and unit tests, just write them in as
+you'd normally would.
+
+Kerblam! is also tested against [the kerblam-examples examples](https://github.com/MrHedmad/kerblam-examples).
+Each example is in a directory (e.g. `examples/my_example`) with a `run` bash
+script that runs the example and rolls it back.
+`cargo test` checks out the *current* version of `kerblam-examples` and runs
+the `run` scripts, checking:
+- If the `run` script exited successfully;
+- If the number or content of the files in the repo has changed from before
+  the `run` script was executed.
+
+To add a new example/test, write the example (see the `kerblam examples` repo),
+add the `run` script to the example and add the `run_example_named!` or
+`run_failing_example_named!` macro with the name of the example, e.g.
+`run_example_named!("my_example")`.
+
+These integration tests are also run by cargo when you `cargo test`.
+They run locally on your machine, so you should make sure that you have
+properly installed kerblam!, including both docker and podman executables.
+
+If you find that one of these tests has failed, please be sure that it is not
+due to your specific environment before starting the debug process.
+
 ## Contributions
 Currently, the Kerblam! maintainer is [MrHedmad](https://github.com/MrHedmad).
 There are no other maintainers. All contributions are listed below
