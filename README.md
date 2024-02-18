@@ -32,6 +32,12 @@ Kerblam! then allows you to:
 To transform a project to a Kerblam! project just make the kerblam.toml
 file yourself. To learn how, look at the section below.
 
+<div align="center">
+
+[✨ See usage examples of Kerblam! ✨](https://github.com/MrHedmad/kerblam-examples)
+
+</div>
+
 # Overview
 Kerblam! has the following commands:
 - :magic_wand: `kerblam new` can be used to create a new kerblam!

@@ -307,6 +307,10 @@ Kerblam! will consider as "remotely available" files that are present in the
 > If you want to preserve the empty folders left behind after cleaning,
 > pass the `--keep-dirs` flag to do just that.
 
+> [!TIP]
+> Kerblam! will ask for your confirmation before deleting the files.
+> If you're feeling bold, skip it with the `--yes` flag.
+
 ### `kerblam data pack` - Package and export your local data
 Say that you wish to send all your data folder to a colleague for inspection.
 You can `tar -czvf exported_data.tar.gz ./data/` and send your whole data folder,

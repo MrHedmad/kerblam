@@ -374,7 +374,12 @@ fn delete_files(files: Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool, keep_dirs: bool) -> Result<()> {
+pub fn clean_data(
+    config: KerblamTomlOptions,
+    keep_remote: bool,
+    keep_dirs: bool,
+    skip_confirm: bool,
+) -> Result<()> {
     let cleanable_files = config.volatile_files();
     let remote_files: Vec<PathBuf> = config
         .remote_files()
@@ -406,12 +411,16 @@ pub fn clean_data(config: KerblamTomlOptions, keep_remote: bool, keep_dirs: bool
                 .sum::<FileSize>()
         );
 
-        match ask_for::<YesNo>(question.as_str()) {
-            YesNo::Yes => delete_files(cleanable_files.clone())?,
-            YesNo::No => {
-                bail!("Aborted!");
-            }
-        };
+        if skip_confirm {
+            delete_files(cleanable_files.clone())?
+        } else {
+            match ask_for::<YesNo>(question.as_str()) {
+                YesNo::Yes => delete_files(cleanable_files.clone())?,
+                YesNo::No => {
+                    bail!("Aborted!");
+                }
+            };
+        }
     }
 
     // After we cleanup the files, we can cleanup the directories
