@@ -117,9 +117,14 @@ macro_rules! run_example_named {
                 // Take a snapshot of the contents of the repo
                 let snap = snapshot(&target).expect("Could not take snapshot of repo");
 
+                // Redirect 'kerblam' to the test kerblam bin
+                let test_bin = PathBuf::from(env!("CARGO_BIN_EXE_kerblam"));
+                let original_path = env!("PATH");
+
                 // Run the things
                 let code = Command::new("bash")
                     .args([target.join("run")])
+                    .env("PATH", format!("{}:{}", test_bin.parent().unwrap().to_string_lossy(), original_path))
                     .output()
                     .expect("Could not collect child output");
 
@@ -159,9 +164,14 @@ macro_rules! run_failing_example_named {
                 // Take a snapshot of the contents of the repo
                 let snap = snapshot(&target).expect("Could not take snapshot of repo");
 
+                // Redirect 'kerblam' to the test kerblam bin
+                let test_bin = PathBuf::from(env!("CARGO_BIN_EXE_kerblam"));
+                let original_path = env!("PATH");
+
                 // Run the things
                 let code = Command::new("bash")
                     .args([target.join("run")])
+                    .env("PATH", format!("{}:{}", test_bin.parent().unwrap().to_string_lossy(), original_path))
                     .output()
                     .expect("Could not collect child output");
 
@@ -186,3 +196,4 @@ macro_rules! run_failing_example_named {
 run_example_named!("basic_pipes");
 run_example_named!("basic_containers");
 run_failing_example_named!("safe_failure");
+run_example_named!("overview");
