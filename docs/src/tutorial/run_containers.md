@@ -59,13 +59,28 @@ and this dockerignore file:
 and simply run `kerblam run process_csv` to build the container and run
 your code inside it.
 
+If you run `kerblam run` without a pipeline (or with the wrong pipeline), you
+will get the list of available pipelines.
+You can see at a glance what pipelines have an associated dockerfile as they
+are prepended with a little whale (🐋):
+```
+Error: No runtime specified. Available runtimes:
+🐋 my_pipeline :: Generate the output data in a docker container
+local_pipeline :: Run some code locally
+```
+
 ### Default dockerfile
 Kerblam! will look for a `default.dockerfile` if it cannot find a container
 recipe for the specific pipe (e.g. `pipe.dockerfile`), and use that instead.
 You can use this to write a generalistic dockerfile that works for your
 most simple pipelines.
-The :whale: emoji in the list of pipes will be replaced by a :fish: for
-pipes that use the default container, so you can identify them at a glance.
+The whale (🐋) emoji in the list of pipes will be replaced by a fish (🐟) for
+pipes that use the default container, so you can identify them easily:
+```
+Error: No runtime specified. Available runtimes:
+🐋 my_pipeline :: Generate the output data in a docker container
+🐟 another :: Run in the default container
+```
 
 ### Switching backends
 Kerblam! runs containers by default with Docker, but you can tell it to use

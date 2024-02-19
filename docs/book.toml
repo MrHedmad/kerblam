@@ -1,6 +1,18 @@
 [book]
-authors = ["Luca Visentin"]
+authors = ["Luca \"Hedmad\" Visentin"]
 language = "en"
 multilingual = false
 src = "src"
 title = "Kerblam Docs"
+description = "Manage and execute data analysis pipelines quickly, easily and reproducibly."
+
+[output.html]
+git-repository-url = "https://github.com/MrHedmad/kerblam"
+edit-url-template = "https://github.com/MrHedmad/kerblam/edit/main/docs/{path}"
+
+[output.html.search]
+limit-results = 15
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 2
+boost-paragraph = 1

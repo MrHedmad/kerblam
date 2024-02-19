@@ -7,7 +7,7 @@ Error: no runtime specified. Available runtimes:
     🐋 save_plots
     generate_metrics
 ```
-The whale emoji (🐋) represents pipes that have an associated Docker container.
+The whale emoji (🐋) represents pipes that [have an associated Docker container](run_containers.html).
 
 If you wish, you can add additional information to this list by writing a section
 in the makefile/shellfile itself. Using the same example as above:
@@ -37,8 +37,12 @@ Error: no runtime specified. Available runtimes:
     🐋 save_plots
     generate_metrics
 ```
-The 📜 emoji appears when Kerblam! notices a long description.
+The scroll (📜) emoji appears when Kerblam! notices a long description.
 You can show the full description for such pipes with `kerblam run process_csv --desc`.
 
 With pipeline docstrings, you can have a record of what the pipeline does for
 both yourself and others who review your work.
+
+You cannot write docstrings inside docker containers[^do_what_you_want].
+
+[^do_what_you_want]: You actually can. I can't stop you.
