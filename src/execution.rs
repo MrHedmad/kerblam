@@ -123,7 +123,13 @@ impl Executor {
             // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
             let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
-            let mut partial: Vec<String> = stringify![vec![&backend, "run", "-it"]];
+            let mut partial: Vec<String> = if atty::is(atty::Stream::Stdout) {
+                // We are in a terminal. Run interactively
+                stringify![vec![&backend, "run", "--rm", "-it"]]
+            } else {
+                // We are not in a terminal. Run normally
+                stringify![vec![&backend, "run", "--rm"]]
+            };
             // We need to bind-mount the same data dirs as specified in the options
             let mounts = generate_bind_mount_strings(config);
             for mount in mounts {
