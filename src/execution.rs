@@ -2,6 +2,7 @@ use core::panic;
 use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs;
+use std::io::{stdout, IsTerminal};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 
@@ -123,7 +124,7 @@ impl Executor {
             // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
             let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
-            let mut partial: Vec<String> = if atty::is(atty::Stream::Stdout) {
+            let mut partial: Vec<String> = if stdout().is_terminal() {
                 // We are in a terminal. Run interactively
                 stringify![vec![&backend, "run", "--rm", "-it"]]
             } else {

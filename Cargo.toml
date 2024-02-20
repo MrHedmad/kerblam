@@ -34,7 +34,6 @@ lto = "thin"
 
 [dependencies]
 anyhow = "^1.0"
-atty = "0.2.14"
 clap = { version = "^4.4", features = ["derive"] }
 crossbeam-channel = "^0.5"
 ctrlc = "^3.4"
