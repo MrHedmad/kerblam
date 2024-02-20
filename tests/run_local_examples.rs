@@ -102,9 +102,8 @@ fn check_identical(old_snap: Content, target: impl AsRef<Path>) -> io::Result<()
 }
 
 macro_rules! run_example_named {
-    ($name:literal) => {
+    ($name:literal, $check:literal) => {
         paste::item! {
-
             #[test]
             fn [< example_ $name >] () {
                 let repo = setup_test();
@@ -134,7 +133,11 @@ macro_rules! run_example_named {
                     String::from_utf8_lossy(&code.stderr),
                 );
 
-                assert!(code.status.success());
+                if $check == "success" {
+                    assert!(code.status.success());
+                } else {
+                    assert!(! code.status.success());
+                }
 
                 assert!(check_identical(snap, &target).is_ok());
 
@@ -146,14 +149,14 @@ macro_rules! run_example_named {
     };
 }
 
-// TODO: This is repeated from above with only small differences.
-// Can we avaoid it?
-macro_rules! run_failing_example_named {
-    ($name:literal) => {
+// Wrapping the result of a macro in anothe macro is terrible.
+// So the code is duplicated...
+macro_rules! run_ignored_example_named {
+    ($name:literal, $check:literal) => {
         paste::item! {
-
             #[test]
-            fn [< failing_example_ $name >] () {
+            #[ignore] // ... just for this line. Sucks to be you!
+            fn [< example_ $name >] () {
                 let repo = setup_test();
                 let target = repo.path().join(format!("examples/{}", $name));
 
@@ -181,7 +184,11 @@ macro_rules! run_failing_example_named {
                     String::from_utf8_lossy(&code.stderr),
                 );
 
-                assert!(! code.status.success());
+                if $check == "success" {
+                    assert!(code.status.success());
+                } else {
+                    assert!(! code.status.success());
+                }
 
                 assert!(check_identical(snap, &target).is_ok());
 
@@ -193,7 +200,10 @@ macro_rules! run_failing_example_named {
     };
 }
 
-run_example_named!("basic_pipes");
-run_example_named!("basic_containers");
-run_failing_example_named!("safe_failure");
-run_example_named!("overview");
+run_example_named!("basic_pipes", "success");
+
+run_ignored_example_named!("basic_containers", "success");
+
+run_example_named!("safe_failure", "failure");
+
+run_ignored_example_named!("overview", "success");

@@ -13,8 +13,7 @@ if you'd like!
 
 ## TODO
 Before merging, tick all of these boxes:
-- [ ] `cargo check` passes without errors or warnings.
-- [ ] `cargo test` passes without errors or warnings.
+- [ ] `cargo test -- --include-ignored` passes without errors or warnings.
 - [ ] Documentation is updated that reflect these changes.
   - [ ] This PR changes nothing that is reflected in docs.
 - [ ] @all-contributors is made aware of this PR.

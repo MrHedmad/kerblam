@@ -39,13 +39,30 @@ the `run` scripts, checking:
 
 To add a new example/test, write the example (see the `kerblam examples` repo),
 add the `run` script to the example and add the `run_example_named!` or
-`run_failing_example_named!` macro with the name of the example, e.g.
-`run_example_named!("my_example")`.
+`run_example_named!` macro with the name of the example and if you expect
+it to succeed or fail, e.g. `run_example_named!("my_example", "success")`.
 
-These integration tests are also run by cargo when you `cargo test`.
-They run locally on your machine, so you should make sure that you have
-properly installed kerblam!, including both docker and podman executables.
+### Testing docker
+Since CIs here on github are run in docker containers, there is a problem when
+trying to test kerblam! on the cloud:
 
+> The issue here is that when you run dockerized pipelines, the docker
+> container is connected through a socket to the host container.
+> Therefore, when we bind-mount paths inside the docker container, the bind
+> fails since the host docker daemon does not "see" inside the runtime.
+> It attempts to bind the local (on the host machine of Github) directory
+> but it simply fails since it's not what we want to bind to, resulting
+> in an empty mountpoint.
+> 
+> I think there is not easy solution here.
+
+For this reason, all tests that run Docker at some point are wrapped in the
+`run_ignored_example_named` macro instead. To run them locally, use
+`cargo test -- --include-ignored`.
+
+These example tests run locally on your machine, so you should make sure that you have
+properly installed the requirements for kerblam! to run, including both docker
+and podman executables.
 If you find that one of these tests has failed, please be sure that it is not
 due to your specific environment before starting the debug process.
 
