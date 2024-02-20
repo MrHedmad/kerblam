@@ -9,6 +9,15 @@ use rusty_fork::rusty_fork_test;
 // rusty-fork makes it so that each test is ran in its own *process*, so
 // this problem does not occur.
 
+// > ---  BIG FAT IMPORTANT NOTICE --- <
+//
+// These tests do not suffer from the "we cannot run docker tests on github"
+// problem since we call COPY . . without any form of dockerignore.
+// This means that THEY DO NOT TEST THE CORRECT MOUNTPOINTS used by Kerblam!
+// Just that the execution itself works.
+//
+// Keep that in mind.
+
 static TEST_KERBLAM_TOML: &'static str = r#"
 [data.remote]
 "https://raw.githubusercontent.com/MrHedmad/kerblam/main/README.md" = "input_data.txt"
