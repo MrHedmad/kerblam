@@ -303,11 +303,15 @@ pub fn warn_kerblam_version(config: &KerblamTomlOptions) {
 /// Find a pipe by name or die trying
 pub fn find_pipe_by_name(config: &KerblamTomlOptions, pipe_name: Option<String>) -> Result<Pipe> {
     let pipes = config.pipes();
-    let pipes_list = pipes
-        .iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>()
-        .join("\n");
+    let mut pipes_list = pipes.iter().map(|x| x.to_string()).collect::<Vec<String>>();
+
+    pipes_list.sort_unstable();
+    // The sorting starts with the emojis, so we sort in the opposite
+    // way to show the non-missing (e.g. not "◾") emojis to the top of the
+    // list. These are generally the most "interesting" pipelines.
+    pipes_list.reverse();
+
+    let pipes_list = pipes_list.join("\n");
 
     let pipe_name = match pipe_name {
         None => bail!("No runtime specified. Available runtimes:\n{}", pipes_list),
