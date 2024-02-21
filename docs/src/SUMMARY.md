@@ -10,6 +10,7 @@
 - [Pipelines](tutorial/pipelines.md)
   - [Running pipelines](tutorial/run.md)
   - [Containerized Execution of Pipelines](tutorial/run_containers.md)
+    - [Writing Dockerfiles for Kerblam!](tutorial/dockerfiles.md)
   - [Describing pipelines](tutorial/pipe_docstrings.md)
   - [Packaging pipelines for later](tutorial/package_pipes.md)
 - [Managing Data](tutorial/intro_data.md)

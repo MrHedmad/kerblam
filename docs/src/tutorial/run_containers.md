@@ -28,8 +28,7 @@ This means that you **have to write `.dockerignore` files in the `./src/dockerfi
 directory instead of the root of the repository**.
 The `dockerignore` and recipes will be executed as if they are in the root
 of the repository (e.g. next to the `kerblam.toml` file), just as you would
-if they were the only container recipe in your project.
- 
+if they were the only container recipe in your project.\
 As an added bonus, you can write custom dockerignores for each of your
 docker containers as `pipe.dockerfile.dockerignore`.\
 See [docker's documentation for this feature](https://docs.docker.com/engine/reference/commandline/build/#file)
@@ -38,6 +37,10 @@ and the related ['using a dockerignore' section](https://docs.docker.com/engine/
 You can write dockerfiles for both `make` and `sh` pipes.
 Kerblam! configures automatically the correct entrypoint and arguments to run
 the pipe in the container.
+
+Read the ["writing dockerfiles for Kerblam!"](dockerfiles.html) section to learn
+more about how to write dockerfiles that work nicely with Kerblam! (spoiler: it's
+easier than writing canonical dockerfiles!).
 
 For example, you can have the following Dockerfile:
 ```dockerfile
@@ -114,14 +117,14 @@ This one does the same by using the `WORKDIR` directive:
 WORKDIR /app
 COPY . .
 ```
-If you change the working directory, let kerblam know by setting the
+If you change the working directory, let Kerblam! know by setting the
 `execution > workdir` option in `kerblam.toml`:
 ```toml
 [execution]
 workdir = "/app"
 ```
 In this way, Kerblam! will run the containers with the proper paths.
-**This option applies to *ALL* containers managed by kerblam!**
+**This option applies to *ALL* containers managed by Kerblam!**
 
 There is currently no way to configure a different working directory for every
 specific dockerfile.
