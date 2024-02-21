@@ -214,7 +214,7 @@ impl Pipe {
 impl Display for Pipe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let container_prefix = if self.env_path.is_none() {
-            ""
+            "◾"
         } else {
             if self.env_path.clone().unwrap().file_stem().unwrap() == "default" {
                 "🐟"
@@ -229,13 +229,10 @@ impl Display for Pipe {
         {
             "📜"
         } else {
-            ""
+            "◾"
         };
 
-        let mut prefix = [container_prefix, desc_prefix].concat();
-        if !prefix.is_empty() {
-            prefix.push(' ');
-        }
+        let prefix = [container_prefix, desc_prefix].concat();
 
         let desc = self
             .description()
@@ -243,10 +240,10 @@ impl Display for Pipe {
 
         match desc {
             Some(desc) => {
-                write!(f, "{}{} :: {}", prefix, self.name(), desc.header)
+                write!(f, "    {} {} :: {}", prefix, self.name(), desc.header)
             }
             None => {
-                write!(f, "{}{}", prefix, self.name())
+                write!(f, "    {} {}", prefix, self.name())
             }
         }
     }
