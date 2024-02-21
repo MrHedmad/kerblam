@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy kerblam.dev documentation
 on:
   workflow_dispatch:
   release:
