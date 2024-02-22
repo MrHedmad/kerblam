@@ -412,17 +412,7 @@ fn print_text(text: minimad::Text) {
 }
 
 /// Returns a path with a new dotted extension component appended to the end.
-/// Note: does not check if the path is a file or directory; you should do that.
-/// # Example
-/// ```
-/// use pathext::append_ext;
-/// use std::path::PathBuf;
-/// let path = PathBuf::from("foo/bar/baz.txt");
-/// if !path.is_dir() {
-///    assert_eq!(append_ext("app", path), PathBuf::from("foo/bar/baz.txt.app"));
-/// }
-/// ```
-///
+/// Stolen from stackoverflow
 pub fn append_ext(ext: impl AsRef<OsStr>, path: PathBuf) -> PathBuf {
     let mut os_string: OsString = path.into();
     os_string.push(".");

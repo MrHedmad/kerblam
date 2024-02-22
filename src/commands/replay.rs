@@ -114,6 +114,7 @@ pub fn replay(
 
     let signal_receiver = setup_ctrlc_hook()?;
 
+    eprintln!("Replaying...");
     let _return_value = match run_protected_command(builder, signal_receiver) {
         Ok(CommandResult::Exited { res }) => Ok(Some(res)), // We don't care if it succeeded.
         Ok(CommandResult::Killed) => {
@@ -125,6 +126,8 @@ pub fn replay(
             Err(e)
         }
     }?;
+
+    eprintln!("Replay finished!");
 
     Ok(())
 }
