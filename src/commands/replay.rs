@@ -10,6 +10,7 @@ use crate::execution::{
     generate_bind_mount_strings, run_protected_command, setup_ctrlc_hook, CommandResult,
 };
 use crate::options::{ContainerBackend, KerblamTomlOptions};
+use crate::utils::gunzip_file;
 
 /// Replay a kerblam! analysis.
 ///
@@ -59,11 +60,13 @@ pub fn replay(
         decompression_dir.path().join("kerblam.toml"),
     )?)?;
 
-    let data_archive_conn = File::open(decompression_dir.path().join("data.tar.gz"))?;
-    let mut data_archive = tar::Archive::new(data_archive_conn);
-
+    let data_archive = decompression_dir.path().join("data.tar.gz");
+    if !data_archive.exists() {
+        bail!("Data archive not found.")
+    };
     eprintln!("Ready to replay! Reconstructing original environment...");
     // For the config files to work, we need to move inside the destination
+    create_dir_all(&destination)?;
     set_current_dir(destination)?;
 
     create_dir_all(package_config.input_data_dir())?;
@@ -72,9 +75,12 @@ pub fn replay(
 
     if !no_decompress {
         log::debug!(
-            "Unpacking data archive to {:?}",
+            "Unpacking {data_archive:?} to {:?}",
             package_config.input_data_dir()
         );
+        let data = gunzip_file(&data_archive, &data_archive)?;
+        let data_archive_conn = File::open(&data)?;
+        let mut data_archive = tar::Archive::new(data_archive_conn);
         data_archive.unpack(package_config.input_data_dir())?;
     };
 

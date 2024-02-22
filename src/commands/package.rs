@@ -7,7 +7,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::execution::{setup_ctrlc_hook, ExecutionStrategy, Executor};
+use crate::execution::{setup_ctrlc_hook, Executor};
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
 use crate::utils::{find_files, gzip_file, tar_files};
@@ -28,18 +28,8 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     log::debug!("Packaging pipe {pipe_name} as {package_name}...");
     let here = current_dir()?;
 
-    // Create an executor for later.
-    let executor: Executor = pipe.into_executor(&here)?;
-    let myself = current_exe()?;
-
-    if !executor.has_env() {
-        bail!(
-            "Cannot proceed! Pipe {:?} has no related container_file.",
-            pipe_name
-        )
-    };
-
     let precious_files = config.precious_files();
+    let input_data_dir = config.input_data_dir();
 
     // We have to purge all data from the context, so that we can package it
     // separately. For this reason we make a temporary context without it,
@@ -54,6 +44,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
             config.input_data_dir(),
             config.output_data_dir(),
             config.intermediate_data_dir(),
+            config.env_dir(),
         ]),
     );
     for file in context_files {
@@ -68,13 +59,21 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     set_current_dir(temp_build_dir.path())?;
 
     log::debug!("Building initial context...");
+    let executor: Executor = pipe.into_executor(&here)?;
+    let myself = current_exe()?;
+
+    if !executor.has_env() {
+        bail!(
+            "Cannot proceed! Pipe {:?} has no related container_file.",
+            pipe_name
+        )
+    };
     let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
     let backend: String = config.execution.backend.clone().into();
     let base_container = executor.build_env(sigint_rec, &backend)?;
     log::debug!("Base container name: {base_container:?}");
 
     // We now have the empty container. We can add our own layers.
-
     log::debug!("Writing wrapper container file.");
 
     // Write the container_file
@@ -88,14 +87,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     let kerblam_path = temp_build_dir.path().join("kerblam");
     copy(myself, kerblam_path)?;
 
-    let content = match executor.strategy() {
-        ExecutionStrategy::Make => format!(
-            "FROM {base_container}\nCOPY ./kerblam .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && make -C {workdir} -f {workdir}/executor\"]"
-        ),
-        ExecutionStrategy::Shell => format!(
-            "FROM {base_container}\nCOPY ./kerblam .\nENTRYPOINT [\"bash\", \"-c\", \"{workdir}/kerblam data fetch && bash {workdir}/executor\"]"
-        ),
-    };
+    let content = format!("FROM {base_container}\nWORKDIR {workdir}\nCOPY ./kerblam .\nENTRYPOINT [\"./kerblam\", \"run\", \"{pipe_name}\"]");
     log::debug!("Execution string: {content}");
     let new_container_file_path = temp_build_dir.path().join("Containerfile");
     let mut new_container_file = File::create(&new_container_file_path)?;
@@ -131,7 +123,11 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     // We now have to export the data.
     let temp_package = tempdir()?;
     log::debug!("Packaging temporary directory: {temp_package:?}");
-    let data_package = tar_files(precious_files, &here, temp_package.path().join("data"))?;
+    let data_package = tar_files(
+        precious_files,
+        input_data_dir,
+        temp_package.path().join("data"),
+    )?;
     let data_package = gzip_file(&data_package, &data_package)?;
 
     // Create the 'name' file

@@ -2,8 +2,8 @@ use anyhow::{anyhow, bail, Result};
 use flate2::Compression;
 use std::env::current_dir;
 use std::ffi::{OsStr, OsString};
-use std::fs;
 use std::fs::File;
+use std::fs::{self, create_dir_all};
 use std::io::{self, ErrorKind, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
@@ -457,6 +457,8 @@ pub fn gzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<Pa
     let input: PathBuf = input.as_ref().to_path_buf();
     let output: PathBuf = output.as_ref().to_path_buf();
 
+    create_dir_all(output.parent().unwrap())?;
+
     let mut input = File::open(input)?;
 
     let zipped = append_ext("gz", output);
@@ -465,4 +467,21 @@ pub fn gzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<Pa
     std::io::copy(&mut input, &mut encoder)?;
 
     Ok(zipped)
+}
+
+pub fn gunzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<PathBuf> {
+    let input: PathBuf = input.as_ref().to_path_buf();
+    let output: PathBuf = output.as_ref().to_path_buf();
+
+    create_dir_all(output.parent().unwrap())?;
+
+    let input = File::open(input)?;
+
+    let unzipped = output.with_extension("");
+    let mut conn = File::create(&unzipped)?;
+    let mut decoder = flate2::read::GzDecoder::new(input);
+
+    std::io::copy(&mut decoder, &mut conn)?;
+
+    Ok(unzipped)
 }
