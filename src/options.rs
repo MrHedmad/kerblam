@@ -396,10 +396,15 @@ impl KerblamTomlOptions {
 
         let pipes_names: Vec<(String, PathBuf)> = pipes_paths
             .into_iter()
+            .filter(|x| {
+                x.extension()
+                    .is_some_and(|x| (x == "makefile") | (x == "sh"))
+            })
             .map(|x| (x.file_stem().unwrap().to_string_lossy().to_string(), x))
             .collect();
         let envs_names: Vec<(String, PathBuf)> = env_paths
             .into_iter()
+            .filter(|x| x.extension().is_some_and(|x| (x == "dockerfile")))
             .map(|x| (x.file_stem().unwrap().to_string_lossy().to_string(), x))
             .collect();
         let mut pipes: Vec<Pipe> = vec![];
