@@ -69,7 +69,7 @@ macro_rules! stringify {
 /// to mimick the local file system in the container.
 ///
 /// Returns a vector of strings with the various `-v source:sink` options.
-fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
+pub fn generate_bind_mount_strings(config: &KerblamTomlOptions) -> Vec<String> {
     let mut result: Vec<String> = vec![];
     let root = current_dir().unwrap();
 
@@ -421,7 +421,7 @@ impl<F: Into<PathBuf>, T: Into<PathBuf>> From<(F, T)> for FileMover {
     }
 }
 
-enum CommandResult {
+pub enum CommandResult {
     Exited { res: ExitStatus },
     Killed,
 }
@@ -439,7 +439,7 @@ enum CommandResult {
 /// Returns an error if the child cannot be killed.
 /// Panics if something really bad happens and the kernel cannot get a handle
 /// on what the child is doing.
-fn run_protected_command<F>(cmd_builder: F, receiver: Receiver<bool>) -> Result<CommandResult>
+pub fn run_protected_command<F>(cmd_builder: F, receiver: Receiver<bool>) -> Result<CommandResult>
 where
     F: FnOnce() -> Child,
 {

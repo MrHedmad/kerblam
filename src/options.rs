@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use serde::Deserialize;
 use std::env::current_dir;
 use std::fmt::Display;
@@ -64,7 +65,7 @@ pub struct ExecutionOptions {
     pub workdir: Option<PathBuf>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum ContainerBackend {
     Docker,
