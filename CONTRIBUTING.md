@@ -23,6 +23,23 @@ Any complex parts of the code should be commented and propely explained.
 If you are unsure on what something does, and cannot decypher the code, please
 open an issue - the code probably needs some refactoring if you feel that way.
 
+### Code style
+Code styling is left to `cargo fmt`. Please reformat your code before sending a
+pull request, such as by adding this [`pre-commit`](https://pre-commit.com) hook:
+```yaml
+default_install_hook_types: [pre-commit, commit-msg]
+repos:
+-   repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+    -   id: fmt
+    -   id: cargo-check
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: end-of-file-fixer
+```
+
 ## Testing
 Tests are of two types, integration or unit tests. Both are run with `cargo test`.
 Unit tests are your standard doc tests and unit tests, just write them in as
@@ -55,6 +72,8 @@ trying to test kerblam! on the cloud:
 > in an empty mountpoint.
 > 
 > I think there is not easy solution here.
+>
+> - @MrHedmad
 
 For this reason, all tests that run Docker at some point are wrapped in the
 `run_ignored_example_named` macro instead. To run them locally, use
