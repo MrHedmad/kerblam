@@ -61,7 +61,7 @@ enum Command {
         pipe: Option<String>,
         /// The label of the exported container image
         #[arg(long)]
-        name: Option<String>,
+        tag: Option<String>,
     },
     /// Add paths and languages to .gitignore
     Ignore {
@@ -200,10 +200,10 @@ where
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
         },
-        Command::Package { pipe, name } => {
+        Command::Package { pipe, tag } => {
             let default_pipe_name = format!("{}_exec", &pipe.clone().unwrap_or("x".to_string()));
             let pipe = find_pipe_by_name(&config, pipe)?;
-            package_pipe(config, pipe, &name.unwrap_or(default_pipe_name))?;
+            package_pipe(config, pipe, &tag.unwrap_or(default_pipe_name))?;
         }
         Command::Ignore {
             path_or_name,

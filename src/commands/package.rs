@@ -133,9 +133,9 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     // Create the 'name' file
     let name_file = temp_package.path().join("name");
     let mut name_file_conn = File::create(&name_file)?;
-    write!(name_file_conn, "{}", package_name)?;
+    write!(name_file_conn, "{}", pipe_name)?;
 
-    let package = here.join(format!("{}.kerblam.tar", package_name));
+    let package = here.join(format!("{}.kerblam.tar", pipe_name));
     let package_conn = File::create(&package)?;
     let mut package_archive = tar::Builder::new(package_conn);
 
