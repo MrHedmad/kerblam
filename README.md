@@ -33,7 +33,7 @@ Kerblam! has the following commands:
 - :gift: `kerblam package` packages your pipelines and exports a container
   image for execution later plus a tarball with all the data a reproducer needs
   to run the analysis again.
-- :recycle: `kerblam replay` replays packaged pipelines fro the tarball made by
+- :recycle: `kerblam replay` replays packaged pipelines from the tarball made by
   `kerblam package`.
   It automatically tries to fetch the same container that was made when the
   tarball was packaged.
