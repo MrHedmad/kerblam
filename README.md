@@ -45,10 +45,12 @@ Kerblam! has the following commands:
   Optionally, allows test data or alternative data to be used instead of
   real data, in order to test your pipelines.
 - :gift: `kerblam package` packages your pipelines and exports a container
-  image for execution later.
-  It's useful for reproducibility purposes as the docker image is primed
-  for execution, bundling the kerblam! executable, execution files and non-remote
-  data in the blob itself.
+  image for execution later plus a tarball with all the data a reproducer needs
+  to run the analysis again.
+- :recycle: `kerblam replay` replays packaged pipelines fro the tarball made by
+  `kerblam package`.
+  It automatically tries to fetch the same container that was made when the
+  tarball was packaged.
 - :package: `kerblam data` fetches remote data and saves it locally, manages
   local data and can clean it up, preserving only files that must be preserved.
   It also shows you how much local data is on the disk, how much data is remote and
