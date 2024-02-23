@@ -16,7 +16,7 @@
 [✨ See usage Examples ✨](https://github.com/MrHedmad/kerblam-examples)
 
 [![An overview of kerblam!](https://s9.gifyu.com/images/SFNkp.gif)](https://asciinema.org/a/641448)
-<p style="color:red;font-size:10px"> Click on the animation to see it on asciinema.org! </p>
+###### Click on the animation to see it on asciinema.org!
 
 </div>
 
