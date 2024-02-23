@@ -21,6 +21,9 @@ on the side of the page.
 Note that all `kerblam` commands support a `--help` flag to print usage
 information.
 
+Kerblam! is very opinionated. To read more about why these choices where made,
+you can read [the Kerblam! philosophy](philosophy.html).
+
 ## Naming
 This project is named after the fictitious online shop/delivery company in
 [S11E07](https://en.wikipedia.org/wiki/Kerblam!) of Doctor Who.
