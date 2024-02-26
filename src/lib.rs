@@ -90,6 +90,7 @@ enum Command {
         tag: Option<String>,
         /// The backend to use, either 'docker' or 'podman'
         #[arg(long, short)]
+        #[clap(default_value = "docker")]
         backend: ContainerBackend,
     },
 }
