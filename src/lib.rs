@@ -124,7 +124,7 @@ where
 {
     let here = current_dir()?;
     log::debug!("Kerblam! invoked in {here:?}");
-    let args = Cli::try_parse_from(arguments)?;
+    let args = Cli::parse_from(arguments);
 
     if let Command::New { path } = args.command {
         eprintln!("Creating a new project in {:?}!", path);
