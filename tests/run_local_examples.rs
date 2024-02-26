@@ -207,3 +207,5 @@ run_ignored_example_named!("basic_containers", "success");
 run_example_named!("safe_failure", "failure");
 
 run_ignored_example_named!("overview", "success");
+
+run_ignored_example_named!("package", "success");
