@@ -1,7 +1,8 @@
 # Quickstart
 
-This introductory chapter will give you the general overview on Kerblam! so that
-you can continue on reading what each command does.
+Welcome to Kerblam!
+This introductory chapter will give you the general overview on Kerblam!: what
+it does and how it does it.
 
 Kerblam! is a *project manager*. It helps you write clean, concise data analysis
 pipelines, and takes care of chores for you.
@@ -52,6 +53,8 @@ you a bunch of benefits:
 - If you have wrapped up pipelines, you can export them for later execution
   (or to send them to a reviewer) with `kerblam package <pipe>` without needing
   to edit your dockerfiles.
+  - If you have a package from someone else, you can run it with
+    `kerblam replay`.
 - You can fetch remote data from the internet with `kerblam data fetch`, see
   how much disk space your project's data is using with `kerblam data` and
   safely cleanup all the files that are not needed to re-run your project with
