@@ -1,6 +1,7 @@
 # Summary
 
-[Introduction](introduction.md)
+[Welcome](landing.md)
+[About](about.md)
 
 - [Installation](install.md)
 

@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 
 use anyhow::*;
-use options::parse_kerblam_toml;
+use options::{parse_kerblam_toml, ContainerBackend};
 use std::env::set_current_dir;
 use std::ffi::OsString;
 use std::{env::current_dir, path::PathBuf};
@@ -13,7 +13,7 @@ mod utils;
 
 use commands::{
     clean_data, create_kerblam_project, fetch_remote_data, get_data_status, ignore,
-    kerblam_run_project, package_data_to_archive, package_pipe,
+    kerblam_run_project, package_data_to_archive, package_pipe, replay,
 };
 
 use crate::utils::find_pipe_by_name;
@@ -61,7 +61,7 @@ enum Command {
         pipe: Option<String>,
         /// The label of the exported container image
         #[arg(long)]
-        name: Option<String>,
+        tag: Option<String>,
     },
     /// Add paths and languages to .gitignore
     Ignore {
@@ -73,6 +73,25 @@ enum Command {
         /// Should the gitignore be compressed?
         #[arg(long, action)]
         compress: bool,
+    },
+    /// Replay a pipeline packaged with `package`
+    Replay {
+        /// The name of the compressed kerblam package
+        name: PathBuf,
+        /// Where the replay should happen in. Defaults to the current
+        /// environment
+        destination: Option<PathBuf>,
+        /// Skip decompressing data? Useful if you replayed before already.
+        #[arg(long, short, action)]
+        no_decompress: bool,
+        /// The name of the container used to unpack with, overriding the
+        /// instructions of the .kerblam file.
+        #[arg(long, short)]
+        tag: Option<String>,
+        /// The backend to use, either 'docker' or 'podman'
+        #[arg(long, short)]
+        #[clap(default_value = "docker")]
+        backend: ContainerBackend,
     },
 }
 
@@ -106,13 +125,31 @@ where
 {
     let here = current_dir()?;
     log::debug!("Kerblam! invoked in {here:?}");
-    let args = Cli::try_parse_from(arguments)?;
+    let args = Cli::parse_from(arguments);
 
     if let Command::New { path } = args.command {
         eprintln!("Creating a new project in {:?}!", path);
         create_kerblam_project(&path)?;
         return Ok(());
     };
+
+    if let Command::Replay {
+        name,
+        destination,
+        no_decompress,
+        tag,
+        backend,
+    } = args.command
+    {
+        replay(
+            name,
+            destination.unwrap_or(here),
+            no_decompress,
+            tag,
+            backend,
+        )?;
+        return Ok(());
+    }
 
     let toml_file = match find_kerblam_toml() {
         // If we find a toml file, move the current working directory there.
@@ -164,10 +201,10 @@ where
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
         },
-        Command::Package { pipe, name } => {
+        Command::Package { pipe, tag } => {
             let default_pipe_name = format!("{}_exec", &pipe.clone().unwrap_or("x".to_string()));
             let pipe = find_pipe_by_name(&config, pipe)?;
-            package_pipe(config, pipe, &name.unwrap_or(default_pipe_name))?;
+            package_pipe(config, pipe, &tag.unwrap_or(default_pipe_name))?;
         }
         Command::Ignore {
             path_or_name,
@@ -175,6 +212,9 @@ where
         } => {
             let gitignore_path = here.join(".gitignore");
             ignore(gitignore_path, &path_or_name, compress)?;
+        }
+        Command::Replay { .. } => {
+            unreachable!("This case was covered above already.")
         }
     };
 

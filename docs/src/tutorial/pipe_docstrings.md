@@ -3,9 +3,9 @@ If you execute `kerblam run` without specifying a pipe (or you try to run a
 pipe that does not exist), you will get a message like this:
 ```
 Error: no runtime specified. Available runtimes:
-    process_csv
-    🐋 save_plots
-    generate_metrics
+    ◾◾ process_csv
+    🐋◾ save_plots
+    ◾◾ generate_metrics
 ```
 The whale emoji (🐋) represents pipes that [have an associated Docker container](run_containers.html).
 
@@ -33,9 +33,9 @@ to only have a single contiguous description block in each file.
 The output of `kerblam run` will now read:
 ```
 Error: no runtime specified. Available runtimes:
-    📜 process_csv :: Calculate the sums of the input metrics
-    🐋 save_plots
-    generate_metrics
+    ◾📜 process_csv :: Calculate the sums of the input metrics
+    🐋◾ save_plots
+    ◾◾ generate_metrics
 ```
 The scroll (📜) emoji appears when Kerblam! notices a long description.
 You can show the full description for such pipes with `kerblam run process_csv --desc`.
@@ -45,4 +45,4 @@ both yourself and others who review your work.
 
 You cannot write docstrings inside docker containers[^do_what_you_want].
 
-[^do_what_you_want]: You actually can. I can't stop you.
+[^do_what_you_want]: You actually can. I can't stop you. But Kerblam! ignores them.

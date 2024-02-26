@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use serde::Deserialize;
 use std::env::current_dir;
 use std::fmt::Display;
@@ -64,7 +65,7 @@ pub struct ExecutionOptions {
     pub workdir: Option<PathBuf>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum ContainerBackend {
     Docker,
@@ -443,23 +444,29 @@ impl KerblamTomlOptions {
 
     /// Return all paths to pipes.
     fn pipes_paths(&self) -> Vec<PathBuf> {
-        let pipes = self
-            .code
+        let pipes = self.pipes_dir();
+        find_files(pipes, None)
+    }
+
+    /// Return the path to the pipes folder
+    pub fn pipes_dir(&self) -> PathBuf {
+        self.code
             .clone()
             .and_then(|x| x.pipes_dir)
-            .unwrap_or_else(|| current_dir().unwrap().join("src/pipes"));
+            .unwrap_or_else(|| current_dir().unwrap().join("src/pipes"))
+    }
 
-        find_files(pipes, None)
+    /// Return the path to the env folder
+    pub fn env_dir(&self) -> PathBuf {
+        self.code
+            .clone()
+            .and_then(|x| x.env_dir)
+            .unwrap_or_else(|| current_dir().unwrap().join("src/dockerfiles"))
     }
 
     /// Return all paths to environments.
     fn env_paths(&self) -> Vec<PathBuf> {
-        let env = self
-            .code
-            .clone()
-            .and_then(|x| x.env_dir)
-            .unwrap_or_else(|| current_dir().unwrap().join("src/dockerfiles"));
-
+        let env = self.env_dir();
         find_files(env, None)
     }
 }

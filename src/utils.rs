@@ -1,6 +1,9 @@
 use anyhow::{anyhow, bail, Result};
+use flate2::Compression;
 use std::env::current_dir;
-use std::fs;
+use std::ffi::{OsStr, OsString};
+use std::fs::File;
+use std::fs::{self, create_dir_all};
 use std::io::{self, ErrorKind, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
@@ -406,4 +409,69 @@ fn print_text(text: minimad::Text) {
     let skin = get_termimad_skin();
     let fmt_text = termimad::FmtText::from_text(&skin, text, None);
     println!("{fmt_text}");
+}
+
+/// Returns a path with a new dotted extension component appended to the end.
+/// Stolen from stackoverflow
+pub fn append_ext(ext: impl AsRef<OsStr>, path: PathBuf) -> PathBuf {
+    let mut os_string: OsString = path.into();
+    os_string.push(".");
+    os_string.push(ext.as_ref());
+    os_string.into()
+}
+
+/// Create a tarball from a series of files.
+///
+/// The `.tar` extension in added automatically to `target`.
+pub fn tar_files(files: Vec<PathBuf>, strip: impl AsRef<Path>, target: PathBuf) -> Result<PathBuf> {
+    let strip = strip.as_ref();
+
+    let data_tar = append_ext("tar", target);
+    let data_conn = File::create(&data_tar)?;
+
+    let mut data_tarball = tar::Builder::new(data_conn);
+
+    for item in files {
+        let inner = item.strip_prefix(&strip)?;
+        log::debug!("Adding {item:?} as {inner:?} to {data_tar:?}...");
+        data_tarball.append_path_with_name(&item, inner)?;
+    }
+
+    data_tarball.finish()?;
+    log::debug!("Finished creating tarball {data_tar:?}");
+
+    Ok(data_tar)
+}
+
+pub fn gzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<PathBuf> {
+    let input: PathBuf = input.as_ref().to_path_buf();
+    let output: PathBuf = output.as_ref().to_path_buf();
+
+    create_dir_all(output.parent().unwrap())?;
+
+    let mut input = File::open(input)?;
+
+    let zipped = append_ext("gz", output);
+    let conn = File::create(&zipped)?;
+    let mut encoder = flate2::write::GzEncoder::new(conn, Compression::default());
+    std::io::copy(&mut input, &mut encoder)?;
+
+    Ok(zipped)
+}
+
+pub fn gunzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<PathBuf> {
+    let input: PathBuf = input.as_ref().to_path_buf();
+    let output: PathBuf = output.as_ref().to_path_buf();
+
+    create_dir_all(output.parent().unwrap())?;
+
+    let input = File::open(input)?;
+
+    let unzipped = output.with_extension("");
+    let mut conn = File::create(&unzipped)?;
+    let mut decoder = flate2::read::GzDecoder::new(input);
+
+    std::io::copy(&mut decoder, &mut conn)?;
+
+    Ok(unzipped)
 }

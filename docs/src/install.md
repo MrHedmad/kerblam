@@ -1,12 +1,9 @@
 # Installation
-
-You have a few options when installing Kerblam!
-
-Currently, Kerblam! only supports mac OS (both intel and apple chips) and GNU linux.
-Other unix/linux versions may work. Install them from source with the commands below.
+You have a few options when installing Kerblam!.
 
 ### Requirements
-Kerblam! requires a Linux (or generally unix-like) OS.
+Currently, Kerblam! only supports mac OS (both intel and apple chips) and GNU linux.
+Other unix/linux versions *may* work, but are untested.
 It also uses binaries that it assumes are already installed:
 - GNU `make`: [gnu.org/software/make](https://gnu.org/software/make);
 - `git`: [git-scm.com](https://git-scm.com/)

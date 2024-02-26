@@ -24,15 +24,10 @@ and execute in a protected, reproducible environment.
 
 Kerblam! will build the container images without moving the recipies around.
 (this is what the `-f` flag does).
-This means that you **have to write `.dockerignore` files in the `./src/dockerfiles`
-directory instead of the root of the repository**.
-The `dockerignore` and recipes will be executed as if they are in the root
-of the repository (e.g. next to the `kerblam.toml` file), just as you would
-if they were the only container recipe in your project.\
-As an added bonus, you can write custom dockerignores for each of your
-docker containers as `pipe.dockerfile.dockerignore`.\
-See [docker's documentation for this feature](https://docs.docker.com/engine/reference/commandline/build/#file)
-and the related ['using a dockerignore' section](https://docs.docker.com/engine/reference/commandline/build/#use-a-dockerignore-file).
+The `.dockerfile` in the build context (next to the `kerblam.toml`) is shared
+by all pipes.
+See the ['using a dockerignore' section](https://docs.docker.com/engine/reference/commandline/build/#use-a-dockerignore-file)
+of the Docker documentation for more.
  
 You can write dockerfiles for both `make` and `sh` pipes.
 Kerblam! configures automatically the correct entrypoint and arguments to run
@@ -57,7 +52,8 @@ and this dockerignore file:
 ```dockerfile
 # ./src/dockerfiles/.dockerignore
 .git
-/data/out
+data
+venv
 ```
 and simply run `kerblam run process_csv` to build the container and run
 your code inside it.
@@ -68,8 +64,8 @@ You can see at a glance what pipelines have an associated dockerfile as they
 are prepended with a little whale (🐋):
 ```
 Error: No runtime specified. Available runtimes:
-🐋 my_pipeline :: Generate the output data in a docker container
-local_pipeline :: Run some code locally
+    🐋◾ my_pipeline :: Generate the output data in a docker container
+    ◾◾ local_pipeline :: Run some code locally
 ```
 
 ### Default dockerfile
@@ -81,8 +77,8 @@ The whale (🐋) emoji in the list of pipes will be replaced by a fish (🐟) fo
 pipes that use the default container, so you can identify them easily:
 ```
 Error: No runtime specified. Available runtimes:
-🐋 my_pipeline :: Generate the output data in a docker container
-🐟 another :: Run in the default container
+    🐋◾ my_pipeline :: Generate the output data in a docker container
+    🐟◾ another :: Run in the default container
 ```
 
 ### Switching backends

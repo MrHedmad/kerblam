@@ -1,0 +1,28 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Kerblam!
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Luca
+    family-names: Visentin
+    email: luca.visentin@unito.it
+    affiliation: University of Torino
+    orcid: 'https://orcid.org/0000-0003-2568-5694'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.10664806
+    description: Static Zenodo DOI to latest version of the software.
+repository-code: 'https://github.com/MrHedmad/kerblam'
+url: 'https://kerblam.dev'
+repository-artifact: 'https://github.com/MrHedmad/kerblam/releases'
+keywords:
+  - pipeline_execution
+  - container
+  - open_science
+  - reproducibility
+license: MIT

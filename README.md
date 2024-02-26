@@ -4,35 +4,21 @@
 ![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square&color=blue)
 ![GitHub License](https://img.shields.io/github/license/MrHedmad/kerblam?style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/MrHedmad/kerblam?style=flat-square&color=yellow)
-[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)
+[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)\
 [![DOI](https://zenodo.org/badge/720446939.svg?style=flat-square)](https://zenodo.org/doi/10.5281/zenodo.10664806)
 
 </div>
 
 <div align="center">
 
-[🚀 Read the full Kerblam Documentation 🚀](https://kerblam.dev)
+[🚀 Read the full Documentation 🚀](https://kerblam.dev)
+|
+[✨ See usage Examples ✨](https://github.com/MrHedmad/kerblam-examples)
+
+[![An overview of kerblam!](https://s9.gifyu.com/images/SFNkp.gif)](https://asciinema.org/a/641448)
+###### Click on the animation to see it on asciinema.org!
 
 </div>
-
-Kerblam! is a tool that can help you manage
-[data analysis projects](https://en.wikipedia.org/wiki/Data_analysis).
-A Kerblam! project has a `kerblam.toml` file in its root.
-Kerblam! then allows you to:
-- Manage and run multiple makefiles or shellfiles for different tasks;
-- Manage containers and run code in them for you;
-- Create reproducible containers to replay your work or share it with others;
-- Access remote data quickly, by just specifying URLs to fetch from;
-- Specify test or alternative data and quickly use it instead of real data.
-- Package and export data in order to share the project with colleagues;
-- Clean up intermediate and output files quickly;
-- Manage the content of your `.gitignore` for you, allowing to add files, 
-  directories and even whole languages in one command.
-
-To transform a project to a Kerblam! project you can just make the `kerblam.toml`
-file yourself. [Read the documentation to learn how](https://kerblam.dev/).
-If you want to see how Kerblam! works in action, you can
-[see usage examples of Kerblam! ✨](https://github.com/MrHedmad/kerblam-examples)
 
 # Overview
 Kerblam! has the following commands:
@@ -45,10 +31,12 @@ Kerblam! has the following commands:
   Optionally, allows test data or alternative data to be used instead of
   real data, in order to test your pipelines.
 - :gift: `kerblam package` packages your pipelines and exports a container
-  image for execution later.
-  It's useful for reproducibility purposes as the docker image is primed
-  for execution, bundling the kerblam! executable, execution files and non-remote
-  data in the blob itself.
+  image for execution later plus a tarball with all the data a reproducer needs
+  to run the analysis again.
+- :recycle: `kerblam replay` replays packaged pipelines from the tarball made by
+  `kerblam package`.
+  It automatically tries to fetch the same container that was made when the
+  tarball was packaged.
 - :package: `kerblam data` fetches remote data and saves it locally, manages
   local data and can clean it up, preserving only files that must be preserved.
   It also shows you how much local data is on the disk, how much data is remote and
@@ -101,7 +89,7 @@ If you don't like this setup, Kerblam! is probably not for you.
 > take a look at [the kerblam! philosophy](html://kerblam.dev/philosophy.html).
 
 ## Documentation
-The full Kerblam! documentation is online at [kerblam.dev](https://kerblam.dev).
+The full Kerblam! documentation is online at [kerblam.dev 🚀](https://kerblam.dev).
 Please take a look there for more information on what Kerblam! can do.
 For example, you might find [the tutorial](https://kerblam.dev/quickstart.html) interesting.
 
@@ -115,7 +103,7 @@ For example, you might find [the tutorial](https://kerblam.dev/quickstart.html) 
 
 In short, use a unix-compatible OS and either: 
 ```bash
-# Install a prebuild binary
+# Install a prebuilt binary
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/MrHedmad/kerblam/releases/latest/download/kerblam-installer.sh | sh
 ```
 or, alternatively
@@ -123,7 +111,7 @@ or, alternatively
 # Install from source with rustc and cargo
 cargo install kerblam
 ```
-You will need `git`, `make`, `tar` and `docker` or `podman` installed for
+You will need `git`, `make` and `docker` or `podman` installed for
 Kerblam! to work.
 
 ## Contributing
