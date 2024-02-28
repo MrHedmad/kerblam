@@ -15,6 +15,12 @@
 |
 [✨ See usage Examples ✨](https://github.com/MrHedmad/kerblam-examples)
 
+</div>
+
+Kerblam! is a Rust command line tool to manage the execution of scientific data analysis, where having reproducible results and sharing the executed pipelines is important. It makes it easy to write multiple analysis pipelines and select what data is analysed. Watch a demo below:
+
+<div align="center">
+  
 [![An overview of kerblam!](https://s9.gifyu.com/images/SFNkp.gif)](https://asciinema.org/a/641448)
 ###### Click on the animation to see it on asciinema.org!
 
