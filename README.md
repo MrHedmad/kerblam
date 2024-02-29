@@ -107,6 +107,11 @@ For example, you might find [the tutorial](https://kerblam.dev/quickstart.html) 
 
 </div>
 
+> [!WARNING]
+> Release candidates (e.g. `1.0.0-rc.x`) are not available on crates.io! Use the pre-compiled
+> binaries in the releases tab, the command below or compile directly from git with
+> `cargo install --git https://github.com/MrHedmad/kerblam`.
+
 In short, use a unix-compatible OS and either: 
 ```bash
 # Install a prebuilt binary
