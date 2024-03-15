@@ -85,6 +85,14 @@ and podman executables.
 If you find that one of these tests has failed, please be sure that it is not
 due to your specific environment before starting the debug process.
 
+## Cutting releases
+
+To cut a new release, simply merge the PR from [`Release-plz`](https://release-plz.ieni.dev/).
+Then, release-plz will generate the CHANGELOG.md from the commit history, create
+a new Github release and push a tag.
+This triggers `cargo-dist` to build the binaries and installers and upload them
+to the release.
+
 ## Contributions
 Currently, the Kerblam! maintainer is [MrHedmad](https://github.com/MrHedmad).
 There are no other maintainers. All contributions are listed below
