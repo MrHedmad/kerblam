@@ -55,16 +55,16 @@ walkdir = "^2.4"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.9.0"
+cargo-dist-version = "0.6.3"
 # CI backends to support
 ci = ["github"]
 # The installers to generate for each app
 installers = ["shell"]
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl"]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-musl"]
 # Publish jobs to run in CI
 pr-run-mode = "plan"
-# Do not create a new release - just append to the one already made by release-plz
+# Whether cargo-dist should create a Github Release or use an existing draft
 create-release = false
 
 [dev-dependencies]
