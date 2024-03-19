@@ -5,23 +5,23 @@ It allows you to package everything needed to execute a pipeline in a docker
 container and export it for execution later.
 
 You must have a matching dockerfile for every pipeline that you want to package,
-or Kerblam! wont know what to package your pipeline into.
+or Kerblam! won't know what to package your pipeline into.
 
 For example, say that you have a `process` pipe that uses `make` to run, and 
 requires both a remotely-downloaded `remote.txt` file and a local-only
 `precious.txt` file.
 
-If you execute
+If you execute:
 ```bash
 kerblam package process --tag my_process_package
 ```
 Kerblam! will:
-- Create a temporary context;
+- Create a temporary build context;
 - Copy all non-data files to the temporary context;
 - Build the specified dockerfile as normal, but using this temporary context;
 - Create a new `Dockerfile` that:
   - Inherits from the image built before;
-  - Copies the Kerblam! executable to the root of the dockerfile;
+  - Copies the Kerblam! executable to the root of the container;
   - Configure the default execution command to something suitable for execution
     (just like `kerblam run` does, but "baked in").
 - Build the docker container and tag it with `my_process_package`;
@@ -54,7 +54,7 @@ The responsibility of having the resulting docker work in the long-term is
 up to you, not Kerblam!
 For most cases, just having `kerblam run` work is enough for the resulting
 package made by `kerblam package` to work, but depending on your docker
-files this might not be the case.\
+files this might not be the case.
 Kerblam! does not test the resulting package - it's up to you to do that.
 It's best to try your packaged pipeline once before shipping it off.
 

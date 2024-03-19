@@ -5,7 +5,7 @@ project.
 If you follow open science guidelines, chances are that a lot of your data is
 FAIR, and you can fetch it remotely.
 
-Kerblam! is perfect to work with such data. The next sections outline what
+Kerblam! is perfect to work with such data. The next tutorial sections outline what
 Kerblam! can do to help you work with data.
 
 Remember that Kerblam! recognizes what data is what by the location where you 
@@ -31,6 +31,3 @@ The total size of all the files in the `./data/` folder is then broken down
 between categories: the `Total` data size, how much data can be removed with
 `kerblam data clean` or `kerblam data pack`, and how many files are specified
 to be downloaded but are not yet present locally.
-
-You can manipulate your data with `kerblam data` in several ways.
-In the following sections we explain every one of these ways.

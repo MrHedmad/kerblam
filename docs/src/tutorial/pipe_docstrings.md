@@ -15,7 +15,7 @@ in the makefile/shellfile itself. Using the same example as above:
 #? Calculate the sums of the input metrics
 #?
 #? The script takes the input metrics, then calculates the row-wise sums.
-#? These are important since the metrics refer to the calculation.
+#? These are useful since we can refer to this calculation later.
 
 ./data/out/output.csv: ./data/in/input.csv ./src/calc_sum.py
     cat $< | ./src/calc_sum.py > $@
