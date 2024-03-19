@@ -1,4 +1,4 @@
-![If you want it, kerblam it!](https://gist.github.com/MrHedmad/286e65516736ba723b45491e65e42ac1/raw/87bf4a548d8b562180163c762d5643ab54a9bb15/kerblam.dev_fig.png)
+![If you want it, kerblam it!](https://gist.github.com/MrHedmad/a5c719bbc22d982425fcd23f9e1d448c/raw/53833514b7701501c1c6b696156504b39b668f81/kerblam.dev_fig.png)
 
 Kerblam! is a Rust command line tool to manage the execution of scientific data
 analysis, where having reproducible results and sharing the executed pipelines
