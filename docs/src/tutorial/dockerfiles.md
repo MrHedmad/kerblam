@@ -21,20 +21,28 @@ using `COPY . .`.
 ### The `data` directory is excluded from packages
 If you have a `COPY . .` directive in the dockerfile, it will behave differently
 when you `kerblam run` versus when you `kerblam package`.
-In a run, **the current, local directory is used as-is as a build context**.
+
+When you run `kerblam package`, Kerblam! will create a temporary build context
+with no input data.
+This is what you want: Kerblam! needs to separately package your (precious)
+input data on the side, and copy in the container only code and other execution-specific
+files.
+
+In a run, the current local project directory is used as-is as a build context.
 This means that the `data` directory will be copied over.
 At the same time, Kerblam! will also *mount* the same directory to the running
 container, so the copied files will be "overwritten" by the live mountpoint
 while to container is running.
 
-This generally means that copying the whole data directory is useless. 
+This generally means that copying the whole data directory is useless in a run,
+and that it cannot be done during packaging.
 
 Therefore, a best practice is to ignore the contents of the data folders in the
 `.dockerignore` file.
 This makes no difference while packaging containers but a big difference when
 running them, as docker skips copying the useless data files.
 
-To do this in a standard Kerblam! project, add this to your `.dockerignore`:
+To do this in a standard Kerblam! project, simply add this to your `.dockerignore`:
 ```
 # Ignore the intermediate/output directory
 data
@@ -68,4 +76,4 @@ you place the `COPY . .` directive near the bottom of the dockerfile.
 This way, you can essentially work exclusively in docker and never install
 anything locally.
 
-Kerblam! will name the pipelines as `<pipeline name>_kerblam_runtime`.
+Kerblam! will name the containers for the pipelines as `<pipeline name>_kerblam_runtime`.

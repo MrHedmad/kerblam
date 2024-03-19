@@ -12,7 +12,3 @@ non-remotely-available `.data/in` files and the files in `./data/out`.
 You can also pass the `--cleanup` flag to also delete them after packing.
 
 You can then share the data pack with others.
-
-This is pretty useful if you have [packaged a pipeline](package_pipes.html) and 
-would like to send just the precious input data to whomever needs to reproduce
-your work.
