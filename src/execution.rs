@@ -117,10 +117,11 @@ impl Executor {
         signal_receiver: Receiver<bool>,
         config: &KerblamTomlOptions,
         env_vars: HashMap<String, String>,
+        extra_args: Option<Vec<String>>,
     ) -> Result<Option<ExitStatus>> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
-        let command_args = if self.env.is_some() {
+        let mut command_args = if self.env.is_some() {
             // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
             let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
@@ -177,6 +178,11 @@ impl Executor {
                 }
             }
         };
+
+        if extra_args.is_some() {
+            log::debug!("Appending extra command arguments...");
+            command_args.extend(extra_args.unwrap().into_iter());
+        }
 
         log::debug!("Executor command arguments: {:?}", command_args);
 
