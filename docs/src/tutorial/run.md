@@ -113,3 +113,38 @@ set to whatever the name of the profile is.
 In this way, you can detect from inside the pipeline if you are in a profile or not.
 This is useful if you want to keep the outputs of different profiles separate,
 for instance.
+
+## Sending additional arguments to make or bash
+You can send additional arguments to either `make` or `bash` after what
+Kerblam! sets by default by specifying them after kerblam's own `run` arguments:
+```bash
+kerblam run my_pipeline -- extra_arg1 extra_arg_2 ...
+```
+Everything after the `--` will be passed as-is to the `make` or `bash`
+worker after Kerblam!'s own arguments.
+
+For example, you can tell `make` to build a different target with this syntax:
+```bash
+kerblam run make_pipeline -- other_target
+```
+As if you had run `make other_target` yourself.
+
+Note that these extra arguments are passed to the `docker` or `podman` command
+for pipelines that have available dockerfiles.
+This means that you can communicate to the `docker`/`podman` process with this,
+for example to set limits on the resources the docker container is using.
+```bash
+kerblam run my_dockerized_pipeline -- --cpu-shares=3 -m 4G
+```
+Note that all ending arguments are transparently passed by the `docker` or
+`podman` instance to the underlying entrypoint, so non-container-specific
+arguments can be passed easily to the underlying `make` or `bash` process.
+To force `docker` to just pass the arguments to the underlying entrypoint,
+you can use the odd syntax of:
+```bash
+kerblam run my_pipe -- -- arg_1 arg_2 ...
+```
+The first `--` is "eaten up" by Kerblam!, and the second one is passed to the
+containerization engine, telling it to pass `arg_1`, `arg_2` etc... as-is to
+the entrypoint.
+
