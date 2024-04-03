@@ -49,6 +49,9 @@ enum Command {
         /// Do not run in container even if a container is available
         #[arg(long, short, action)]
         local: bool,
+        /// Command line arguments to be passed to child process
+        #[clap(last = true, allow_hyphen_values = true)]
+        extra_args: Option<Vec<String>>,
     },
     /// Manage local data
     Data {
@@ -126,6 +129,7 @@ where
     let here = current_dir()?;
     log::debug!("Kerblam! invoked in {here:?}");
     let args = Cli::parse_from(arguments);
+    log::debug!("Args: {args:?}");
 
     if let Command::New { path } = args.command {
         eprintln!("Creating a new project in {:?}!", path);
@@ -177,13 +181,21 @@ where
             profile,
             local,
             desc,
+            extra_args,
         } => {
             let pipe = find_pipe_by_name(&config, module_name)?;
             if desc {
                 print_md(&pipe.long_description());
                 return Ok(());
             }
-            kerblam_run_project(config, pipe, &current_dir().unwrap(), profile, local)?;
+            kerblam_run_project(
+                config,
+                pipe,
+                &current_dir().unwrap(),
+                profile,
+                local,
+                extra_args,
+            )?;
         }
         Command::Data { subcommand } => match subcommand {
             None => {
