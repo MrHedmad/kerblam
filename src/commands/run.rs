@@ -4,6 +4,7 @@ use std::env::current_dir;
 use std::fs::read_to_string;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use crate::execution::{setup_ctrlc_hook, Executor, FileMover};
 use crate::options::KerblamTomlOptions;
@@ -55,7 +56,12 @@ fn infer_test_data(paths: Vec<PathBuf>) -> HashMap<PathBuf, PathBuf> {
 ///
 /// This causes each project to have its own cache file.
 pub fn get_cache_path() -> Result<PathBuf> {
-    let cache_dir = get_my_home()?.unwrap().join(".cache/kerblam");
+    let cache_dir = match get_my_home() {
+        Ok(dir) => dir
+            .unwrap_or_else(|| PathBuf::from_str("/tmp").unwrap())
+            .join(".cache/kerblam"),
+        Err(_) => PathBuf::from_str("/tmp/.cache/kerblam").unwrap(),
+    };
     if !cache_dir.exists() {
         std::fs::create_dir_all(&cache_dir)?;
     };

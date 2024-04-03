@@ -114,6 +114,25 @@ In this way, you can detect from inside the pipeline if you are in a profile or 
 This is useful if you want to keep the outputs of different profiles separate,
 for instance.
 
+### File modification times when using profiles
+`make` tracks file creation times to determine if it has to re-run pipelines again.
+This means that if you move files around, like Kerblam! does when it applies
+profiles, `make` will always re-run your pipelines, even if you run the same
+pipeline with the same profile back-to-back.
+
+To avoid this, Kerblam! will keep track of the last-run profile in your
+projects and update the timestamps of the moved files
+**only when strictly necessary**.
+
+This means that the profile files will get updated timestamps only when they
+actually need to be updated, which is:
+- When you use a profile for the first time;
+- When you switch from one profile to a different one;
+- When you don't use a profile, but you just used one the previous run;
+
+To track what was the last profile used, Kerblam! creates a file in
+`$HOME/.cache/kerblam/` for each of your projects.
+
 ## Sending additional arguments to make or bash
 You can send additional arguments to either `make` or `bash` after what
 Kerblam! sets by default by specifying them after kerblam's own `run` arguments:
@@ -147,4 +166,3 @@ kerblam run my_pipe -- -- arg_1 arg_2 ...
 The first `--` is "eaten up" by Kerblam!, and the second one is passed to the
 containerization engine, telling it to pass `arg_1`, `arg_2` etc... as-is to
 the entrypoint.
-
