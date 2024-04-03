@@ -378,10 +378,12 @@ impl FileMover {
     ///
     /// Works identically to `mv`, but returns a new `FileMover` that can be
     /// used to quickly undo the move.
-    pub fn rename(self) -> Result<FileMover> {
+    pub fn rename(self, update_time: bool) -> Result<FileMover> {
         log::debug!("Moving {:?} to {:?}", self.from, self.to);
         fs::rename(&self.from, &self.to)?;
-        set_file_mtime(&self.to, FileTime::now())?;
+        if update_time {
+            set_file_mtime(&self.to, FileTime::now())?;
+        }
 
         Ok(self.invert())
     }
@@ -415,6 +417,14 @@ impl FileMover {
             from: self.to,
             to: self.from,
         }
+    }
+
+    pub fn get_from(self) -> PathBuf {
+        self.from.clone()
+    }
+    #[allow(dead_code)]
+    pub fn get_to(self) -> PathBuf {
+        self.to.clone()
     }
 }
 

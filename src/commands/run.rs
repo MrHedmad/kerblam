@@ -1,5 +1,8 @@
 use log;
 use std::collections::HashMap;
+use std::env::current_dir;
+use std::fs::read_to_string;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 
 use crate::execution::{setup_ctrlc_hook, Executor, FileMover};
@@ -7,6 +10,8 @@ use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
 
 use anyhow::{anyhow, bail, Result};
+use filetime::{set_file_mtime, FileTime};
+use homedir::get_my_home;
 
 /// Push a bit of a string to the end of this path
 ///
@@ -34,6 +39,87 @@ fn infer_test_data(paths: Vec<PathBuf>) -> HashMap<PathBuf, PathBuf> {
     }
 
     matches
+}
+
+/// NOTE: This chache-related stuff may be best moved to its own module and
+/// perhaps wrapped in a struct. The functions are broken up like this to be
+/// a bit more flexible if we need to add more than a single word in the cache
+/// in the future (like, using JSON or stuff like that).
+/// For now, it's so simple that just a few loose functions should be enough.
+
+/// Return the cache file for the current directory
+///
+/// The location of the cache file is dependent on the hash of the path
+/// of the current directory, which generally is where the kerblam.toml
+/// file is.
+///
+/// This causes each project to have its own cache file.
+pub fn get_cache_path() -> Result<PathBuf> {
+    let cache_dir = get_my_home()?.unwrap().join(".cache/kerblam");
+    if !cache_dir.exists() {
+        std::fs::create_dir_all(&cache_dir)?;
+    };
+    let path_hash = calc_hash(&mut current_dir().unwrap());
+    Ok(cache_dir.join(format!("{}", path_hash)))
+}
+
+/// Read the content of the cache file to a string
+/// Returns None if a cache cannot be found.
+pub fn get_cache() -> Option<String> {
+    let cache_file = get_cache_path().unwrap();
+    if !cache_file.exists() {
+        return None;
+    }
+
+    Some(read_to_string(cache_file).unwrap())
+}
+
+/// Save content to the cache
+pub fn write_cache(name: &str) -> Result<()> {
+    let cache_file = get_cache_path().unwrap();
+    std::fs::write(cache_file, name)?;
+
+    Ok(())
+}
+
+/// Check the name of the last profile run in this project and return
+/// True if it's the same as the current one, False otherwise.
+/// Returns None if there is no cache.
+///
+/// Also updates the cache to the new profile
+pub fn check_last_profile(current_profile: String) -> Option<bool> {
+    let last_profile = get_cache();
+
+    let result = last_profile
+        .clone()
+        .is_some_and(|x| x.trim() == current_profile);
+
+    write_cache(&current_profile).unwrap();
+
+    if last_profile.is_none() {
+        return None;
+    } else {
+        return Some(result);
+    }
+}
+
+/// Delete from the cache the last profile used.
+///
+/// This currently just deletes the cache.
+pub fn delete_last_profile() -> Result<()> {
+    let cache_path = get_cache_path()?;
+
+    if cache_path.exists() {
+        std::fs::remove_file(cache_path)?;
+    }
+
+    Ok(())
+}
+
+fn calc_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
 }
 
 fn extract_profile_paths(
@@ -165,9 +251,24 @@ pub fn kerblam_run_project(
         // This should mean that there is a profile with the same name in the
         // config...
         let profile_paths = extract_profile_paths(&config, profile.as_str())?;
+
+        // Check the cache (if there) what the last profile was.
+        // If it was this one, we should not update the file creation time
+        // as we move them around, or the make pipelines re-run from the
+        // beginning even if we did nothing to them
+        let cached_run = check_last_profile(profile);
+        let cached_run = if cached_run.is_none() {
+            false
+        } else {
+            cached_run.unwrap()
+        };
+        log::debug!("Checked cached profile: {}", cached_run);
+
         // Rename the paths that we found
-        let move_results: Vec<Result<FileMover, anyhow::Error>> =
-            profile_paths.into_iter().map(|x| x.rename()).collect();
+        let move_results: Vec<Result<FileMover, anyhow::Error>> = profile_paths
+            .into_iter()
+            .map(|x| x.rename(!cached_run))
+            .collect();
         // If they are all ok, return the vec
         if move_results.iter().all(|x| x.is_ok()) {
             move_results.into_iter().map(|x| x.unwrap()).collect()
@@ -183,7 +284,7 @@ pub fn kerblam_run_project(
                 .collect();
             for mover in unwindable {
                 // I don't use the result for the same reason.
-                let _ = mover.rename();
+                let _ = mover.rename(!cached_run);
             }
 
             let failed: Vec<anyhow::Error> =
@@ -199,6 +300,23 @@ pub fn kerblam_run_project(
             )
         }
     } else {
+        // If we are not in a profile now, but we were before, we should
+        // re-touch all the old profile paths just to be safe that the
+        // whole pipeline is re-run again with the new data
+        let last_profile = get_cache();
+        if last_profile.is_some() {
+            log::debug!("Should re-touch profile files.");
+            let profile_paths = extract_profile_paths(&config, &last_profile.unwrap())?;
+
+            for mover in profile_paths {
+                log::debug!("Touching {:?}", &mover.clone().get_from());
+                set_file_mtime(&mover.get_from(), FileTime::now())?;
+            }
+
+            // We are done. We can delete the last profile.
+            let _ = delete_last_profile();
+        }
+
         vec![]
     };
 
@@ -219,7 +337,9 @@ pub fn kerblam_run_project(
             // If this worked before, it should work now, that is why I discard the
             // result...
             // TODO: This might be a bad idea.
-            let _ = item.rename();
+            //
+            // We can skip updating timestamps at this stage
+            let _ = item.rename(false);
         }
     }
 
