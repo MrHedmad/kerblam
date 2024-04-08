@@ -79,7 +79,7 @@ pub fn replay(
             package_config.input_data_dir()
         );
         let data = gunzip_file(&data_archive, &data_archive)?;
-        let data_archive_conn = File::open(&data)?;
+        let data_archive_conn = File::open(data)?;
         let mut data_archive = tar::Archive::new(data_archive_conn);
         data_archive.unpack(package_config.input_data_dir())?;
     };

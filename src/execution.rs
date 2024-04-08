@@ -10,7 +10,7 @@ use crate::options::KerblamTomlOptions;
 
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
-use ctrlc;
+
 use filetime::{set_file_mtime, FileTime};
 
 // TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
@@ -181,7 +181,7 @@ impl Executor {
 
         if extra_args.is_some() {
             log::debug!("Appending extra command arguments...");
-            command_args.extend(extra_args.unwrap().into_iter());
+            command_args.extend(extra_args.unwrap());
         }
 
         log::debug!("Executor command arguments: {:?}", command_args);

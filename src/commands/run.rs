@@ -1,4 +1,3 @@
-use log;
 use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::read_to_string;
@@ -103,9 +102,9 @@ pub fn check_last_profile(current_profile: String) -> Option<bool> {
     write_cache(&current_profile).unwrap();
 
     if last_profile.is_none() {
-        return None;
+        None
     } else {
-        return Some(result);
+        Some(result)
     }
 }
 

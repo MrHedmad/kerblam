@@ -216,12 +216,10 @@ impl Display for Pipe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let container_prefix = if self.env_path.is_none() {
             "◾"
+        } else if self.env_path.clone().unwrap().file_stem().unwrap() == "default" {
+            "🐟"
         } else {
-            if self.env_path.clone().unwrap().file_stem().unwrap() == "default" {
-                "🐟"
-            } else {
-                "🐋"
-            }
+            "🐋"
         };
         let desc_prefix = if self
             .description()
@@ -416,7 +414,7 @@ impl KerblamTomlOptions {
         let default_dockerfile: Option<PathBuf> = envs_names
             .iter()
             .find(|(name, _)| name == "default")
-            .and_then(|(_, path)| Some(path.to_owned()));
+            .map(|(_, path)| path.to_owned());
 
         for (pipe_name, pipe_path) in pipes_names {
             let mut found = false;
