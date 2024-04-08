@@ -354,7 +354,7 @@ pub fn kerblam_run_project(
                 if res.success() {
                     Ok("Done!".into())
                 } else {
-                    Err(anyhow!("Process exited with error."))
+                    Err(anyhow!("Process exited with error: {res:?}"))
                 }
             }
             None => Err(anyhow!("Process killed.")),
