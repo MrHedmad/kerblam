@@ -151,7 +151,9 @@ impl Executor {
                     "make",
                     &runtime_name,
                     "-f",
-                    &format!("{}/executor", workdir)
+                    &format!("{}/executor", workdir),
+                    "-C",
+                    &workdir
                 ]),
                 ExecutionStrategy::Shell => stringify!(vec![
                     "--entrypoint",
