@@ -121,7 +121,7 @@ enum DataCommands {
 }
 
 /// Run Kerblam! with a certain arguments list.
-pub fn kerblam<'a, I, T>(arguments: I) -> anyhow::Result<()>
+pub fn kerblam<I, T>(arguments: I) -> anyhow::Result<()>
 where
     I: Iterator<Item = T>,
     T: Into<OsString> + Clone,

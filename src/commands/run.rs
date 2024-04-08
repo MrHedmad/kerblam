@@ -64,7 +64,7 @@ pub fn get_cache_path() -> Result<PathBuf> {
     if !cache_dir.exists() {
         std::fs::create_dir_all(&cache_dir)?;
     };
-    let path_hash = calc_hash(&mut current_dir().unwrap());
+    let path_hash = calc_hash(&current_dir().unwrap());
     Ok(cache_dir.join(format!("{}", path_hash)))
 }
 
@@ -262,11 +262,7 @@ pub fn kerblam_run_project(
         // as we move them around, or the make pipelines re-run from the
         // beginning even if we did nothing to them
         let cached_run = check_last_profile(profile);
-        let cached_run = if cached_run.is_none() {
-            false
-        } else {
-            cached_run.unwrap()
-        };
+        let cached_run = cached_run.unwrap_or(false);
         log::debug!("Checked cached profile: {}", cached_run);
 
         // Rename the paths that we found

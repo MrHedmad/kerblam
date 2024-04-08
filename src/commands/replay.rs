@@ -48,8 +48,8 @@ pub fn replay(
     let tag_name = match tag {
         Some(x) => x,
         None => {
-            if read_name.is_ok() {
-                read_name.unwrap()
+            if let Ok(name) = read_name {
+                name
             } else {
                 bail!("Could not read container name. Try running with --tag")
             }
