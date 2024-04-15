@@ -147,22 +147,3 @@ For example, you can tell `make` to build a different target with this syntax:
 kerblam run make_pipeline -- other_target
 ```
 As if you had run `make other_target` yourself.
-
-Note that these extra arguments are passed to the `docker` or `podman` command
-for pipelines that have available dockerfiles.
-This means that you can communicate to the `docker`/`podman` process with this,
-for example to set limits on the resources the docker container is using.
-```bash
-kerblam run my_dockerized_pipeline -- --cpu-shares=3 -m 4G
-```
-Note that all ending arguments are transparently passed by the `docker` or
-`podman` instance to the underlying entrypoint, so non-container-specific
-arguments can be passed easily to the underlying `make` or `bash` process.
-To force `docker` to just pass the arguments to the underlying entrypoint,
-you can use the odd syntax of:
-```bash
-kerblam run my_pipe -- -- arg_1 arg_2 ...
-```
-The first `--` is "eaten up" by Kerblam!, and the second one is passed to the
-containerization engine, telling it to pass `arg_1`, `arg_2` etc... as-is to
-the entrypoint.
