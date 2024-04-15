@@ -45,6 +45,7 @@ indicatif = "^0.17"
 log = "^0.4"
 reqwest = { version = "^0.11", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "^1.0", features = ["derive"] }
+serde_json = "1.0.115"
 tar = "0.4.40"
 tempfile = "^3.8"
 termimad = "0.29.0"

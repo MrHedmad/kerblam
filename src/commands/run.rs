@@ -214,10 +214,16 @@ pub fn kerblam_run_project(
         // If we are not in a profile now, but we were before, we should
         // re-touch all the old profile paths just to be safe that the
         // whole pipeline is re-run again with the new data
-        let last_profile = get_cache();
-        if last_profile.is_some() {
+        let last_cache = get_cache();
+        if last_cache
+            .clone()
+            .is_some_and(|x| x.last_executed_profile.is_some())
+        {
             log::debug!("Should re-touch profile files.");
-            let profile_paths = extract_profile_paths(&config, &last_profile.unwrap())?;
+            let profile_paths = extract_profile_paths(
+                &config,
+                &last_cache.unwrap().last_executed_profile.unwrap(),
+            )?;
 
             for mover in profile_paths {
                 log::debug!("Touching {:?}", &mover.clone().get_from());

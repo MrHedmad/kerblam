@@ -1,11 +1,25 @@
 use std::env::current_dir;
-use std::fs::read_to_string;
+use std::fs::File;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::PathBuf;
 use std::str::FromStr;
 
 use anyhow::Result;
 use homedir::get_my_home;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Cache {
+    pub last_executed_profile: Option<String>,
+}
+
+impl Default for Cache {
+    fn default() -> Self {
+        Cache {
+            last_executed_profile: None,
+        }
+    }
+}
 
 /// Return the cache file for the current directory
 ///
@@ -30,19 +44,36 @@ pub fn get_cache_path() -> Result<PathBuf> {
 
 /// Read the content of the cache file to a string
 /// Returns None if a cache cannot be found.
-pub fn get_cache() -> Option<String> {
+pub fn get_cache() -> Option<Cache> {
     let cache_file = get_cache_path().unwrap();
     if !cache_file.exists() {
         return None;
     }
+    let conn = match File::open(cache_file.clone()) {
+        Ok(file) => file,
+        Err(_) => {
+            log::warn!("Cache file cannot be read. Returning 'None' for cache content.");
+            return None;
+        }
+    };
 
-    Some(read_to_string(cache_file).unwrap())
+    let cache_content = match serde_json::from_reader(conn) {
+        Ok(content) => content,
+        Err(e) => {
+            log::error!(
+                "Failed to parse cache content: {e:?} Returning None. Consider deleting {cache_file:?}."
+            );
+            return None;
+        }
+    };
+
+    Some(cache_content)
 }
 
 /// Save content to the cache
-pub fn write_cache(name: &str) -> Result<()> {
+pub fn write_cache(content: Cache) -> Result<()> {
     let cache_file = get_cache_path().unwrap();
-    std::fs::write(cache_file, name)?;
+    std::fs::write(cache_file, serde_json::to_string_pretty(&content)?)?;
 
     Ok(())
 }
@@ -55,11 +86,21 @@ pub fn write_cache(name: &str) -> Result<()> {
 pub fn check_last_profile(current_profile: String) -> Option<bool> {
     let last_profile = get_cache();
 
-    let result = last_profile
-        .clone()
-        .is_some_and(|x| x.trim() == current_profile);
+    let result = last_profile.clone().is_some_and(|x| {
+        x.last_executed_profile
+            .is_some_and(|x| x == current_profile)
+    });
 
-    write_cache(&current_profile).unwrap();
+    let new_cache = Cache {
+        last_executed_profile: Some(current_profile),
+        ..last_profile.clone().unwrap_or_default()
+    };
+    match write_cache(new_cache) {
+        Ok(_) => {}
+        Err(_) => {
+            log::error!("New cache was generated but could not be written. Silently continuing.")
+        }
+    };
 
     if last_profile.is_none() {
         None
@@ -72,11 +113,14 @@ pub fn check_last_profile(current_profile: String) -> Option<bool> {
 ///
 /// This currently just deletes the cache.
 pub fn delete_last_profile() -> Result<()> {
-    let cache_path = get_cache_path()?;
+    let cache = get_cache();
 
-    if cache_path.exists() {
-        std::fs::remove_file(cache_path)?;
-    }
+    let new_cache = Cache {
+        last_executed_profile: None,
+        ..cache.unwrap_or_default()
+    };
+
+    write_cache(new_cache)?;
 
     Ok(())
 }
