@@ -51,7 +51,7 @@ enum Command {
         #[arg(long, short, action)]
         local: bool,
         /// Skip using build cache if running in containers.
-        #[arg(long = "skip-build-cache", action)]
+        #[arg(long = "no-build-cache", action)]
         skip_build_cache: bool,
         /// Command line arguments to be passed to child process
         #[clap(last = true, allow_hyphen_values = true)]

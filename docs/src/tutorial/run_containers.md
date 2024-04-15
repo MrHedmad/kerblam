@@ -132,6 +132,6 @@ In this way, Kerblam! will run the containers with the proper paths.
 Sometimes, you want to skip using the build cache when executing a pipeline
 with a container executable.
 
-Using `kerblam run my_pipeline --skip-build-cache` will do just that: the
+Using `kerblam run my_pipeline --no-build-cache` will do just that: the
 build backend will be told not to use the cached layers for that build (with
 [the `--no-cache` flag](https://docs.docker.com/reference/cli/docker/image/build/#options)).
