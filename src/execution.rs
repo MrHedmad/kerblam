@@ -117,6 +117,7 @@ impl Executor {
         signal_receiver: Receiver<bool>,
         config: &KerblamTomlOptions,
         env_vars: HashMap<String, String>,
+        skip_build_cache: bool,
         extra_args: Option<Vec<String>>,
     ) -> Result<Option<ExitStatus>> {
         let mut cleanup: Vec<PathBuf> = vec![];
@@ -124,7 +125,8 @@ impl Executor {
         let mut command_args = if self.env.is_some() {
             // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
-            let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
+            let runtime_name =
+                self.build_env(signal_receiver.clone(), &backend, skip_build_cache)?;
             let mut partial: Vec<String> = if stdout().is_terminal() {
                 // We are in a terminal. Run interactively
                 stringify![vec![&backend, "run", "--rm", "-it"]]
@@ -151,7 +153,7 @@ impl Executor {
                     "make",
                     &runtime_name,
                     "-f",
-                    &format!("{}/executor", workdir),
+                    "executor",
                     "-C",
                     &workdir
                 ]),
@@ -225,7 +227,12 @@ impl Executor {
     /// Build the context of this executor and return its tag.
     ///
     /// If the executor has no environment file, this function fails.
-    pub fn build_env(&self, signal_receiver: Receiver<bool>, backend: &str) -> Result<String> {
+    pub fn build_env(
+        &self,
+        signal_receiver: Receiver<bool>,
+        backend: &str,
+        no_cache: bool,
+    ) -> Result<String> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         if self.env.is_none() {
@@ -246,6 +253,8 @@ impl Executor {
 
         let containerfile_path = containerfile_path.as_os_str().to_string_lossy().to_string();
 
+        let skip_cache = if no_cache { "--no-cache" } else { "" };
+
         let builder = || {
             Command::new(backend)
                 // If the `self.env` path is not UTF-8 I'll eat my hat.
@@ -255,6 +264,7 @@ impl Executor {
                     containerfile_path.as_str(),
                     "--tag",
                     env_name.as_str(),
+                    skip_cache,
                     ".",
                 ])
                 .stdout(Stdio::inherit())

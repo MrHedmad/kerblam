@@ -146,6 +146,7 @@ pub fn kerblam_run_project(
     runtime_dir: &PathBuf,
     profile: Option<String>,
     ignore_container: bool,
+    skip_build_cache: bool,
     extra_args: Option<Vec<String>>,
 ) -> Result<String> {
     let pipe = if ignore_container {
@@ -245,7 +246,8 @@ pub fn kerblam_run_project(
     };
 
     // Execute the executor
-    let runtime_result = executor.execute(sigint_rec, &config, env_vars, extra_args);
+    let runtime_result =
+        executor.execute(sigint_rec, &config, env_vars, skip_build_cache, extra_args);
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {

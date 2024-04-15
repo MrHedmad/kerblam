@@ -70,7 +70,7 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     };
     let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
     let backend: String = config.execution.backend.clone().into();
-    let base_container = executor.build_env(sigint_rec, &backend)?;
+    let base_container = executor.build_env(sigint_rec, &backend, false)?;
     log::debug!("Base container name: {base_container:?}");
 
     // We now have the empty container. We can add our own layers.
