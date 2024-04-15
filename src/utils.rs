@@ -432,7 +432,7 @@ pub fn tar_files(files: Vec<PathBuf>, strip: impl AsRef<Path>, target: PathBuf) 
     let mut data_tarball = tar::Builder::new(data_conn);
 
     for item in files {
-        let inner = item.strip_prefix(&strip)?;
+        let inner = item.strip_prefix(strip)?;
         log::debug!("Adding {item:?} as {inner:?} to {data_tar:?}...");
         data_tarball.append_path_with_name(&item, inner)?;
     }

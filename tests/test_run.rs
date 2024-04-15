@@ -1,5 +1,5 @@
 use crate::utils::{assert_ok, init_log, setup_workdir, File};
-use chwd;
+
 use kerblam::kerblam;
 use rusty_fork::rusty_fork_test;
 
@@ -18,7 +18,7 @@ use rusty_fork::rusty_fork_test;
 //
 // Keep that in mind.
 
-static TEST_KERBLAM_TOML: &'static str = r#"
+static TEST_KERBLAM_TOML: &str = r#"
 [data.remote]
 "https://raw.githubusercontent.com/MrHedmad/kerblam/main/README.md" = "input_data.txt"
 "https://raw.githubusercontent.com/BurntSushi/ripgrep/master/README.md" = "alternate_input_data.txt"
@@ -28,18 +28,18 @@ static TEST_KERBLAM_TOML: &'static str = r#"
 
 "#;
 
-static TEST_SHELL_PIPE: &'static str = r#"
+static TEST_SHELL_PIPE: &str = r#"
 echo "Running shell pipe"
 mkdir -p ./data/out/
 cat ./data/in/input_data.txt | wc -l > ./data/out/line_count.txt
 "#;
 
-static TEST_ERROR_SHELL_PIPE: &'static str = r#"
+static TEST_ERROR_SHELL_PIPE: &str = r#"
 echo "Running error shell pipe"
 exit 1
 "#;
 
-static TEST_MAKE_PIPE: &'static str = r#"
+static TEST_MAKE_PIPE: &str = r#"
 .RECIPEPREFIX = > 
 all: ./data/out/line_count.txt
 
@@ -50,7 +50,7 @@ all: ./data/out/line_count.txt
 
 "#;
 
-static TEST_DOCKER_FILE: &'static str = r#"
+static TEST_DOCKER_FILE: &str = r#"
 FROM ubuntu:latest
 
 COPY . .
@@ -74,8 +74,8 @@ rusty_fork_test! {
         let temp_dir = setup_workdir(default_files.iter());
         let _flag = chwd::ChangeWorkingDirectory::change(&temp_dir).unwrap();
 
-        assert_ok(kerblam(vec!["", "data", "fetch"].iter()));
-        assert_ok(kerblam(vec!["", "run", "shell_pipe", "--local"].iter()));
+        assert_ok(kerblam(["", "data", "fetch"].iter()));
+        assert_ok(kerblam(["", "run", "shell_pipe", "--local"].iter()));
     }
 }
 
@@ -87,8 +87,8 @@ rusty_fork_test! {
         let temp_dir = setup_workdir(default_files.iter());
         let _flag = chwd::ChangeWorkingDirectory::change(&temp_dir).unwrap();
 
-        assert_ok(kerblam(vec!["", "data", "fetch"].iter()));
-        assert_ok(kerblam(vec!["", "run", "make_pipe", "--local"].iter()));
+        assert_ok(kerblam(["", "data", "fetch"].iter()));
+        assert_ok(kerblam(["", "run", "make_pipe", "--local"].iter()));
     }
 }
 
@@ -101,7 +101,7 @@ rusty_fork_test! {
         let temp_dir = setup_workdir(default_files.iter());
         let _flag = chwd::ChangeWorkingDirectory::change(&temp_dir).unwrap();
 
-        assert_ok(kerblam(vec!["", "data", "fetch"].iter()));
-        assert_ok(kerblam(vec!["", "run", "error", "--local"].iter()));
+        assert_ok(kerblam(["", "data", "fetch"].iter()));
+        assert_ok(kerblam(["", "run", "error", "--local"].iter()));
     }
 }

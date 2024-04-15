@@ -1,12 +1,13 @@
-use log;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use crate::cache::{check_last_profile, delete_last_profile, get_cache};
 use crate::execution::{setup_ctrlc_hook, Executor, FileMover};
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
 
 use anyhow::{anyhow, bail, Result};
+use filetime::{set_file_mtime, FileTime};
 
 /// Push a bit of a string to the end of this path
 ///
@@ -145,6 +146,7 @@ pub fn kerblam_run_project(
     runtime_dir: &PathBuf,
     profile: Option<String>,
     ignore_container: bool,
+    skip_build_cache: bool,
     extra_args: Option<Vec<String>>,
 ) -> Result<String> {
     let pipe = if ignore_container {
@@ -165,9 +167,20 @@ pub fn kerblam_run_project(
         // This should mean that there is a profile with the same name in the
         // config...
         let profile_paths = extract_profile_paths(&config, profile.as_str())?;
+
+        // Check the cache (if there) what the last profile was.
+        // If it was this one, we should not update the file creation time
+        // as we move them around, or the make pipelines re-run from the
+        // beginning even if we did nothing to them
+        let cached_run = check_last_profile(profile);
+        let cached_run = cached_run.unwrap_or(false);
+        log::debug!("Checked cached profile: {}", cached_run);
+
         // Rename the paths that we found
-        let move_results: Vec<Result<FileMover, anyhow::Error>> =
-            profile_paths.into_iter().map(|x| x.rename()).collect();
+        let move_results: Vec<Result<FileMover, anyhow::Error>> = profile_paths
+            .into_iter()
+            .map(|x| x.rename(!cached_run))
+            .collect();
         // If they are all ok, return the vec
         if move_results.iter().all(|x| x.is_ok()) {
             move_results.into_iter().map(|x| x.unwrap()).collect()
@@ -183,7 +196,7 @@ pub fn kerblam_run_project(
                 .collect();
             for mover in unwindable {
                 // I don't use the result for the same reason.
-                let _ = mover.rename();
+                let _ = mover.rename(!cached_run);
             }
 
             let failed: Vec<anyhow::Error> =
@@ -199,6 +212,29 @@ pub fn kerblam_run_project(
             )
         }
     } else {
+        // If we are not in a profile now, but we were before, we should
+        // re-touch all the old profile paths just to be safe that the
+        // whole pipeline is re-run again with the new data
+        let last_cache = get_cache();
+        if last_cache
+            .clone()
+            .is_some_and(|x| x.last_executed_profile.is_some())
+        {
+            log::debug!("Should re-touch profile files.");
+            let profile_paths = extract_profile_paths(
+                &config,
+                &last_cache.unwrap().last_executed_profile.unwrap(),
+            )?;
+
+            for mover in profile_paths {
+                log::debug!("Touching {:?}", &mover.clone().get_from());
+                set_file_mtime(&mover.get_from(), FileTime::now())?;
+            }
+
+            // We are done. We can delete the last profile.
+            let _ = delete_last_profile();
+        }
+
         vec![]
     };
 
@@ -210,7 +246,8 @@ pub fn kerblam_run_project(
     };
 
     // Execute the executor
-    let runtime_result = executor.execute(sigint_rec, &config, env_vars, extra_args);
+    let runtime_result =
+        executor.execute(sigint_rec, &config, env_vars, skip_build_cache, extra_args);
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {
@@ -219,7 +256,9 @@ pub fn kerblam_run_project(
             // If this worked before, it should work now, that is why I discard the
             // result...
             // TODO: This might be a bad idea.
-            let _ = item.rename();
+            //
+            // We can skip updating timestamps at this stage
+            let _ = item.rename(false);
         }
     }
 
@@ -233,7 +272,7 @@ pub fn kerblam_run_project(
                 if res.success() {
                     Ok("Done!".into())
                 } else {
-                    Err(anyhow!("Process exited with error."))
+                    Err(anyhow!("Process exited with error: {res:?}"))
                 }
             }
             None => Err(anyhow!("Process killed.")),

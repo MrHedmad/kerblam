@@ -6,6 +6,7 @@ use std::env::set_current_dir;
 use std::ffi::OsString;
 use std::{env::current_dir, path::PathBuf};
 
+mod cache;
 mod commands;
 mod execution;
 mod options;
@@ -49,6 +50,9 @@ enum Command {
         /// Do not run in container even if a container is available
         #[arg(long, short, action)]
         local: bool,
+        /// Skip using build cache if running in containers.
+        #[arg(long = "no-build-cache", action)]
+        skip_build_cache: bool,
         /// Command line arguments to be passed to child process
         #[clap(last = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -121,7 +125,7 @@ enum DataCommands {
 }
 
 /// Run Kerblam! with a certain arguments list.
-pub fn kerblam<'a, I, T>(arguments: I) -> anyhow::Result<()>
+pub fn kerblam<I, T>(arguments: I) -> anyhow::Result<()>
 where
     I: Iterator<Item = T>,
     T: Into<OsString> + Clone,
@@ -181,6 +185,7 @@ where
             profile,
             local,
             desc,
+            skip_build_cache,
             extra_args,
         } => {
             let pipe = find_pipe_by_name(&config, module_name)?;
@@ -194,6 +199,7 @@ where
                 &current_dir().unwrap(),
                 profile,
                 local,
+                skip_build_cache,
                 extra_args,
             )?;
         }

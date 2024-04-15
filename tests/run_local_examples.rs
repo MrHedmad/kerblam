@@ -1,5 +1,3 @@
-use git2;
-use paste;
 use std::collections::HashMap;
 use std::env::set_current_dir;
 use std::mem::drop;
@@ -8,7 +6,7 @@ use std::process::Command;
 use std::{fs, io};
 use tempfile::TempDir;
 
-const EXAMPLE_REPO: &'static str = "https://github.com/MrHedmad/kerblam-examples.git";
+const EXAMPLE_REPO: &str = "https://github.com/MrHedmad/kerblam-examples.git";
 
 /// Setup local tests by cloning the example repo.
 fn setup_test() -> TempDir {
@@ -22,7 +20,7 @@ fn setup_test() -> TempDir {
     fetcher.fetch_options(clone_options);
 
     fetcher
-        .clone(EXAMPLE_REPO, &target.path())
+        .clone(EXAMPLE_REPO, target.path())
         .expect("Could not clone remote repo.");
 
     target

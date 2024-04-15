@@ -10,7 +10,7 @@ use crate::options::KerblamTomlOptions;
 
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
-use ctrlc;
+
 use filetime::{set_file_mtime, FileTime};
 
 // TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
@@ -117,6 +117,7 @@ impl Executor {
         signal_receiver: Receiver<bool>,
         config: &KerblamTomlOptions,
         env_vars: HashMap<String, String>,
+        skip_build_cache: bool,
         extra_args: Option<Vec<String>>,
     ) -> Result<Option<ExitStatus>> {
         let mut cleanup: Vec<PathBuf> = vec![];
@@ -124,7 +125,8 @@ impl Executor {
         let mut command_args = if self.env.is_some() {
             // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
-            let runtime_name = self.build_env(signal_receiver.clone(), &backend)?;
+            let runtime_name =
+                self.build_env(signal_receiver.clone(), &backend, skip_build_cache)?;
             let mut partial: Vec<String> = if stdout().is_terminal() {
                 // We are in a terminal. Run interactively
                 stringify![vec![&backend, "run", "--rm", "-it"]]
@@ -151,7 +153,7 @@ impl Executor {
                     "make",
                     &runtime_name,
                     "-f",
-                    &format!("{}/executor", workdir),
+                    "executor",
                     "-C",
                     &workdir
                 ]),
@@ -183,7 +185,7 @@ impl Executor {
 
         if extra_args.is_some() {
             log::debug!("Appending extra command arguments...");
-            command_args.extend(extra_args.unwrap().into_iter());
+            command_args.extend(extra_args.unwrap());
         }
 
         log::debug!("Executor command arguments: {:?}", command_args);
@@ -225,7 +227,12 @@ impl Executor {
     /// Build the context of this executor and return its tag.
     ///
     /// If the executor has no environment file, this function fails.
-    pub fn build_env(&self, signal_receiver: Receiver<bool>, backend: &str) -> Result<String> {
+    pub fn build_env(
+        &self,
+        signal_receiver: Receiver<bool>,
+        backend: &str,
+        no_cache: bool,
+    ) -> Result<String> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         if self.env.is_none() {
@@ -246,17 +253,31 @@ impl Executor {
 
         let containerfile_path = containerfile_path.as_os_str().to_string_lossy().to_string();
 
+        let build_args: Vec<&str> = if no_cache {
+            vec![
+                "build",
+                "-f",
+                containerfile_path.as_str(),
+                "--tag",
+                env_name.as_str(),
+                "--no-cache",
+                ".",
+            ]
+        } else {
+            vec![
+                "build",
+                "-f",
+                containerfile_path.as_str(),
+                "--tag",
+                env_name.as_str(),
+                ".",
+            ]
+        };
+
         let builder = || {
             Command::new(backend)
                 // If the `self.env` path is not UTF-8 I'll eat my hat.
-                .args([
-                    "build",
-                    "-f",
-                    containerfile_path.as_str(),
-                    "--tag",
-                    env_name.as_str(),
-                    ".",
-                ])
+                .args(&build_args)
                 .stdout(Stdio::inherit())
                 .stdin(Stdio::inherit())
                 .stderr(Stdio::inherit())
@@ -380,10 +401,12 @@ impl FileMover {
     ///
     /// Works identically to `mv`, but returns a new `FileMover` that can be
     /// used to quickly undo the move.
-    pub fn rename(self) -> Result<FileMover> {
+    pub fn rename(self, update_time: bool) -> Result<FileMover> {
         log::debug!("Moving {:?} to {:?}", self.from, self.to);
         fs::rename(&self.from, &self.to)?;
-        set_file_mtime(&self.to, FileTime::now())?;
+        if update_time {
+            set_file_mtime(&self.to, FileTime::now())?;
+        }
 
         Ok(self.invert())
     }
@@ -417,6 +440,14 @@ impl FileMover {
             from: self.to,
             to: self.from,
         }
+    }
+
+    pub fn get_from(self) -> PathBuf {
+        self.from.clone()
+    }
+    #[allow(dead_code)]
+    pub fn get_to(self) -> PathBuf {
+        self.to.clone()
     }
 }
 
