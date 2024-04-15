@@ -6,6 +6,7 @@ use std::env::set_current_dir;
 use std::ffi::OsString;
 use std::{env::current_dir, path::PathBuf};
 
+mod cache;
 mod commands;
 mod execution;
 mod options;
