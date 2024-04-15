@@ -253,20 +253,31 @@ impl Executor {
 
         let containerfile_path = containerfile_path.as_os_str().to_string_lossy().to_string();
 
-        let skip_cache = if no_cache { "--no-cache" } else { "" };
+        let build_args: Vec<&str> = if no_cache {
+            vec![
+                "build",
+                "-f",
+                containerfile_path.as_str(),
+                "--tag",
+                env_name.as_str(),
+                "--no-cache",
+                ".",
+            ]
+        } else {
+            vec![
+                "build",
+                "-f",
+                containerfile_path.as_str(),
+                "--tag",
+                env_name.as_str(),
+                ".",
+            ]
+        };
 
         let builder = || {
             Command::new(backend)
                 // If the `self.env` path is not UTF-8 I'll eat my hat.
-                .args([
-                    "build",
-                    "-f",
-                    containerfile_path.as_str(),
-                    "--tag",
-                    env_name.as_str(),
-                    skip_cache,
-                    ".",
-                ])
+                .args(&build_args)
                 .stdout(Stdio::inherit())
                 .stdin(Stdio::inherit())
                 .stderr(Stdio::inherit())
