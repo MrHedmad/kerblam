@@ -17,11 +17,13 @@ and therefore locally expendable for the sake of saving disk size** (see the
 You can specify any number of URLs and file names in `[data.remote]`, one for
 each file that you wish to be downloaded.
 
-The download directory for all fetched data is your input directory,
-so if you specify `some/nested/dir/file.txt`, kerblam! will save the file in
-`./data/in/some/nested/dir/file.txt`.
-This also means that if you write an absolute path (e.g. `/some_file.txt`),
-Kerblam! will treat the path as it should treat it - by making `some_file.txt`
-in the root of the filesystem (and most likely failing to do so).
-It will, however, warn you before acting that it is about to do something
-potentially unwanted, giving you the chance to abort.
+> [!DANGER]
+> The download directory for all fetched data is your input directory,
+> so if you specify `some/nested/dir/file.txt`, kerblam! will save the file in
+> `./data/in/some/nested/dir/file.txt`.
+> This also means that if you write an absolute path (e.g. `/some_file.txt`),
+> Kerblam! will treat the path as it should treat it - by making `some_file.txt`
+> in the root of the filesystem (and most likely failing to do so).
+>
+> Kerblam! will, however, warn you before acting, telling you that it is about
+> to do something potentially unwanted, and giving you the chance to abort.

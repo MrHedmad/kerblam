@@ -58,6 +58,7 @@ You can then run the same makefile with the new data with:
 kerblam run process_csv --profile alternate
 ```
 
+> [!IMPORTANT]
 > Paths under every profile section are relative to the input data directory,
 > by default `data/in`.
 
@@ -71,6 +72,7 @@ Under the hood, Kerblam! will:
 
 This effectively causes the makefile to run with different input data.
 
+> [!WARNING]
 > Careful that the *output* data will (most likely) be saved as the
 > same file names as a "normal" run!
 > 
@@ -101,6 +103,7 @@ Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
 delete temporary files, etc...) when you use `kerblam run`, even if the pipe
 fails, and even if you kill your pipe with `CTRL-C`.
 
+> [!TIP]
 > If your pipeline is unresponsive to a `CTRL-C`, pressing it twice (two
 > `SIGTERM` signals in a row) will kill Kerblam! instead, leaving the child
 > process to be cleaned up by the OS and the (eventual) profile not cleaned up.

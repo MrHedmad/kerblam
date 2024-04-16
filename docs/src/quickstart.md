@@ -23,6 +23,7 @@ These folders, relative to where the `kerblam.toml` file is, are:
   They have to be written as if they were saved in `./`.
 - `./src/dockerfiles/`: Container build scripts should be saved here.
 
+> [!TIP]
 > Any sub-folder of one of these specific folders (with the exception of
 > `src/pipes` and `src/dockerfiles`) contains the same type of files as the
 > parent directory. For instance, `data/in/fastq` is treated as if it contains
@@ -33,6 +34,7 @@ This is mostly done for compatibility reasons with non-kerblam! projects.
 New projects that wish to use Kerblam! are strongly encouraged to follow the
 standard folder structure, however.
 
+> [!IMPORTANT]
 > The rest of these docs are written as if you are using the standard
 > folder structure. If you are not, don't worry! All Kerblam! commands respect
 > your choices in the `kerblam.toml` file.
@@ -66,5 +68,6 @@ The rest of this tutorial walks you through every feature.
 I hope you enjoy Kerblam! and that it makes your projects easier to understand,
 run and reproduce!
 
+> [!INFO]
 > If you like Kerblam!, please consider [leaving a star on Github](https://github.com/MrHedmad/kerblam/stargazers).
 > Thank you for supporting Kerblam!

@@ -4,6 +4,7 @@ The `kerblam.toml` file is the control center of kerblam!
 All of its configuration is found there.
 Here is what fields are available, and what they do.
 
+> [!WARNING]
 > Extra fields not found here are silently ignored.
 > This means that you must be careful of typos!
 
