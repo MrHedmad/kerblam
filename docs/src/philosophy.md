@@ -48,6 +48,7 @@ you have a `pyproject.toml`/`setup.py`, a module directory[^pyweird]...
 Similarly, when you work on a Rust project, you use `cargo`, and therefore
 have a `cargo.toml` file, a `/src` directory...
 
+> [!NOTE]
 > The topic of structuring the code itself is even deeper, with different ways to
 > think of your coding problem: object oriented vs functional vs procedural, 
 > monolithic vs microservices, etcetera, but it's out of the scope of this piece.
@@ -60,6 +61,7 @@ A ***project layout system (PLS)*** is a pre-established way to layout these fil
 Kerblam! is a tool that can help you with general tasks if you follow the
 Kerblam! project layout system.
 
+> [!NOTE]
 > There are also project *management* systems, that are tasked with managing
 > what has to be done while writing code.
 > They are not the subject of this piece, however.
@@ -95,6 +97,7 @@ binary files.
 
 [^proud]: I'm very proud of this pun. Please don't take it from me.
 
+> [!QUOTE]
 > I assume that the reader knows how vital version control is when writing software.
 > In case that you do not, I want to briefly outline why you'd want to use a version
 > control system in your work:
@@ -208,6 +211,7 @@ Other than input, output, temporary and intermediate data, kerblam! also conside
   little repercussion (i.e. you just re-download it or re-run the pipeline to
   obtain it again.
 
+> [!NOTE]
 > Practically, data can be input/output/temp/intermediate, either fragile
 > or precious and either local or remote.
 

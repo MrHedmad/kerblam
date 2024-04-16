@@ -20,6 +20,7 @@ Say 'yes' to all of these questions to follow along. Kerblam! will then:
   files (if you opted to use Python),
 - and setup the `.gitignore` file with appropriate ignores.
 
+> [!IMPORTANT]
 > Kerblam! will **NOT** do an `Initial commit` for you!
 > You still need to do that manually once you've finished setting up.
 

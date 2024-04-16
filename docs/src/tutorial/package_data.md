@@ -4,6 +4,7 @@ You can `tar -czvf exported_data.tar.gz ./data/` and send your whole data folder
 but you might want to only pick the output and non-remotely available inputs,
 and leave re-downloading the (potentially bulky) remote data to your colleague.
 
+> [!FAILURE]
 > It is widely known that remembering `tar` commands is impossible.
 
 If you run `kerblam data pack` you can do just that.

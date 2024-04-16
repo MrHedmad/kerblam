@@ -123,6 +123,7 @@ workdir = "/app"
 ```
 In this way, Kerblam! will run the containers with the proper paths.
 
+> [!IMPORTANT]
 > **This option applies to *ALL* containers managed by Kerblam!**
 > 
 > There is currently no way to configure a different working directory for every

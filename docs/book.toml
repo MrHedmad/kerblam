@@ -8,3 +8,5 @@ title = "Kerblam Docs"
 [output.html]
 default-theme="dark"
 preferred-dark-theme = "ayu"
+
+[preprocessor.callouts]
