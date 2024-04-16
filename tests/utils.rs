@@ -1,3 +1,4 @@
+use filetime::{set_file_mtime, FileTime};
 use similar::{ChangeTag, TextDiff};
 use std::env::set_var;
 use std::fmt::{Debug, Write};

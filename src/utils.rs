@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail, Result};
+use filetime::{set_file_mtime, FileTime};
 use flate2::Compression;
 use std::env::current_dir;
 use std::ffi::{OsStr, OsString};
@@ -474,4 +475,25 @@ pub fn gunzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<
     std::io::copy(&mut decoder, &mut conn)?;
 
     Ok(unzipped)
+}
+
+pub fn update_timestamps(path: &PathBuf) -> anyhow::Result<()> {
+    let mut files_touched = 0;
+    if path.is_file() {
+        files_touched += 1;
+        set_file_mtime(path, FileTime::now())?
+    } else if path.is_dir() {
+        for entry in walkdir::WalkDir::new(path)
+            .follow_links(false)
+            .into_iter()
+            .filter_map(|x| x.ok())
+        {
+            files_touched += 1;
+            if entry.path().is_file() {
+                set_file_mtime(entry.path(), FileTime::now())?;
+            }
+        }
+    }
+    log::debug!("Re-touched {files_touched} files.");
+    Ok(())
 }

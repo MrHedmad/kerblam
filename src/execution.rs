@@ -7,11 +7,10 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 
 use crate::options::KerblamTomlOptions;
+use crate::utils::update_timestamps;
 
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
-
-use filetime::{set_file_mtime, FileTime};
 
 // TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
 // functions can be simplified a lot.
@@ -405,7 +404,7 @@ impl FileMover {
         log::debug!("Moving {:?} to {:?}", self.from, self.to);
         fs::rename(&self.from, &self.to)?;
         if update_time {
-            set_file_mtime(&self.to, FileTime::now())?;
+            update_timestamps(&self.to)?;
         }
 
         Ok(self.invert())

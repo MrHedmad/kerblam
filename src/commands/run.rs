@@ -5,9 +5,9 @@ use crate::cache::{check_last_profile, delete_last_profile, get_cache};
 use crate::execution::{setup_ctrlc_hook, Executor, FileMover};
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
+use crate::utils::update_timestamps;
 
 use anyhow::{anyhow, bail, Result};
-use filetime::{set_file_mtime, FileTime};
 
 /// Push a bit of a string to the end of this path
 ///
@@ -234,7 +234,7 @@ pub fn kerblam_run_project(
 
             for mover in profile_paths {
                 log::debug!("Touching {:?}", &mover.clone().get_from());
-                set_file_mtime(&mover.get_from(), FileTime::now())?;
+                update_timestamps(&mover.clone().get_from())?
             }
 
             // We are done. We can delete the last profile.
