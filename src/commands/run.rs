@@ -75,10 +75,16 @@ fn extract_profile_paths(
         .map(|file| {
             let f = &root_dir.join(file);
             log::debug!("Checking if {f:?} exists...");
-            if !f.exists() {
-                bail!("\t- {:?} does not exists!", file)
-            };
-            Ok(())
+            match f.try_exists() {
+                Ok(i) => {
+                    if i {
+                        Ok(())
+                    } else {
+                        bail!("\t - {file:?} does not exist!")
+                    }
+                }
+                Err(e) => bail!("\t- {file:?} - {e:?}"),
+            }
         })
         .filter_map(|x| x.err())
         .collect();
