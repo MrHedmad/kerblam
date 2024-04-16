@@ -117,6 +117,9 @@ In this way, you can detect from inside the pipeline if you are in a profile or 
 This is useful if you want to keep the outputs of different profiles separate,
 for instance.
 
+> Profiles work on directories too! If you specify a directory as a target
+> of a profile, Kerblam! will move the whole directory to the new location.
+
 ### File modification times when using profiles
 `make` tracks file creation times to determine if it has to re-run pipelines again.
 This means that if you move files around, like Kerblam! does when it applies
