@@ -1,0 +1,9 @@
+name: Kerblam!
+icon: https://github.com/MrHedmad/kerblam/blob/main/docs/images/icon.png?raw=true
+headline: A project manager to keep data analysis workflows tidy and consistent.
+language: English
+
+documentation:
+  general: https://kerblam.dev/
+  installation: https://kerblam.dev/install.html
+  tutorial: https://kerblam.dev/quickstart.html
