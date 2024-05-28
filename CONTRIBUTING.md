@@ -87,11 +87,17 @@ due to your specific environment before starting the debug process.
 
 ## Cutting releases
 
-To cut a new release, simply merge the PR from [`Release-plz`](https://release-plz.ieni.dev/).
-Then, release-plz will generate the CHANGELOG.md from the commit history, create
-a new Github release and push a tag.
-This triggers `cargo-dist` to build the binaries and installers and upload them
-to the release.
+When we are ready to push a new release, do the following:
+- Update `cargo.toml` with the new tag, and commit the change.
+- To trigger a release, push a tag to the `main` branch with the version that
+  needs to be release.
+  This triggers `cargo-dist` to build the binaries and installers and upload them
+  to the release.
+  - For example: `git tag v0.0.0 && git push --tags`
+- To publish on `crates.io`, use `cargo publish` after triggering `cargo-dist`.
+
+And you're done! You might want to edit the release made automatically by
+`cargo-dist` with more information, perhaps by adding a changelog.
 
 ## Contributions
 Currently, the Kerblam! maintainer is [MrHedmad](https://github.com/MrHedmad).
