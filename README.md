@@ -17,46 +17,51 @@
 
 </div>
 
-Kerblam! is a Rust command line tool to manage the execution of scientific data analysis, where having reproducible results and sharing the executed pipelines is important. It makes it easy to write multiple analysis pipelines and select what data is analysed. Watch a demo below:
+## Kerblam! is a project management system.
 
-<div align="center">
-  
-[![An overview of kerblam!](https://s9.gifyu.com/images/SFNkp.gif)](https://asciinema.org/a/641448)
-###### Click on the animation to see it on asciinema.org!
+Wherever you have input data that needs to be processed to obtain some output,
+Kerblam! can help you out by dealing with the more tedious and repetitive parts
+of working with data for you, letting you concentrate on getting things done.
 
-</div>
+You can [watch a demo of what Kerblam! can do for you](https://asciinema.org/a/641448),
+or you can jump right in by [reading the quickstart guide](https://kerblam.dev/quickstart.html).
+
+If you are here often, you might need [the installation command](https://kerblam.dev/install.html).
 
 # Overview
-Kerblam! has the following commands:
-- :magic_wand: `kerblam new` can be used to create a new kerblam!
-  project. Kerblam! asks you if you want to use some common programming
-  languages and sets up a proper `.gitignore` for you.
-- :rocket: `kerblam run` executes the analysis for you,
-  by choosing your `makefile`s and containers appropriately and 
-  building container images as needed.
-  Optionally, allows test data or alternative data to be used instead of
-  real data, in order to test your pipelines.
-- :gift: `kerblam package` packages your pipelines and exports a container
-  image for execution later plus a tarball with all the data a reproducer needs
-  to run the analysis again.
-- :recycle: `kerblam replay` replays packaged pipelines from the tarball made by
-  `kerblam package`.
-  It automatically tries to fetch the same container that was made when the
-  tarball was packaged.
-- :package: `kerblam data` fetches remote data and saves it locally, manages
-  local data and can clean it up, preserving only files that must be preserved.
+These are some of the features of Kerblam!:
+- :magic_wand: You can quickly start a new project with `kerblam new`.
+  Kerblam generates the folder structure of your project using sensible defaults,
+  similar to what [`cookiecutter`](https://github.com/cookiecutter/cookiecutter) does.
+- :rocket: Kerblam! can manage your workflows, written for different
+  workflow management systems. It chiefly prefers GNU `make`, but can manage
+  anything that can be executed via the command line.
+- :recycle: Kerblam! can hotswap input data just before your workflows start,
+  letting you work with different sets of input data without having to touch
+  the configuration of your workflows.
+  For example, this is very useful to temporarily work with test data.
+- :gift: Kerblam! lets you run arbitrary workflows into containers, dealing
+  with volume mounting and other details for you.
+  This lets you package workflows that are not natively containerized
+  into Docker for greater reproducibility.
+  For instance, you might just need to run a very tiny data processing pipeline,
+  and don't want to deal with the verbosity of robust workflow management
+  systems like Snakemake, CWL or Nextflow.
+- :package: `kerblam package` packages your pipelines and exports a container
+  image for execution later. This leaves a tarball with all the data a
+  reproducer needs to run the analysis again, so they may do so quickly and
+  easily. The reproducer may do so manually, or use Kerblam! again to
+  un-package the project.
+- :package: Kerblam! can fetch remote data and save it locally, manage
+  local data and clean it up, preserving only files that must be preserved.
   It also shows you how much local data is on the disk, how much data is remote and
   how much disk space you can free without losing anything important.
   It can also export the important data to share it with colleagues quickly.
-- :scissors: `kerblam ignore` can edit your `.gitignore` file by adding files,
-  folders and GitHub's recommended ignores for specific languages in just one command.
 
-Kerblam! is *not* and does not want to be:
-- :non-potable_water: A pipeline manager like `snakemake` and `nextflow`;
-  - It supports and helps you execute pipelines written in other formats, but
+Kerblam! is *not* and *does not want to be*:
+- :non-potable_water: A workflow runner like `snakemake`, `nextflow` or `cwltool`;
+  - It supports and helps you execute pipelines written *for* other WMS, but
     it does not interfere from then on;
-  - You can however use `snakemake`, `nextflow` or any other program in conjunction
-    with Kerblam! by writing shell pipelines.
 - :recycle: A replacement for any of the tools it leverages (e.g. `git`, `docker` or `podman`,
   `pre-commit`, etc...);
 - :mag_right: Something that insulates you from the nuances of writing good, correct
@@ -67,13 +72,9 @@ Kerblam! is *not* and does not want to be:
   - Edit code for you (with the exception of a tiny bit of wrapping to allow
     `kerblam package` to work);
   - Handle any errors produced by the pipelines or containers.
-- :earth_africa: A tool that covers every edge case.
-  Kerblam! will never have a wall of options for you to choose from.
-  If you need more advanced control on what is done, you should directly
-  use the tools that Kerblam! leverages.
 
 ## Opinions
-Kerblam! wants to streamline and standardize data analysis project as much as
+Kerblam! wants to streamline and standardize data analysis projects as much as
 possible. For this reason, projects are opinionated:
 - The folder structure of your project adheres to the Kerblam! standard,
   although you may configure it in `kerblam.toml`.
@@ -97,7 +98,8 @@ If you don't like this setup, Kerblam! is probably not for you.
 ## Documentation
 The full Kerblam! documentation is online at [kerblam.dev 🚀](https://kerblam.dev).
 Please take a look there for more information on what Kerblam! can do.
-For example, you might find [the tutorial](https://kerblam.dev/quickstart.html) interesting.
+
+You might find [the tutorial](https://kerblam.dev/quickstart.html) interesting.
 
 ## Installation
 
@@ -122,8 +124,7 @@ or, alternatively
 # Install from source with rustc and cargo
 cargo install kerblam
 ```
-You will need `git`, `make` and `docker` or `podman` installed for
-Kerblam! to work.
+You will need `git`, `make` and `docker` or `podman` installed for Kerblam! to work.
 
 ## Contributing
 To contribute, please take a look at [the contributing guide](CONTRIBUTING.md).
@@ -147,8 +148,7 @@ the Zenodo DOI [10.5281/zenodo.10664806](https://zenodo.org/doi/10.5281/zenodo.1
 ## Naming
 This project is named after the fictitious online shop/delivery company in
 [S11E07](https://en.wikipedia.org/wiki/Kerblam!) of Doctor Who.
-Kerblam! might be referred to as Kerblam!, Kerblam or Kerb!am, interchangeably,
-although Kerblam! is preferred.
+Kerblam! might be referred to as Kerblam!, Kerblam or Kerb!am, interchangeably, although Kerblam! is preferred.
 The Kerblam! logo is written in the [Kwark Font](https://www.1001fonts.com/kwark-font.html)
 by [tup wanders](https://www.1001fonts.com/users/tup/).
 
