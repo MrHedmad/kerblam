@@ -4,10 +4,25 @@
 ![GitHub issues](https://img.shields.io/github/issues/MrHedmad/kerblam?style=flat-square&color=blue)
 ![GitHub License](https://img.shields.io/github/license/MrHedmad/kerblam?style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/MrHedmad/kerblam?style=flat-square&color=yellow)
-[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)\
+[![All Contributors](https://img.shields.io/github/all-contributors/MrHedmad/kerblam?color=ee8449&style=flat-square)](CONTRIBUTING.md)
 [![DOI](https://zenodo.org/badge/720446939.svg?style=flat-square)](https://zenodo.org/doi/10.5281/zenodo.10664806)
 
 </div>
+
+### Kerblam! is a **project management system** for data analysis projects.
+
+Wherever you have input data that needs to be processed to obtain some output,
+Kerblam! can help you out by dealing with the more tedious and repetitive parts
+of working with data for you, letting you concentrate on getting things done.
+
+Kerblam! lets you work reproducibly, rigorously and quickly for big and small
+projects alike: from routine data analysis to large, multi-workflow projects. 
+
+You can [watch a demo of what Kerblam! can do for you](https://asciinema.org/a/641448),
+or you can jump right in by [reading the quickstart guide](https://kerblam.dev/quickstart.html).
+If you are here often, you might need [the installation command](https://kerblam.dev/install.html).
+
+## Overview
 
 <div align="center">
 
@@ -17,18 +32,6 @@
 
 </div>
 
-## Kerblam! is a project management system.
-
-Wherever you have input data that needs to be processed to obtain some output,
-Kerblam! can help you out by dealing with the more tedious and repetitive parts
-of working with data for you, letting you concentrate on getting things done.
-
-You can [watch a demo of what Kerblam! can do for you](https://asciinema.org/a/641448),
-or you can jump right in by [reading the quickstart guide](https://kerblam.dev/quickstart.html).
-
-If you are here often, you might need [the installation command](https://kerblam.dev/install.html).
-
-# Overview
 These are some of the features of Kerblam!:
 - :magic_wand: You can quickly start a new project with `kerblam new`.
   Kerblam generates the folder structure of your project using sensible defaults,
@@ -37,8 +40,8 @@ These are some of the features of Kerblam!:
   workflow management systems. It chiefly prefers GNU `make`, but can manage
   anything that can be executed via the command line.
 - :recycle: Kerblam! can hotswap input data just before your workflows start,
-  letting you work with different sets of input data without having to touch
-  the configuration of your workflows.
+  letting you work with different sets of input data *on the fly*
+  without having to touch your configuration.
   For example, this is very useful to temporarily work with test data.
 - :gift: Kerblam! lets you run arbitrary workflows into containers, dealing
   with volume mounting and other details for you.
@@ -50,8 +53,8 @@ These are some of the features of Kerblam!:
 - :package: `kerblam package` packages your pipelines and exports a container
   image for execution later. This leaves a tarball with all the data a
   reproducer needs to run the analysis again, so they may do so quickly and
-  easily. The reproducer may do so manually, or use Kerblam! again to
-  un-package the project.
+  easily. The reproducer can use the reply tarball manually, or also let Kerblam!
+  un-package the project for them.
 - :package: Kerblam! can fetch remote data and save it locally, manage
   local data and clean it up, preserving only files that must be preserved.
   It also shows you how much local data is on the disk, how much data is remote and
@@ -79,7 +82,7 @@ possible. For this reason, projects are opinionated:
 - The folder structure of your project adheres to the Kerblam! standard,
   although you may configure it in `kerblam.toml`.
   Read more about it [here](https://kerblam.dev/quickstart.md).
-- You use `make` or bash scripts as your pipeline manager.
+- You use some kind of workflow management system to run your analysis.
   - Kerblam! natively uses `make`, but nothing stops you writing
     shell files that execute other tools, like `snakemake`.
 - You use `docker` or `podman` as your virtualisation service.
