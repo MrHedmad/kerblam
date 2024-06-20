@@ -30,8 +30,3 @@ on the side of the page.
 
 Kerblam! is very opinionated. To read more about why these choices where made,
 you can read [the Kerblam! philosophy](philosophy.html).
-
----
-
-![A diagram describing the structure of Kerblam! in brief.](https://gist.github.com/MrHedmad/a5c719bbc22d982425fcd23f9e1d448c/raw/07340b4819da43f981cafd6b31c0e05f84732975/kerblam.dev_fig.png)
-
