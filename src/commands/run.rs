@@ -37,9 +37,14 @@ fn infer_test_data(paths: Vec<PathBuf>) -> HashMap<PathBuf, PathBuf> {
     matches
 }
 
+// TODO: This checks for the existence of profile paths here. This is a bad
+// thing. It's best to handle the error when we actually do the move.
+// This was done this way because I want a nice error list.
+// The 'check_existence' check was added to overcome this, but it's a hack.
 fn extract_profile_paths(
     config: &KerblamTomlOptions,
     profile_name: &str,
+    check_existance: bool,
 ) -> Result<Vec<FileMover>> {
     let root_dir = config.input_data_dir();
     // The call here was broken in 2 because the last `ok_or` makes a temporary
@@ -89,7 +94,7 @@ fn extract_profile_paths(
         .filter_map(|x| x.err())
         .collect();
 
-    if !exist_check.is_empty() {
+    if !exist_check.is_empty() & check_existance {
         let mut missing: Vec<String> = Vec::with_capacity(exist_check.len());
         for item in exist_check {
             missing.push(item.to_string());
@@ -115,7 +120,7 @@ fn extract_profile_paths(
         .filter_map(|x| x.err())
         .collect();
 
-    if !exist_check.is_empty() {
+    if !exist_check.is_empty() & check_existance {
         let mut missing: Vec<String> = Vec::with_capacity(exist_check.len());
         for item in exist_check {
             missing.push(item.to_string());
@@ -172,7 +177,7 @@ pub fn kerblam_run_project(
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile.clone() {
         // This should mean that there is a profile with the same name in the
         // config...
-        let profile_paths = extract_profile_paths(&config, profile.as_str())?;
+        let profile_paths = extract_profile_paths(&config, profile.as_str(), true)?;
 
         // Check the cache (if there) what the last profile was.
         // If it was this one, we should not update the file creation time
@@ -227,14 +232,27 @@ pub fn kerblam_run_project(
             .is_some_and(|x| x.last_executed_profile.is_some())
         {
             log::debug!("Should re-touch profile files.");
+            // We can avoid checking if all files exist or in general if the
+            // profile is valid, since we just touch the existing files and
+            // that is it - we don't enact the profile.
             let profile_paths = extract_profile_paths(
                 &config,
                 &last_cache.unwrap().last_executed_profile.unwrap(),
+                false,
             )?;
 
             for mover in profile_paths {
                 log::debug!("Touching {:?}", &mover.clone().get_from());
-                update_timestamps(&mover.clone().get_from())?
+                match update_timestamps(&mover.clone().get_from()) {
+                    Ok(_) => (),
+                    Err(e) => {
+                        log::warn!(
+                            "Cannot touch {:?}: {:?}. Was the file deleted? Ignoring it.",
+                            &mover.clone().get_from(),
+                            e
+                        )
+                    }
+                }
             }
 
             // We are done. We can delete the last profile.
