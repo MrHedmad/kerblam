@@ -13,7 +13,28 @@ the top. Non pre-release versions sometimes have an associated name.
 
 ## [Unreleased]
 
-- Nothing.
+This release adds a few tweaks that should be made now before 1.0.0 and we
+stop being retrocompatible
+
+### Changed
+- **BREAKING CHANGE**: The default path for workflows was changed from 
+  `src/pipes` to `src/workflows`.
+  - The "pipeline" terminology is apparently quite old, and therefore
+    "workflow" sounds more natural to the modern ear.
+- The book and README were quite heavily updated to reflect the nature of
+  Kerblam!. A quickstart project was added to get people started with an
+  hand-on approach.
+
+### Fixed
+- The `test` profile could not be used if the `data.profiles` section of the
+  TOML was not there (even if empty).
+  This was fixed by @MrHedmad in https://github.com/MrHedmad/kerblam/pull/104
+- If you deleted some profile files between profiled runs, the cache would
+  tell Kerblam! to touch the files, but it would fail, since they are not
+  found.
+  Now, Kerblam! just silently ignores these files - if they are no there,
+  there is no need to update their timestamps, is there?
+  Fixed by @MrHedmad in https://github.com/MrHedmad/kerblam/pull/102
 
 ## [v1.0.0-rc.2] - 2024-05-28
 This release candidate adds a few fixes and features, and it is probably the
