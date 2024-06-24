@@ -1,51 +1,56 @@
-# Executing code - `kerblam run`
+# Running workflow managers - `kerblam run`
 
-The `kerblam run` command is used to run pipelines.
+The `kerblam run` command is used to execute workflow managers for you.
 
-Kerblam! looks for files ending in the `.makefile` extension for makefiles and 
-`.sh` for shell files in the pipelines directory (by default `src/pipes/`).
+Kerblam! looks for makefiles ending in the `.makefile` extension and 
+`.sh` for shell files in the workflows directory (by default `src/pipes/`).
 It automatically uses the proper execution strategy based on what extension
-the file is saved as.
+the file is saved as: either `make` or `bash`.
 
-Shellfiles are *always executed in `bash`*. You can use anything that is
-installed on your system this way, e.g. `snakemake` or `nextflow`.
+> [!IMPORTANT]
+> Shell scripts are always executed in `bash`.
 
+You can use any workflow manager that is installed on your system
+through Kerblam! (e.g. `snakemake` or `nextflow`) by writing thin shell wrappers
+with the execution command in the `src/pipes/` folder.
 Make has a special execution policy to allow it to work with as little boilerplate
 as possible.
-You can read more on Make [in the GNU Make book](https://www.gnu.org/software/make/manual/make.pdf).
 
 `kerblam run` supports the following flags:
-- `--profile <profile>`: Execute this pipeline with a profile.
+- `--profile <profile>`: Execute this workflow with a profile.
   Read more about profiles in the section below.
-- `--desc` (`-d`): Show [the description of the pipeline](pipe_docstrings.html), then exit.
+- `--desc` (`-d`): Show [the description of the workflow](workflow_docstrings.html), then exit.
 - `--local` (`-l`): Skip [running in a container](run_containers.html), if a
   container is available, preferring a local run.
 
 In short, `kerblam run` does something similar to this:
-- Move your `pipe.sh` or `pipe.makefile` file in the root of the project,
+- Move your `workflow.sh` or `workflow.makefile` file in the root of the project,
   under the name `executor`;
 - Launch `make -f executor` or `bash executor` for you.
 
-This is why pipelines are written as if they are executed in the root of the
+This is why workflows are written as if they are executed in the root of the
 project, because they are.
 
-## Data Profiles - Running the same pipelines on different data
+## Data Profiles - Running the same workflows on different data
 
-You can run your same pipelines, *as-is*, on different data thanks to data profiles.
+You can run your same workflows, *as-is*, on different data thanks to data profiles.
 
-By default, Kerblam! will use your untouched `./data/in/` folder when executing pipes.
-If you want the same pipes to run on different sets of input data, Kerblam! can
+By default, Kerblam! will leave `./data/in/` untouched when running workflow managers.
+If you want the same workflows to run on different sets of input data, Kerblam! can
 temporarily swap out your real data with this 'substitute' data during execution.
 
 For example, a `process_csv.makefile` requires an input `./data/in/input.csv` file.
-However, you might want to run the same pipe on another, `different_input.csv` file.
-You could copy and paste the first pipe and change the paths to the first file
-to this alternative one.
-However, you then have to maintain two essentially identical
-pipelines, and you are prone to adding errors while you modify it (what if you
+However, you might want to run the same workflow on another, `different_input.csv` file.
+You could copy and paste the first workflows and change the paths to the first file
+to this alternative one, or you might group variables into configuration
+files for your workflow.
+However, you then have to maintain two essentially identical workflows
+(or several different configuration files),
+and you are prone to adding errors while you modify them (what if you
 forget to change one reference to the original file?).
-You can use `kerblam` to do the same, but in an easy, declarative and less-error-prone way.
 
+You can let Kerblam! handle temporarely swapping input files for you,
+without touching your workflows.
 Define in your `kerblam.toml` file a new section under `data.profiles`:
 ```toml
 # You can use any ASCII name in place of 'alternate'.
@@ -57,6 +62,9 @@ You can then run the same makefile with the new data with:
 ```
 kerblam run process_csv --profile alternate
 ```
+> [!TIP]
+> Profiles work on directories too! If you specify a directory as a target
+> of a profile, Kerblam! will move the whole directory to the new location.
 
 > [!IMPORTANT]
 > Paths under every profile section are relative to the input data directory,
@@ -70,7 +78,7 @@ Under the hood, Kerblam! will:
   it moves `different_input.csv` back to its original place and
   renames `input.csv.original` back to `input.csv`.
 
-This effectively causes the makefile to run with different input data.
+This effectively causes the workflow to run with different input data.
 
 > [!WARNING]
 > Careful that the *output* data will (most likely) be saved as the
@@ -81,7 +89,7 @@ This effectively causes the makefile to run with different input data.
 > If you really want to, use the `KERBLAM_PROFILE` environment variable
 > described below and change the output paths accordingly.
 
-Profiles are most commonly useful to run the pipelines on test data that is faster to
+Profiles are most commonly useful to run the workflows on test data that is faster to
 process or that produces pre-defined outputs. For example, you could define
 something similar to:
 ```toml
@@ -89,7 +97,7 @@ something similar to:
 "input.csv" = "test_input.csv"
 "configs/config_file.yaml" = "configs/test_config_file.yaml"
 ```
-And execute your test run with `kerblam run pipe --profile test`.
+And execute your test run with `kerblam run workflow --profile test`.
 
 The profiles feature is used so commonly for test data that Kerblam! will
 automatically make a `test` profile for you, swapping all input files in the
@@ -100,36 +108,34 @@ If you write a `[data.profiles.test]` profile yourself, Kerblam! will not
 modify it in any way, effectively disabling the automatic test profile feature.
 
 Kerblam! tries its best to cleanup after itself (e.g. undo profiles,
-delete temporary files, etc...) when you use `kerblam run`, even if the pipe
-fails, and even if you kill your pipe with `CTRL-C`.
+delete temporary files, etc...) when you use `kerblam run`, even if the workflow
+fails, and even if you kill your workflow with `CTRL-C`.
 
 > [!TIP]
-> If your pipeline is unresponsive to a `CTRL-C`, pressing it twice (two
+> If your workflow is unresponsive to a `CTRL-C`, pressing it twice (two
 > `SIGTERM` signals in a row) will kill Kerblam! instead, leaving the child
 > process to be cleaned up by the OS and the (eventual) profile not cleaned up.
 >
-> This is to allow you to stop whatever Kerblam! or the pipe is doing in
+> This is to allow you to stop whatever Kerblam! or the workflow is doing in
 > case of emergency.
 
-Kerblam! will run the pipelines with the environment variable `KERBLAM_PROFILE`
+### Detecting if you are in a profiled run
+
+Kerblam! will run the workflows with the environment variable `KERBLAM_PROFILE`
 set to whatever the name of the profile is.
-In this way, you can detect from inside the pipeline if you are in a profile or not.
+In this way, you can detect from inside the workflow if you are in a profile or not.
 This is useful if you want to keep the outputs of different profiles separate,
 for instance.
 
-> [!TIP]
-> Profiles work on directories too! If you specify a directory as a target
-> of a profile, Kerblam! will move the whole directory to the new location.
-
 ### File modification times when using profiles
-`make` tracks file creation times to determine if it has to re-run pipelines again.
+`make` tracks file creation times to determine if it has to re-run workflows again.
 This means that if you move files around, like Kerblam! does when it applies
-profiles, `make` will always re-run your pipelines, even if you run the same
-pipeline with the same profile back-to-back.
+profiles, `make` will always re-run your workflows, even if you run the same
+workflow with the same profile back-to-back.
 
 To avoid this, Kerblam! will keep track of the last-run profile in your
-projects and update the timestamps of the moved files
-**only when strictly necessary**.
+projects and will update the timestamps of the moved files
+*only when strictly necessary*.
 
 This means that the profile files will get updated timestamps only when they
 actually need to be updated, which is:
@@ -140,17 +146,18 @@ actually need to be updated, which is:
 To track what was the last profile used, Kerblam! creates a file in
 `$HOME/.cache/kerblam/` for each of your projects.
 
-## Sending additional arguments to make or bash
+### Sending additional arguments to the worker process
 You can send additional arguments to either `make` or `bash` after what
 Kerblam! sets by default by specifying them after kerblam's own `run` arguments:
 ```bash
-kerblam run my_pipeline -- extra_arg1 extra_arg_2 ...
+kerblam run my_workflow -- extra_arg1 extra_arg_2 ...
 ```
 Everything after the `--` will be passed as-is to the `make` or `bash`
 worker after Kerblam!'s own arguments.
 
 For example, you can tell `make` to build a different target with this syntax:
 ```bash
-kerblam run make_pipeline -- other_target
+kerblam run make_workflow -- other_target
 ```
 As if you had run `make other_target` yourself.
+

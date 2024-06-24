@@ -4,23 +4,24 @@
 [About](about.md)
 
 - [Installation](install.md)
-
-# Tutorial
 - [Quickstart](quickstart.md)
-- [Creating new projects](tutorial/new.md)
-- [Pipelines](tutorial/pipelines.md)
-  - [Running pipelines](tutorial/run.md)
-  - [Containerized Execution of Pipelines](tutorial/run_containers.md)
-    - [Writing Dockerfiles for Kerblam!](tutorial/dockerfiles.md)
-  - [Describing pipelines](tutorial/pipe_docstrings.md)
-  - [Packaging pipelines for later](tutorial/package_pipes.md)
-- [Managing Data](tutorial/intro_data.md)
-  - [Fetching remote data](tutorial/fetch_data.md)
-  - [Package and distribute data](tutorial/package_data.md)
-  - [Cleanup data](tutorial/data_clean.md)
-- [Other utilities](tutorial/utils.md)
-- [Getting help](tutorial/get_help.md)
-- [Usage examples](tutorial/examples.md)
+
+# Manual
+- [Introduction](intro.md)
+- [Creating new projects](manual/new.md)
+- [Managing workflows](manual/pipelines.md)
+  - [Running workflow managers](manual/run.md)
+  - [Containerized execution](manual/run_containers.md)
+    - [Writing Dockerfiles for Kerblam!](manual/dockerfiles.md)
+  - [Describing workflows](manual/pipe_docstrings.md)
+  - [Packaging workflow runs for later](manual/package_pipes.md)
+- [Managing Data](manual/intro_data.md)
+  - [Fetching remote data](manual/fetch_data.md)
+  - [Package and distribute data](manual/package_data.md)
+  - [Cleanup data](manual/data_clean.md)
+- [Other utilities](manual/utils.md)
+- [Getting help](manual/get_help.md)
+- [Usage examples](manual/examples.md)
 
 # Reference
 - [The `kerblam.toml` file](kerblam.toml.md)

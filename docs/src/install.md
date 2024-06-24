@@ -9,10 +9,9 @@ It also uses binaries that it assumes are already installed and visible from you
 - `git`: [git-scm.com](https://git-scm.com/)
 - Docker (as `docker`) and/or Podman (as `podman`):
   [docker.com](https://docker.com/) and/or [podman.io](https://podman.io);
-- `tar`: [gnu.org/software/tar](https://www.gnu.org/software/tar/).
 - `bash`: [gnu.org/software/bash](https://www.gnu.org/software/bash/).
 
-If you can use `git`, `make`, `tar`, `bash` and `docker` or `podman` from your CLI,
+If you can use `git`, `make`, `bash` and `docker` or `podman` from your CLI,
 you're good to go!
 
 Most if not all of these tools come pre-packaged in most linux distros.

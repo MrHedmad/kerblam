@@ -1,4 +1,4 @@
-# Describing pipelines
+# Describing workflows
 If you execute `kerblam run` without specifying a pipe (or you try to run a 
 pipe that does not exist), you will get a message like this:
 ```
@@ -24,7 +24,7 @@ If you add this block of lines starting with `#? `, Kerblam! will use them as
 descriptions (note that the space after the `?` is important!), and it will
 treat them as [markdown](https://www.markdownguide.org/).
 The first paragraph of text (`#? ` lines not separated by an empty `#?` line) will be
-the title of the pipeline. Try to keep this short and to the point.
+the title of the workflow. Try to keep this short and to the point.
 The rest of the lines will be the long description.
 
 Kerblam will parse *all* lines starting with `#? `, although it's preferrable
@@ -40,7 +40,7 @@ Error: no runtime specified. Available runtimes:
 The scroll (📜) emoji appears when Kerblam! notices a long description.
 You can show the full description for such pipes with `kerblam run process_csv --desc`.
 
-With pipeline docstrings, you can have a record of what the pipeline does for
+With workflow docstrings, you can have a record of what the workflow does for
 both yourself and others who review your work.
 
 You cannot write docstrings inside docker containers[^do_what_you_want].

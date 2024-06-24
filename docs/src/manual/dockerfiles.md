@@ -11,7 +11,7 @@ should keep in mind:
   as if `kerblam data clean --yes` was run on it, while the context of
   `kerblam run` is the current project, as-is.
 
-This means a few things:
+This means a few things, detailed below.
 
 ### `COPY` directives are executed in the root of the repository
 This is exactly what you want, usually.
@@ -42,7 +42,8 @@ Therefore, a best practice is to ignore the contents of the data folders in the
 This makes no difference while packaging containers but a big difference when
 running them, as docker skips copying the useless data files.
 
-To do this in a standard Kerblam! project, simply add this to your `.dockerignore`:
+To do this in a standard Kerblam! project, simply add this to your `.dockerignore`
+in the root of the project directory:
 ```
 # Ignore the intermediate/output directory
 data
@@ -68,12 +69,14 @@ You might also be interested in the article
 '[best practices while writing dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)'
 by Docker.
 
-### Docker images are named based on the pipeline name
-If you run `kerblam run my_pipeline` twice, the same container is built to run
-the pipeline twice, meaning that caching will make your execution quite fast if
+### Docker images are named based on the workflow name
+If you run `kerblam run my_workflow` twice, the same container is built to run
+the workflow twice, meaning that caching will make your execution quite fast if
 you place the `COPY . .` directive near the bottom of the dockerfile.
 
 This way, you can essentially work exclusively in docker and never install
 anything locally.
 
-Kerblam! will name the containers for the pipelines as `<pipeline name>_kerblam_runtime`.
+Kerblam! will name the containers for the workflows as `<workflow name>_kerblam_runtime`.
+For example, the container for `my_workflow.sh` will be `my_workflow_kerblam_runtime`.
+
