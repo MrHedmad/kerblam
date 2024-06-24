@@ -12,6 +12,9 @@ Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
 ## [Unreleased]
+- Nothing yet!
+
+## [v1.0.0-rc.3] - 2024-06-24
 
 This release adds a few tweaks that should be made now before 1.0.0 and we
 stop being retrocompatible
