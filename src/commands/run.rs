@@ -47,16 +47,16 @@ fn extract_profile_paths(
     check_existance: bool,
 ) -> Result<Vec<FileMover>> {
     let root_dir = config.input_data_dir();
-    // The call here was broken in 2 because the last `ok_or` makes a temporary
-    // reference that does not live enough until the 'profile.iter()' call
-    // later on. I'm not sure why this is the case, but separating the
-    // calls fixes it.
-    let mut profiles = config
-        .clone()
-        .data
-        .ok_or(anyhow!("Missing 'data' field!"))?
-        .profiles
-        .ok_or(anyhow!("Missing 'profiles' field!"))?;
+
+    // If there are no profiles, an empty hashmap is OK intead:
+    // we can add the default "test" profile anyway.
+    let mut profiles = {
+        let data = config.clone().data;
+        match data {
+            Some(x) => x.profiles.unwrap_or(HashMap::new()),
+            None => HashMap::new(),
+        }
+    };
 
     // add the default 'test' profile
     if !profiles.keys().any(|x| x == "test") {
