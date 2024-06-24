@@ -10,7 +10,7 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
         "",
         "./data/in",
         "./data/out",
-        "./src/pipes",
+        "./src/workflows",
         "./src/dockerfiles",
     ];
     let mut files_to_create: Vec<(&str, String)> = vec![(
