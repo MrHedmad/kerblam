@@ -451,7 +451,7 @@ impl KerblamTomlOptions {
         self.code
             .clone()
             .and_then(|x| x.pipes_dir)
-            .unwrap_or_else(|| current_dir().unwrap().join("src/pipes"))
+            .unwrap_or_else(|| current_dir().unwrap().join("src/workflows"))
     }
 
     /// Return the path to the env folder
