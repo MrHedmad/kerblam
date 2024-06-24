@@ -265,7 +265,7 @@ with sensible names, saving them in version control.
 Point 5 is easy if each program is independent of each other, and developed in
 its own folder.
 Kerblam! appoints the `./src` directory to contain the program code (e.g. scripts,
-directories with programs, etc...) and the `/src/pipes` directory to contain shell
+directories with programs, etc...) and the `/src/workflows` directory to contain shell
 scripts and makefile pipelines.
 
 These steps fulfill the design principle D[^pd]: Makefiles and shell scripts

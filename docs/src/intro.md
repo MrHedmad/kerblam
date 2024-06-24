@@ -23,13 +23,13 @@ These folders, relative to where the `kerblam.toml` file is, are:
 - `./data/in/`: Input data files are saved and should be looked for in here.
 - `./data/out/`: Output data files are saved and should be looked for in here.
 - `./src/`: Code you want to be executed should be saved here.
-- `./src/pipes/`: Makefiles and bash build scripts should be saved here.
+- `./src/workflows/`: Makefiles and bash build scripts should be saved here.
   They have to be written as if they were saved in `./`.
 - `./src/dockerfiles/`: Container build scripts should be saved here.
 
 > [!TIP]
 > Any sub-folder of one of these specific folders (with the exception of
-> `src/pipes` and `src/dockerfiles`) contains the same type of files as the
+> `src/workflows` and `src/dockerfiles`) contains the same type of files as the
 > parent directory. For instance, `data/in/fastq` is treated as if it contains
 > input data by Kerblam! just as the `data/in` directory is.
 
@@ -49,7 +49,7 @@ learn how to configure these paths.
 
 If you follow this standard (or you write proper configuration), you can use
 Kerblam! to do a bunch of things:
-- You can run pipelines written in `make` or arbitrary shell files in `src/pipes/`
+- You can run pipelines written in `make` or arbitrary shell files in `src/workflows/`
   as if you ran them from the root directory of your project by simply using
   `kerblam run <pipe>`;
 - You can wrap your pipelines in docker containers by just writing new

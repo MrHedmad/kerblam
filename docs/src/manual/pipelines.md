@@ -37,14 +37,14 @@ Kerblam supports `make` out of the box, and all other workflow managers
 through thin Bash wrappers.
 
 You can write different makefiles and/or shell files for different types of
-runs of your project and save them in `./src/pipes/`.
+runs of your project and save them in `./src/workflows/`.
 When you `kerblam run`, Kerblam! looks into that folder, finds (by name) the
 workflows that you've written, and brings them to the top level of the project
 (e.g. `./`) for execution.
 In this way, you can write your workflows *as if* they were in the root of
 the repository, cutting down on a lot of boilerplate paths.
 
-For instance, you could write a `./src/pipes/process_csv.makefile`
+For instance, you could write a `./src/workflows/process_csv.makefile`
 and you could invoke it with `kerblam run process_csv`.
 
 This lets you write separate workflows and keep your project compact,

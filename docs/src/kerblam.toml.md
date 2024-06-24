@@ -43,7 +43,7 @@ profile_name = {
 ##### --- #####
 [code] # Where to look for containers and pipes
 env_dir = "./src/dockerfiles"
-pipes_dir = "./src/pipes"
+pipes_dir = "./src/workflows"
 
 [execution] # How to execute the pipelines
 backend = "docker" # or "podman", the backend to use to build and run containers

@@ -143,7 +143,7 @@ relatively straightforward.
 In this case, we do not need a rich workflow manager: a bash script does the trick.
 
 We can let Kerblam! handle the execution through Bash.
-Create the `/src/pipes/create_iris_plot.sh` file and write in the command
+Create the `/src/workflows/create_iris_plot.sh` file and write in the command
 from above:
 ```bash
 python src/process_csv.py data/in/iris.csv data/out/plot.png

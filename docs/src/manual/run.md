@@ -3,7 +3,7 @@
 The `kerblam run` command is used to execute workflow managers for you.
 
 Kerblam! looks for makefiles ending in the `.makefile` extension and 
-`.sh` for shell files in the workflows directory (by default `src/pipes/`).
+`.sh` for shell files in the workflows directory (by default `src/workflows/`).
 It automatically uses the proper execution strategy based on what extension
 the file is saved as: either `make` or `bash`.
 
@@ -12,7 +12,7 @@ the file is saved as: either `make` or `bash`.
 
 You can use any workflow manager that is installed on your system
 through Kerblam! (e.g. `snakemake` or `nextflow`) by writing thin shell wrappers
-with the execution command in the `src/pipes/` folder.
+with the execution command in the `src/workflows/` folder.
 Make has a special execution policy to allow it to work with as little boilerplate
 as possible.
 

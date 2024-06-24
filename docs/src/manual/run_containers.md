@@ -10,7 +10,7 @@ you, making Kerblam-handled containers less useful.
 If Kerblam! finds a container recipe (such as a Dockerfile) of the same name
 as one of your workflows in the `./src/dockerfiles/` folder
 (e.g. `./src/dockerfiles/process_csv.dockerfile` for the
-`./src/pipes/process_csv.makefile` workflow),
+`./src/workflows/process_csv.makefile` workflow),
 it will use it automatically when you execute the workflow manager for that
 workflow (e.g. `kerblam run process_csv`) to run it inside a container.
 
