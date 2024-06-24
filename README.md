@@ -102,7 +102,8 @@ If you don't like this setup, Kerblam! is probably not for you.
 The full Kerblam! documentation is online at [kerblam.dev 🚀](https://kerblam.dev).
 Please take a look there for more information on what Kerblam! can do.
 
-You might find [the tutorial](https://kerblam.dev/quickstart.html) interesting.
+You might find [the quickstart](https://kerblam.dev/quickstart.html) interesting.
+It provides an overview of what Kerblam! is and does with an hands-on project.
 
 ## Installation
 
