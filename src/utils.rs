@@ -316,9 +316,22 @@ pub fn find_pipe_by_name(config: &KerblamTomlOptions, pipe_name: Option<String>)
     pipes_list.reverse();
 
     let pipes_list = pipes_list.join("\n");
+    let profiles: Option<Vec<String>> = config
+        .clone()
+        .data
+        .and_then(|x| x.profiles)
+        .and_then(|x| Some(x.into_keys().collect()));
+    let profiles_list = match profiles {
+        None => "No profiles defined".to_string(),
+        Some(list) => list.join(", "),
+    };
 
     let pipe_name = match pipe_name {
-        None => bail!("No runtime specified. Available runtimes:\n{}", pipes_list),
+        None => bail!(
+            "No runtime specified. Available runtimes:\n{}\nAvailable profiles: {}.",
+            pipes_list,
+            profiles_list
+        ),
         Some(name) => name,
     };
 
@@ -496,4 +509,15 @@ pub fn update_timestamps(path: &PathBuf) -> anyhow::Result<()> {
     }
     log::debug!("Re-touched {files_touched} files.");
     Ok(())
+}
+
+/// Push a bit of a string to the end of this path
+///
+/// Useful if you want to add an extension to the path.
+/// Requires a clone.
+pub fn push_fragment(buffer: impl AsRef<Path>, ext: &str) -> PathBuf {
+    let buffer = buffer.as_ref();
+    let mut path = buffer.as_os_str().to_owned();
+    path.push(ext);
+    path.into()
 }
