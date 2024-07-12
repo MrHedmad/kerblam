@@ -11,7 +11,9 @@ Possible sections are "Added", "Changed", "Deprecated", "Removed", "Fixed" and
 Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
-## [Unreleased]
+## [v1.0.0] - 2024-07-12
+
+This is the first official release of Kerblam! Hurray!
 
 ### Changelog
 - ! **BREAKING CHANGE**: The default behaviour of `kerblam data clean` was changed.
