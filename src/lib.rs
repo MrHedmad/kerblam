@@ -20,7 +20,18 @@ use commands::{
 use crate::utils::find_pipe_by_name;
 use crate::utils::{find_kerblam_toml, print_md};
 
-const KERBLAM_LONG_ABOUT: &str = "Remember, if you want it - Kerblam it!";
+const KERBLAM_LONG_ABOUT: &str = concat!(
+    "  _  __           _     _               _ \n",
+    " | |/ / ___  _ _ | |__ | | __ _  _ __  | |\n",
+    " | ' < / -_)| '_|| '_ \\| |/ _` || '  \\ |_|\n",
+    " |_|\\_\\\\___||_|  |_.__/|_|\\__,_||_|_|_|(_)\n",
+    "                                          \n",
+    "Manage your data analysis projects quickly and easily.\n\n",
+    "Kerblam! is a project manager that lets you focus on getting things done,\n",
+    "with it taking care of tedious or tricky parts of project management.\n\n",
+    "You can find the Kerblam! manual online at https://kerblam.dev/.\n",
+    "The source code is available at https://github.com/MrHedmad/kerblam"
+);
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser, Debug)]
@@ -32,66 +43,143 @@ struct Cli {
 
 #[derive(Subcommand, Debug, PartialEq)]
 enum Command {
-    /// Initialize a new Kerblam! project.
+    /// Initialize a new, empty Kerblam! project.
+    ///
+    /// This command asks you a few initialization questions to get you
+    /// started, such as which programming languages you will use, if you
+    /// want to use `git` and a remote Git server, etc...
+    ///
+    /// Examples:
+    ///     > Create a new project in the 'my_project' directory
+    ///          kerblam new ./my_project
+    ///
+    #[command(verbatim_doc_comment)]
     New {
-        /// Path of the new project.
+        /// Path to the new project
         path: PathBuf,
     },
-    /// Run a Kerblam! project
+    /// Start a workflow within a Kerblam! project
+    ///
+    /// Start workflow managers for your workflows, potentially with a data
+    /// profile attached.
+    ///
+    /// If no workflow is specified, shows the list of available workflows.
+    ///
+    /// Examples:
+    ///     > List the available workflows that Kerblam! can manage
+    ///         kerblam run
+    ///
+    ///     > Run the workflow named 'process_csv.sh'
+    ///         kerblam run process_csv
+    ///
+    ///     > Use the 'test' profile with a workflow
+    ///         kerblam run process_csv --profile test
+    #[command(verbatim_doc_comment)]
     Run {
-        /// Name of the module to run
+        /// Name of the workflow to be started
         module_name: Option<String>,
-        /// Optional data profile to run with
+        /// Name of a data profile to use during this execution
         #[arg(long)]
         profile: Option<String>,
-        /// Show pipe description and exit
+        /// Show the pipe description and exit
         #[arg(long, short, action)]
         desc: bool,
-        /// Do not run in container even if a container is available
+        /// Do not run in container, even if a container is available
         #[arg(long, short, action)]
         local: bool,
-        /// Skip using build cache if running in containers.
+        /// Do not use the containerization engine build cache if running in a container
         #[arg(long = "no-build-cache", action)]
         skip_build_cache: bool,
         /// Command line arguments to be passed to child process
         #[clap(last = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
     },
-    /// Manage local data
+    /// Show, fetch, delete or manage local data
+    ///
+    /// You can measure how large a project is on your disk, bulk fetch
+    /// required data from your project, delete unneeded data or package it
+    /// up to share it with others.
+    ///
+    /// If no subcommand is specified, shows the status of current data.
+    ///
+    /// Examples:
+    ///     > Show the amount of data present locally
+    ///         kerblam data
+    ///
+    ///     > Fetch remote data as specified in kerblam.toml
+    ///         kerblam data fetch
+    ///
+    ///     > Clean all non-essential data for this project
+    ///         kerblam data clean --delete-remote
+    #[command(verbatim_doc_comment)]
     Data {
         #[command(subcommand)]
         subcommand: Option<DataCommands>,
     },
-    /// Package for execution later
+    /// Package a workflow for execution later
+    ///
+    /// Package your workflow in a container primed for execution and
+    /// a replay tarball with input data and execution parameters.
+    ///
+    /// If you upload the container to a registry and share your replay
+    /// tarball, other people can use Kerblam! to re-execute your workflow
+    /// (or do it manually).
+    ///
+    /// Example:
+    ///   kerblam package process_csv --tag username/process_csv:latest
+    #[command(verbatim_doc_comment)]
     Package {
-        /// The name of the pipe to package
+        /// The name of the workflow to package. Must have a related container
         pipe: Option<String>,
         /// The label of the exported container image
         #[arg(long)]
         tag: Option<String>,
     },
-    /// Add paths and languages to .gitignore
+    /// Add paths and whole languages to a .gitignore file
+    ///
+    /// Supported names can be seen in https://github.com/github/gitignore
+    /// The input is case-sensitive!
+    ///
+    /// Examples:
+    ///     > Use the Python gitignore from Github
+    ///         kerblam ignore Python
+    ///
+    ///     > Use the Rust gitignore from Github, and delete duplicates
+    ///         kerblam ignore Rust --compress
+    ///
+    ///     > Ignore a specific file in the project
+    ///         kerblam ignore ./src/test_script.sh
+    #[command(verbatim_doc_comment)]
     Ignore {
         /// The name of a language or a path to ignore
-        ///
-        /// Supported names can be seen in https://github.com/github/gitignore
-        /// The input is case-sensitive!
         path_or_name: String,
-        /// Should the gitignore be compressed?
+        /// Should the gitignore be compressed to remove duplicates?
         #[arg(long, action)]
         compress: bool,
     },
-    /// Replay a pipeline packaged with `package`
+    /// Replay a pipeline previously packaged with `package`
+    ///
+    /// The replay tarball made by `kerblam package` contains all the info
+    /// to replay a workflow run in the past. This can be done manually by
+    /// anyone with a containerization engine.
+    ///
+    /// This command is here for convenience: it unpacks the files for you
+    /// in their correct positions and starts the replay workflow on top
+    /// with the correct mountpoints.
+    ///
+    /// Example:
+    ///     > Replay the 'test.kerblam.tar' replay package
+    ///         kerblam replay test.kerblam.tar
+    #[command(verbatim_doc_comment)]
     Replay {
-        /// The name of the compressed kerblam package
+        /// The name of the compressed replay package
         name: PathBuf,
-        /// Where the replay should happen in. Defaults to the current
-        /// environment
+        /// Where the replay should happen in. Defaults to the current dir
         destination: Option<PathBuf>,
         /// Skip decompressing data? Useful if you replayed before already.
         #[arg(long, short, action)]
         no_decompress: bool,
-        /// The name of the container used to unpack with, overriding the
+        /// The name of the container used to run, overriding the
         /// instructions of the .kerblam file.
         #[arg(long, short)]
         tag: Option<String>,
@@ -105,8 +193,31 @@ enum Command {
 #[derive(Subcommand, Debug, PartialEq)]
 enum DataCommands {
     /// Fetch remote data and save it locally
+    ///
+    /// You can specify data to fetch in the kerblam.toml file, like so:
+    ///
+    /// [data.remote]
+    /// "url to be fetched" = "target file"
+    #[command(verbatim_doc_comment)]
     Fetch,
     /// Clean non-essential data to save disk space
+    ///
+    /// This removes:
+    ///     - Output data (in the output directory);
+    ///     - Intermediate data (in the intermediate data directory);
+    ///     - Data that can be downloaded remotely (in the input data directory);
+    /// and all empty directories that are left behind after deletion.
+    ///
+    /// Examples:
+    ///     > Delete everything that is not precious
+    ///         kerblam data clean
+    ///
+    ///     > Delete everything but remote data
+    ///         kerblam data clean --keep-remote
+    ///
+    ///     > Skip the confirmation prompt
+    ///         kerblam data clean --yes
+    #[command(verbatim_doc_comment)]
     Clean {
         #[arg(long, short, action)]
         /// Do not delete locally present remote files.
@@ -118,10 +229,18 @@ enum DataCommands {
         /// Do not ask for any confirmation.
         yes: bool,
     },
-    // Pack local data for export to others
-    Pack {
-        output_path: Option<PathBuf>,
-    },
+    /// Pack local data for export to others
+    ///
+    /// This creates a tarball with the local-only input data and the output
+    /// data currently present on disk.
+    ///
+    /// The created file will always be a tar.gz file, regardless of the name
+    /// you give it.
+    ///
+    /// Example:
+    ///      kerblam data pack my_last_execution.tar.gz
+    #[command(verbatim_doc_comment)]
+    Pack { output_path: Option<PathBuf> },
 }
 
 /// Run Kerblam! with a certain arguments list.

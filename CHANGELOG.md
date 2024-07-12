@@ -16,6 +16,8 @@ the top. Non pre-release versions sometimes have an associated name.
 - The error message you get when running `kerblam run` with no parameters now
   includes a list of available profiles, or tells you that you have specified
   no profiles.
+- All the help messages (e.g. `kerblam --help`) were revamped to be more
+  complete and explicit on what each command does.
 
 ## [v1.0.0-rc.3] - 2024-06-24
 
