@@ -12,7 +12,10 @@ Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
 ## [Unreleased]
-- Nothing yet!
+### New
+- The error message you get when running `kerblam run` with no parameters now
+  includes a list of available profiles, or tells you that you have specified
+  no profiles.
 
 ## [v1.0.0-rc.3] - 2024-06-24
 
