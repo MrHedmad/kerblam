@@ -17,6 +17,9 @@ exclude = [
 autotests = false
 rust-version = "1.78"
 
+[lib]
+doctest = false
+
 [badges]
 maintenance = {status = "actively-developed"}
 

@@ -205,23 +205,22 @@ enum DataCommands {
     /// This removes:
     ///     - Output data (in the output directory);
     ///     - Intermediate data (in the intermediate data directory);
-    ///     - Data that can be downloaded remotely (in the input data directory);
     /// and all empty directories that are left behind after deletion.
     ///
     /// Examples:
-    ///     > Delete everything that is not precious
+    ///     > Delete everything that is not precious or remote
     ///         kerblam data clean
     ///
-    ///     > Delete everything but remote data
-    ///         kerblam data clean --keep-remote
+    ///     > Delete everything that is not precious
+    ///         kerblam data clean --include-remote
     ///
     ///     > Skip the confirmation prompt
     ///         kerblam data clean --yes
     #[command(verbatim_doc_comment)]
     Clean {
-        #[arg(long, short, action)]
-        /// Do not delete locally present remote files.
-        keep_remote: bool,
+        #[arg(long, short('r'), action)]
+        /// Also delete locally present remote files.
+        include_remote: bool,
         #[arg(long, short('d'), action)]
         /// Do not delete locally present directories.
         keep_dirs: bool,
@@ -329,10 +328,10 @@ where
             }
             Some(DataCommands::Fetch) => fetch_remote_data(config)?,
             Some(DataCommands::Clean {
-                keep_remote,
+                include_remote,
                 keep_dirs,
                 yes,
-            }) => clean_data(config, keep_remote, keep_dirs, yes)?,
+            }) => clean_data(config, !include_remote, keep_dirs, yes)?,
             Some(DataCommands::Pack { output_path: path }) => package_data_to_archive(
                 config,
                 path.unwrap_or(here.join("data/data_export.tar.gz")),

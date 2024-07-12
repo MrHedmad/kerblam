@@ -76,13 +76,21 @@ fn check_identical(old_snap: Content, target: impl AsRef<Path>) -> io::Result<()
 
     let old_files: Vec<PathBuf> = old_snap.keys().cloned().collect();
     let new_files: Vec<PathBuf> = new_snap.keys().cloned().collect();
-    if !two_way_check(&old_files, &new_files) {
+
+    if &old_files.len() != &new_files.len() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
                 "Number of files differ: old: {:?}, new: {:?}",
                 old_files, new_files
             ),
+        ));
+    }
+
+    if !two_way_check(&old_files, &new_files) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Files differ: old: {:?}, new: {:?}", old_files, new_files),
         ));
     }
 

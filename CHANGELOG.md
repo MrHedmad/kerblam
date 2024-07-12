@@ -12,6 +12,18 @@ Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
 ## [Unreleased]
+
+### Changelog
+- ! **BREAKING CHANGE**: The default behaviour of `kerblam data clean` was changed.
+  Now, remote data are not deleted by default, as if you ran
+  `kerblam data clean --keep-remote`.
+  To also delete remote data, pass the flag `--include-remote`, e.g.
+  `kerblam data clean --include-remote`.
+  During day-to-day usage, deletion of remote data is often not wanted, so
+  it's much better to treat the deletion of remote data as an exception rather
+  than a rule.
+  - As a result, the `--keep-remote` flag has been deleted. 
+
 ### New
 - The error message you get when running `kerblam run` with no parameters now
   includes a list of available profiles, or tells you that you have specified
