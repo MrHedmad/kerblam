@@ -55,6 +55,8 @@ are prepended with a little whale (🐋):
 Error: No runtime specified. Available runtimes:
     🐋◾ my_workflow :: Generate the output data in a docker container
     ◾◾ local_workflow :: Run some code locally
+
+Available profiles: No profiles defined.
 ```
 
 ### Default dockerfile
@@ -68,6 +70,8 @@ pipes that use the default container, so you can identify them easily:
 Error: No runtime specified. Available runtimes:
     🐋◾ my_workflow :: Generate the output data in a docker container
     🐟◾ another :: Run in the default container
+
+Available profiles: No profiles defined.
 ```
 
 ### Switching backends

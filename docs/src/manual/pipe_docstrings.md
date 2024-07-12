@@ -2,10 +2,12 @@
 If you execute `kerblam run` without specifying a pipe (or you try to run a 
 pipe that does not exist), you will get a message like this:
 ```
-Error: no runtime specified. Available runtimes:
+Error: No runtime specified. Available runtimes:
     ◾◾ process_csv
     🐋◾ save_plots
     ◾◾ generate_metrics
+
+Available profiles: No profiles defined.
 ```
 The whale emoji (🐋) represents pipes that [have an associated Docker container](run_containers.html).
 
@@ -32,10 +34,12 @@ to only have a single contiguous description block in each file.
 
 The output of `kerblam run` will now read:
 ```
-Error: no runtime specified. Available runtimes:
+Error: No runtime specified. Available runtimes:
     ◾📜 process_csv :: Calculate the sums of the input metrics
     🐋◾ save_plots
     ◾◾ generate_metrics
+
+Available profiles: No profiles defined.
 ```
 The scroll (📜) emoji appears when Kerblam! notices a long description.
 You can show the full description for such pipes with `kerblam run process_csv --desc`.
