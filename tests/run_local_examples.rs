@@ -1,3 +1,4 @@
+use serial_test::serial;
 use std::collections::HashMap;
 use std::env::set_current_dir;
 use std::mem::drop;
@@ -103,6 +104,7 @@ macro_rules! run_example_named {
     ($name:literal, $check:literal) => {
         paste::item! {
             #[test]
+            #[serial]
             fn [< example_ $name >] () {
                 let repo = setup_test();
                 let target = repo.path().join(format!("examples/{}", $name));
@@ -153,6 +155,7 @@ macro_rules! run_ignored_example_named {
     ($name:literal, $check:literal) => {
         paste::item! {
             #[test]
+            #[serial]
             #[ignore] // ... just for this line. Sucks to be you!
             fn [< example_ $name >] () {
                 let repo = setup_test();

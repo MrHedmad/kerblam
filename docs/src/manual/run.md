@@ -31,6 +31,24 @@ In short, `kerblam run` does something similar to this:
 This is why workflows are written as if they are executed in the root of the
 project, because they are.
 
+### Listing out workflows
+If you just want a list of workflows that Kerblam! can see, just use
+`kerblam run` with no workflow specified. Kerblam will reply with something
+like this:
+
+```
+Error: No runtime specified. Available runtimes:
+    ◾📜 process_csv :: Calculate the sums of the input metrics
+    🐋◾ save_plots
+    ◾◾ generate_metrics
+
+Available profiles: No profiles defined.
+```
+
+Workflows with a 📜 have [an associated description](pipe_docstrings.md), and 
+those with a 🐋 have [an associated docker container](run_containers.md).
+You also get a list of available data profiles, which are detailed just below.
+
 ## Data Profiles - Running the same workflows on different data
 
 You can run your same workflows, *as-is*, on different data thanks to data profiles.
@@ -160,4 +178,3 @@ For example, you can tell `make` to build a different target with this syntax:
 kerblam run make_workflow -- other_target
 ```
 As if you had run `make other_target` yourself.
-
