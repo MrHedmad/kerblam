@@ -11,7 +11,7 @@ Possible sections are "Added", "Changed", "Deprecated", "Removed", "Fixed" and
 Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
-## [Unreleased]
+## [v1.1.0] - 2024-09-26
 
 ### New
 - `kerblam new` now creates additional gitignore files in the data folder to
