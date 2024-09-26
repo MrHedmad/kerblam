@@ -11,6 +11,14 @@ Possible sections are "Added", "Changed", "Deprecated", "Removed", "Fixed" and
 Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
+## [Unreleased]
+
+### New
+- `kerblam new` now creates additional gitignore files in the data folder to
+  include the data folders themselves but ignore all files inside them.
+  Data files or folders that need to be committed to version control need to
+  be explicitly listed in the `.gitignore` files in the appropriate place.
+
 ## [v1.0.0] - 2024-07-12
 
 This is the first official release of Kerblam! Hurray!
