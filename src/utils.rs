@@ -205,8 +205,7 @@ pub fn run_command(
     let output = Command::new(command)
         .current_dir(location.unwrap_or(PathBuf::from_str("./").unwrap()))
         .args(args)
-        .output()
-        .expect("Failed to spawn process");
+        .output()?;
 
     if output.status.success() {
         println!(" Done!");

@@ -159,7 +159,13 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     for (command, args) in commands_to_run {
         match utils::run_command(Some(dir), command, args.iter().map(|x| &**x).collect()) {
             Ok(_) => (),
-            Err(e) => eprintln!("{}", e),
+            Err(e) => {
+                eprintln!(
+                    "❌ Couldn't execute command '{}': {}. Ignoring.",
+                    format!("{} {}", command, args.join(" ")),
+                    e
+                )
+            }
         }
     }
 
