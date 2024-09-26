@@ -13,10 +13,22 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
         "./src/workflows",
         "./src/dockerfiles",
     ];
-    let mut files_to_create: Vec<(&str, String)> = vec![(
-        "./kerblam.toml",
-        format!("[meta]\nversion = \"{}\"\n", VERSION),
-    )];
+
+    let base_data_gitignore: &str =
+        "# Ignore everything in this directory\n*\n# Except this file\n!.gitignore\n";
+
+    let mut files_to_create: Vec<(&str, String)> = vec![
+        (
+            "./kerblam.toml",
+            format!("[meta]\nversion = \"{}\"\n", VERSION),
+        ),
+        ("./data/in/.gitignore", base_data_gitignore.to_string()),
+        ("./data/out/.gitignore", base_data_gitignore.to_string()),
+        (
+            "./data/.gitignore",
+            format!("{}\n!in/\n!out/", base_data_gitignore),
+        ),
+    ];
     // Having this to be a Vec<String> makes all sorts of problems since most
     // commands are hardcoded &str, and we need to go back and forth.
     // Probably can be fixed by generics?
@@ -147,7 +159,13 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     for (command, args) in commands_to_run {
         match utils::run_command(Some(dir), command, args.iter().map(|x| &**x).collect()) {
             Ok(_) => (),
-            Err(e) => eprintln!("{}", e),
+            Err(e) => {
+                eprintln!(
+                    "❌ Couldn't execute command '{}': {}. Ignoring.",
+                    format!("{} {}", command, args.join(" ")),
+                    e
+                )
+            }
         }
     }
 
