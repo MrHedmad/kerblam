@@ -11,7 +11,8 @@ Possible sections are "Added", "Changed", "Deprecated", "Removed", "Fixed" and
 Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
-## Unreleased
+## [v1.1.1] - 2024-10-14
+
 ### Fixed
 - `kerblam data clean` now no longer deletes hidden files (starting with a dot),
   like `.gitignore` files in data directories.
