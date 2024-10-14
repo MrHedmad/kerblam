@@ -375,6 +375,10 @@ impl KerblamTomlOptions {
                 .collect(),
         ]
         .concat()
+        .into_iter()
+        // Get rid of hidden files - we ignore them like a good little program should.
+        .filter(|x| !x.file_name().unwrap().to_string_lossy().starts_with("."))
+        .collect()
     }
 
     /// Return all files that are deemed 'precious'
