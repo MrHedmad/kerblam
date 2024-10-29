@@ -121,6 +121,7 @@ See [the emoji key](https://allcontributors.org/docs/en/emoji-key)
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://mrhedmad.github.io/blog/"><img src="https://avatars.githubusercontent.com/u/46203625?v=4?s=100" width="100px;" alt="Luca "Hedmad" Visentin"/><br /><sub><b>Luca "Hedmad" Visentin</b></sub></a><br /><a href="#code-MrHedmad" title="Code">💻</a> <a href="#doc-MrHedmad" title="Documentation">📖</a> <a href="#ideas-MrHedmad" title="Ideas, Planning, & Feedback">🤔</a> <a href="#projectManagement-MrHedmad" title="Project Management">📆</a> <a href="#tutorial-MrHedmad" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Feat-FeAR"><img src="https://avatars.githubusercontent.com/u/88393554?v=4?s=100" width="100px;" alt="Federico Alessandro Ruffinatti"/><br /><sub><b>Federico Alessandro Ruffinatti</b></sub></a><br /><a href="#bug-Feat-FeAR" title="Bug reports">🐛</a> <a href="#design-Feat-FeAR" title="Design">🎨</a></td>
     </tr>
   </tbody>
 </table>
