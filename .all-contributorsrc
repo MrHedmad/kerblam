@@ -20,6 +20,16 @@
         "projectManagement",
         "tutorial"
       ]
+    },
+    {
+      "login": "Feat-FeAR",
+      "name": "Federico Alessandro Ruffinatti",
+      "avatar_url": "https://avatars.githubusercontent.com/u/88393554?v=4",
+      "profile": "https://github.com/Feat-FeAR",
+      "contributions": [
+        "bug",
+        "design"
+      ]
     }
   ]
 }
