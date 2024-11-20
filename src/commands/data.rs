@@ -379,6 +379,7 @@ pub fn clean_data(
     keep_remote: bool,
     keep_dirs: bool,
     skip_confirm: bool,
+    dry_run: bool,
 ) -> Result<()> {
     let cleanable_files = config.volatile_files();
     let remote_files: Vec<PathBuf> = config
@@ -401,6 +402,18 @@ pub fn clean_data(
     };
 
     log::debug!("Files to clean: {:?}", cleanable_files);
+
+    if dry_run {
+        let current_dir = current_dir().unwrap();
+        let cleanable: Vec<String> = cleanable_files
+            .clone()
+            .into_iter()
+            .map(|x| x.strip_prefix(&current_dir).unwrap().to_owned())
+            .map(|x| x.into_os_string().into_string().unwrap())
+            .collect();
+        println!("Files to clean:\n{}", cleanable.join(" \n"));
+        return Ok(());
+    }
 
     if !cleanable_files.is_empty() {
         let question = format!(

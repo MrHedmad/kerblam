@@ -227,6 +227,9 @@ enum DataCommands {
         #[arg(long, short, action)]
         /// Do not ask for any confirmation.
         yes: bool,
+        #[arg(long, action)]
+        /// Print files that will be cleaned, but don't delete them.
+        dry_run: bool,
     },
     /// Pack local data for export to others
     ///
@@ -331,7 +334,8 @@ where
                 include_remote,
                 keep_dirs,
                 yes,
-            }) => clean_data(config, !include_remote, keep_dirs, yes)?,
+                dry_run,
+            }) => clean_data(config, !include_remote, keep_dirs, yes, dry_run)?,
             Some(DataCommands::Pack { output_path: path }) => package_data_to_archive(
                 config,
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
