@@ -13,8 +13,47 @@ use crate::options::Pipe;
 use crate::utils::{find_files, gzip_file, tar_files};
 
 use anyhow::{bail, Result};
+use chrono;
+use serde::Serialize;
 
 use tempfile::tempdir;
+
+#[derive(Serialize, Debug)]
+struct Signature {
+    name: String,
+    email: String,
+    on: String,
+    // Perhaps add RSA key?
+}
+
+/// Gets a git option given a name
+fn get_git_option(option: &str) -> Result<String> {
+    match Command::new("git").args(vec!["config", option]).output() {
+        Ok(output) => {
+            let msg = String::from_utf8(output.stdout).expect("Could not parse output from UTF8");
+            if output.status.success() {
+                return Ok(msg.trim().to_owned());
+            } else {
+                bail!(msg)
+            }
+        }
+        Err(_) => bail!("Could not execute command"),
+    }
+}
+
+impl Signature {
+    fn new() -> Result<Signature> {
+        let git_name = get_git_option("user.name")?;
+        let git_email = get_git_option("user.email")?;
+        let current_time = chrono::Utc::now().to_string();
+
+        Ok(Signature {
+            name: git_name,
+            email: git_email,
+            on: current_time,
+        })
+    }
+}
 
 /// Package a pipeline for execution later
 ///
@@ -23,7 +62,12 @@ use tempfile::tempdir;
 /// - `config`: The kerblam config for this execution.
 /// - `pipe`: The name of the pipe to execute
 /// - `package_name`: The name of the container image built by this execution.
-pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) -> Result<()> {
+pub fn package_pipe(
+    config: KerblamTomlOptions,
+    pipe: Pipe,
+    package_name: &str,
+    include_signature: bool,
+) -> Result<()> {
     let pipe_name = pipe.name();
     log::debug!("Packaging pipe {pipe_name} as {package_name}...");
     let here = current_dir()?;
@@ -143,6 +187,24 @@ pub fn package_pipe(config: KerblamTomlOptions, pipe: Pipe, package_name: &str) 
     package_archive
         .append_path_with_name(&data_package, data_package.strip_prefix(&temp_package)?)?;
     package_archive.append_path_with_name(&temp_package.path().join("name"), "name")?;
+
+    // Create the 'signature' file
+    // This inherits from the git config files
+    if include_signature {
+        let signature_file = temp_package.path().join("signature.json");
+        let mut signature_file_conn = File::create(signature_file)?;
+        let signature = Signature::new()?;
+
+        write!(
+            signature_file_conn,
+            "{}",
+            serde_json::to_string(&signature).unwrap()
+        )?;
+        package_archive.append_path_with_name(
+            &temp_package.path().join("signature.json"),
+            "signature.json",
+        )?;
+    }
 
     eprintln!("✅ Created replay package at {:?}!", package);
 

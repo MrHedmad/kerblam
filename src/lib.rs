@@ -125,6 +125,9 @@ enum Command {
     /// tarball, other people can use Kerblam! to re-execute your workflow
     /// (or do it manually).
     ///
+    /// If you want, you can sign the package by passing the --sign option.
+    /// This includes your git name and git email in the package.
+    ///
     /// Example:
     ///   kerblam package process_csv --tag username/process_csv:latest
     #[command(verbatim_doc_comment)]
@@ -134,6 +137,9 @@ enum Command {
         /// The label of the exported container image
         #[arg(long)]
         tag: Option<String>,
+        /// If passed, sign the package with git name and email
+        #[arg(long)]
+        sign: bool,
     },
     /// Add paths and whole languages to a .gitignore file
     ///
@@ -341,10 +347,10 @@ where
                 path.unwrap_or(here.join("data/data_export.tar.gz")),
             )?,
         },
-        Command::Package { pipe, tag } => {
+        Command::Package { pipe, tag, sign } => {
             let default_pipe_name = format!("{}_exec", &pipe.clone().unwrap_or("x".to_string()));
             let pipe = find_pipe_by_name(&config, pipe)?;
-            package_pipe(config, pipe, &tag.unwrap_or(default_pipe_name))?;
+            package_pipe(config, pipe, &tag.unwrap_or(default_pipe_name), sign)?;
         }
         Command::Ignore {
             path_or_name,
