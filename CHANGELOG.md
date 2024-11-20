@@ -11,6 +11,11 @@ Possible sections are "Added", "Changed", "Deprecated", "Removed", "Fixed" and
 Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
+## [Unreleased]
+### Added
+- Added the `--dry-run` option to `kerblam data clean` to only show the files
+  that will be deleted without actually doing anything to them.
+
 ## [v1.1.1] - 2024-10-14
 
 ### Fixed
@@ -19,7 +24,7 @@ the top. Non pre-release versions sometimes have an associated name.
 
 ## [v1.1.0] - 2024-09-26
 
-### New
+### Added
 - `kerblam new` now creates additional gitignore files in the data folder to
   include the data folders themselves but ignore all files inside them.
   Data files or folders that need to be committed to version control need to
@@ -40,7 +45,7 @@ This is the first official release of Kerblam! Hurray!
   than a rule.
   - As a result, the `--keep-remote` flag has been deleted. 
 
-### New
+### Added
 - The error message you get when running `kerblam run` with no parameters now
   includes a list of available profiles, or tells you that you have specified
   no profiles.
