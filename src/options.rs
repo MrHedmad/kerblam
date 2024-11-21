@@ -550,18 +550,7 @@ impl<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug> Profile<T
             .collect()
     }
 
-    fn from(data: HashMap<T, T>, root_dir: PathBuf, temp_dir: PathBuf) -> Self {
-        let targets = data.into_iter().map(|(origin, target)| {
-            // Why do we need to clone here? I don't really get it...
-            let target = if target.clone().into().into_os_string() == "_" {
-                None
-            } else {
-                Some(target)
-            };
-            (origin, target)
-        });
-        let targets = HashMap::from_iter(targets);
-
+    fn from(targets: HashMap<T, Option<T>>, root_dir: PathBuf, temp_dir: PathBuf) -> Self {
         Self {
             targets,
             root_dir,
@@ -616,6 +605,18 @@ pub fn extract_profile_paths(
     let profile = profiles
         .get(profile_name)
         .ok_or(anyhow!("Could not find {} profile", profile_name))?;
+
+    // Expand profile paths
+    let profile: HashMap<PathBuf, Option<PathBuf>> = profile
+        .into_iter()
+        .map(|(x, y)| {
+            if y.to_string_lossy() == "_" {
+                (root_dir.join(x), None)
+            } else {
+                (root_dir.join(x), Some(root_dir.join(y)))
+            }
+        })
+        .collect();
 
     let profile = Profile::from(profile.to_owned(), root_dir.clone(), temp_dir);
 
