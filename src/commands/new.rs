@@ -8,6 +8,7 @@ use crate::VERSION;
 pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let dirs_to_create: Vec<&str> = vec![
         "",
+        "./.kerblam",
         "./data/in",
         "./data/out",
         "./src/workflows",
@@ -35,6 +36,9 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let mut commands_to_run: Vec<(&str, Vec<String>)> = vec![];
     commands_to_run.push(("git", vec![String::from("init")]));
     let mut gitignore_content: Vec<String> = vec![];
+    // We always ignore the .kerblam directory
+    gitignore_content.push(".kerblam".to_string());
+
     // Ask for user input
     // I defined `dirs_to_create` before so that if we ever have to add to them
     // dynamically we can do so here.

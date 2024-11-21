@@ -4,6 +4,7 @@ use std::env::current_dir;
 use std::fmt::Display;
 use std::fmt::Write;
 use std::fs::{self, File};
+use std::hash::Hash;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
@@ -12,7 +13,7 @@ use anyhow::{anyhow, bail, Result};
 use url::Url;
 
 use crate::execution::{Executor, FileMover};
-use crate::utils::{find_files, push_fragment, warn_kerblam_version};
+use crate::utils::{find_files, get_salt, kerblam_create_dir, push_fragment, warn_kerblam_version};
 
 // Note: i keep all the fields that are not used to private until we
 // actually support their usage.
@@ -490,6 +491,85 @@ fn infer_test_data(paths: Vec<PathBuf>) -> HashMap<PathBuf, PathBuf> {
     matches
 }
 
+/// Represents a Kerblam! profile, with a series of files to be moved back and forth
+struct Profile<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug> {
+    /// The origin: target list of paths
+    ///
+    /// 'origin' (the key) is the real file that needs to be substituted,
+    /// 'target' (the value) is the file that will substitute the original one
+    targets: HashMap<T, Option<T>>,
+    /// The root directory where the data lives, e.g. "/../../data/"
+    root_dir: PathBuf,
+    /// The temporary "swap" directory where the data will be (temporarily) moved
+    temp_dir: PathBuf,
+}
+
+impl<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug> Profile<T> {
+    #[allow(dead_code)]
+    fn add_paths(&mut self, origin: T, target: Option<T>) -> () {
+        self.targets.insert(origin, target);
+    }
+
+    fn to_filemovers(self) -> Vec<FileMover> {
+        log::debug!("Converting hashmap to filemovers: {:?}", self.targets);
+        self.targets
+            .into_iter()
+            .flat_map(|(origin, target)| {
+                // The original will always be moved to the temporary
+                // This also needs to happen FIRST, not later.
+                let original: PathBuf = origin.into();
+                let mut res = vec![
+                    // We always need to move the original to the temporary file
+                    FileMover::from((
+                        &self.root_dir.join(&original),
+                        push_fragment(
+                            &self
+                                .temp_dir
+                                .join(&original.strip_prefix(&self.root_dir).unwrap()),
+                            &format!(".{}", get_salt(5)),
+                        ),
+                    )),
+                ];
+
+                match target {
+                    Some(t) => {
+                        // This is a regular target: we also need to move the target to the original's
+                        // position
+                        let target = t.into();
+                        res.push(FileMover::from((
+                            &self.root_dir.join(&target),
+                            &self.root_dir.join(&original),
+                        )));
+                    }
+                    // If there is no target, we don't need to do anything.
+                    None => (),
+                }
+
+                res
+            })
+            .collect()
+    }
+
+    fn from(data: HashMap<T, T>, root_dir: PathBuf, temp_dir: PathBuf) -> Self {
+        let targets = data.into_iter().map(|(origin, target)| {
+            // Why do we need to clone here? I don't really get it...
+            let target = if target.clone().into().into_os_string() == "_" {
+                None
+            } else {
+                Some(target)
+            };
+            (origin, target)
+        });
+        let targets = HashMap::from_iter(targets);
+
+        Self {
+            targets,
+            root_dir,
+            temp_dir,
+        }
+    }
+}
+
 // TODO: This checks for the existence of profile paths here. This is a bad
 // thing. It's best to handle the error when we actually do the move.
 // This was done this way because I want a nice error list.
@@ -500,6 +580,18 @@ pub fn extract_profile_paths(
     check_existance: bool,
 ) -> Result<Vec<FileMover>> {
     let root_dir = config.input_data_dir();
+    let temp_dir = current_dir().unwrap().join(".kerblam/scratch");
+
+    kerblam_create_dir(&temp_dir)?;
+
+    // Check if the scratch directory is empty. If not, we bail early.
+    // If this is not empty, something has gone wrong in a previous run.
+    if temp_dir.read_dir()?.next().is_some() {
+        bail!(
+            "The Kerblam scratch folder ({}) is not empty! Aborting before we do anything stupid.",
+            temp_dir.to_string_lossy()
+        )
+    }
 
     // If there are no profiles, an empty hashmap is OK intead:
     // we can add the default "test" profile anyway.
@@ -525,81 +617,40 @@ pub fn extract_profile_paths(
         .get(profile_name)
         .ok_or(anyhow!("Could not find {} profile", profile_name))?;
 
+    let profile = Profile::from(profile.to_owned(), root_dir.clone(), temp_dir);
+
+    let file_movers = profile.to_filemovers();
+    log::debug!("Obtained filemovers: {:?}", file_movers);
+
     // Check if the sources exist, otherwise we crash now, and not later
     // when we actually move the files.
-    let exist_check: Vec<anyhow::Error> = profile
+    let origin_exist_check: Vec<String> = file_movers
         .iter()
-        .flat_map(|(a, b)| [a, b])
-        .map(|file| {
-            let f = &root_dir.join(file);
-            log::debug!("Checking if {f:?} exists...");
-            match f.try_exists() {
-                Ok(i) => {
-                    if i {
-                        Ok(())
-                    } else {
-                        bail!("\t - {file:?} does not exist!")
-                    }
-                }
-                Err(e) => bail!("\t- {file:?} - {e:?}"),
+        .filter_map(|mover| {
+            let origin = mover.get_from();
+            if origin.exists() {
+                // This exists, no error has to be raised.
+                None
+            } else {
+                // This does NOT exist - return the name so we can error.
+                Some(origin)
             }
         })
-        .filter_map(|x| x.err())
+        .map(|x| match x.strip_prefix(&root_dir) {
+            Ok(stripped) => stripped.to_path_buf(),
+            Err(_) => x,
+        })
+        .map(|x| format!("\t- {}", x.to_string_lossy()))
         .collect();
 
-    if !exist_check.is_empty() & check_existance {
-        let mut missing: Vec<String> = Vec::with_capacity(exist_check.len());
-        for item in exist_check {
-            missing.push(item.to_string());
+    if check_existance {
+        if !origin_exist_check.is_empty() {
+            bail!(
+                "Failed to find some profiles files:\n{}",
+                origin_exist_check.join("\n")
+            )
         }
-        bail!(
-            "Failed to find some profiles files:\n{}",
-            missing.join("\n")
-        )
     }
 
-    // Also check if the targets do NOT exist, so we don't overwrite anything
-    let exist_check: Vec<anyhow::Error> = profile
-        .iter()
-        .flat_map(|(a, b)| [a, b])
-        .map(|file| {
-            let f = &root_dir.join(push_fragment(file, ".original"));
-            log::debug!("Checking if {f:?} destroys files...");
-            if f.exists() {
-                bail!("\t- {:?} would be destroyed by {:?}!", f, file)
-            };
-            Ok(())
-        })
-        .filter_map(|x| x.err())
-        .collect();
-
-    if !exist_check.is_empty() & check_existance {
-        let mut missing: Vec<String> = Vec::with_capacity(exist_check.len());
-        for item in exist_check {
-            missing.push(item.to_string());
-        }
-        bail!(
-            "Some profile temporary files would overwrite real files:\n{}",
-            missing.join("\n")
-        )
-    }
-
-    Ok(profile
-        .iter()
-        .flat_map(|(original, profile)| {
-            // We need two FileMovers. One for the temporary file
-            // that holds the original file (e.g. 'to'), and one for the
-            // profile-to-original rename.
-            // To unwind, we just redo the transaction, but in reverse.
-            [
-                // This one moves the original to the temporary file
-                FileMover::from((
-                    &root_dir.join(original),
-                    &root_dir.join(push_fragment(original, ".original")),
-                )),
-                // This one moves the profile one to the original one
-                FileMover::from((&root_dir.join(profile), &root_dir.join(original))),
-            ]
-        })
-        .collect())
+    Ok(file_movers)
 }
