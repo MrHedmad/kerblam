@@ -15,6 +15,15 @@ the top. Non pre-release versions sometimes have an associated name.
 ### Added
 - Added the `--dry-run` option to `kerblam data clean` to only show the files
   that will be deleted without actually doing anything to them.
+- When using a profile, specifying `"_"` as target will simply temporarily hide
+  the file for the duration of the workflow.
+  For example `"test.txt" = "_"` will temporarily remove the `"test.txt"` file
+  from its original position (it will be moved to `.kerblam/scratch`).
+
+### Changed
+- The way that profiles are handled was changed.
+  Now, the original files are moved to `.kerblam/scratch/` during the workflow,
+  instead of remaining in the original directory (and being renamed `.original`).
 
 ## [v1.1.1] - 2024-10-14
 
