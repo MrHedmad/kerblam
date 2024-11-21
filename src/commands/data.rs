@@ -217,6 +217,44 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
         return Ok(());
     }
 
+    // Send a message reminding the user that there are some unfetcheable remote files
+    let non_fetcheable: Vec<&RemoteFile> = remote_files
+        .iter()
+        .filter_map(|x| {
+            if x.path.to_str().unwrap() == "_" {
+                Some(x)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if !non_fetcheable.is_empty() {
+        if non_fetcheable.len() <= 5 {
+            let names: Vec<&str> = non_fetcheable
+                .into_iter()
+                .map(|x| x.to_owned().path.to_str().unwrap())
+                .collect();
+            eprintln!(
+                "There are {} remote files that Kerblam! cannot fetch: {}",
+                names.len(),
+                names.join(", ")
+            );
+        } else {
+            eprintln!(
+                "There are {} remote files that Kerblam! cannot fetch",
+                non_fetcheable.len(),
+            );
+        }
+    }
+
+    let remote_files: Vec<RemoteFile> = remote_files
+        .into_iter()
+        .filter(|x| x.path.to_str().unwrap() != "_")
+        .collect();
+
+    log::debug!("Fetching files: {:?}", remote_files);
+
     // Check if any remote files will be saved somewhere else than the
     // input data dir. If so, warn the user before continuing.
     let data_dir = config.input_data_dir();
