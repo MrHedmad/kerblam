@@ -11,6 +11,7 @@ use std::process::Command;
 use std::str::FromStr;
 use termimad::{minimad, MadSkin};
 
+use rand::distributions::{Alphanumeric, DistString};
 use version_compare::Version;
 use walkdir::{self, DirEntry};
 
@@ -514,9 +515,16 @@ pub fn update_timestamps(path: &PathBuf) -> anyhow::Result<()> {
 ///
 /// Useful if you want to add an extension to the path.
 /// Requires a clone.
+#[allow(dead_code)]
 pub fn push_fragment(buffer: impl AsRef<Path>, ext: &str) -> PathBuf {
     let buffer = buffer.as_ref();
     let mut path = buffer.as_os_str().to_owned();
     path.push(ext);
     path.into()
+}
+
+/// Get a random alphanumerical string some characters long
+#[allow(dead_code)]
+pub fn get_salt(length: usize) -> String {
+    Alphanumeric.sample_string(&mut rand::thread_rng(), length)
 }

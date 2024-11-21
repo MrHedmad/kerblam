@@ -441,11 +441,11 @@ impl FileMover {
         }
     }
 
-    pub fn get_from(self) -> PathBuf {
+    pub fn get_from(&self) -> PathBuf {
         self.from.clone()
     }
     #[allow(dead_code)]
-    pub fn get_to(self) -> PathBuf {
+    pub fn get_to(&self) -> PathBuf {
         self.to.clone()
     }
 }

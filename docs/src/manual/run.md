@@ -89,12 +89,12 @@ kerblam run process_csv --profile alternate
 > by default `data/in`.
 
 Under the hood, Kerblam! will:
-- Rename `input.csv` to `input.csv.original`;
+- Move `input.csv` to a temporary directory in the root of the project named `.kerblam/scratch`,
+  adding a very small salt string to its name (to avoid potential name collisions);
 - Move `different_input.csv` to `input.csv`;
 - Run the analysis as normal;
-- When the run ends (it finishes, it crashes or you kill it), Kerblam! will undo both actions:
-  it moves `different_input.csv` back to its original place and
-  renames `input.csv.original` back to `input.csv`.
+- When the run ends (it finishes, it crashes or you kill it), Kerblam! will restore the original state:
+  it moves both `different_input.csv` and `input.csv.<salt>` back to their original places.
 
 This effectively causes the workflow to run with different input data.
 
