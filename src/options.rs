@@ -36,7 +36,7 @@ pub struct DataOptions {
     pub paths: Option<DataPaths>,
     // Profiles are like HashMap<profile_name, HashMap<old_file_name, new_file_name>>
     pub profiles: Option<HashMap<String, HashMap<PathBuf, PathBuf>>>,
-    pub remote: Option<HashMap<Url, PathBuf>>,
+    pub remote: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -101,7 +101,7 @@ pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOpti
 
 #[derive(Debug)]
 pub struct RemoteFile {
-    pub url: Url,
+    pub url: Option<Url>,
     pub path: PathBuf,
 }
 
@@ -111,9 +111,29 @@ impl From<RemoteFile> for PathBuf {
     }
 }
 
-impl From<RemoteFile> for Url {
-    fn from(val: RemoteFile) -> Self {
-        val.url
+impl TryFrom<RemoteFile> for Url {
+    fn try_from(value: RemoteFile) -> Result<Self> {
+        value
+            .url
+            .ok_or(anyhow!("Cannot convert to URL - it's missing"))
+    }
+
+    type Error = anyhow::Error;
+}
+
+impl RemoteFile {
+    fn from_string_pair(value: (&str, &str), base_directory: PathBuf) -> Result<Self> {
+        if value.0 == "_" {
+            Ok(RemoteFile {
+                url: None,
+                path: base_directory.join(value.1),
+            })
+        } else {
+            Ok(RemoteFile {
+                url: Some(Url::try_from(value.0)?),
+                path: base_directory.join(value.1),
+            })
+        }
     }
 }
 
@@ -262,9 +282,14 @@ impl KerblamTomlOptions {
             .and_then(|x| x.remote)
             .map(|y| {
                 y.iter()
-                    .map(|pairs| RemoteFile {
-                        url: pairs.0.clone(),
-                        path: root_data_dir.join(pairs.1),
+                    // TODO: This fails horribly if the URL is not valid
+                    // due to the .unwrap here. Pretty print a nice error?
+                    .map(|(a, b)| {
+                        RemoteFile::from_string_pair(
+                            (a.as_str(), b.as_str()),
+                            self.input_data_dir(),
+                        )
+                        .unwrap()
                     })
                     .collect()
             })

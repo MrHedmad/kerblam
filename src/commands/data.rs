@@ -218,16 +218,8 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     }
 
     // Send a message reminding the user that there are some unfetcheable remote files
-    let non_fetcheable: Vec<&RemoteFile> = remote_files
-        .iter()
-        .filter_map(|x| {
-            if x.path.to_str().unwrap() == "_" {
-                Some(x)
-            } else {
-                None
-            }
-        })
-        .collect();
+    let non_fetcheable: Vec<&RemoteFile> =
+        remote_files.iter().filter(|x| x.url.is_none()).collect();
 
     if !non_fetcheable.is_empty() {
         if non_fetcheable.len() <= 5 {
@@ -235,14 +227,21 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
                 .into_iter()
                 .map(|x| x.to_owned().path.to_str().unwrap())
                 .collect();
-            eprintln!(
-                "There are {} remote files that Kerblam! cannot fetch: {}",
-                names.len(),
-                names.join(", ")
-            );
+            if names.len() == 1 {
+                eprintln!(
+                    "❓ There is one remote file that Kerblam! cannot fetch: {}",
+                    names.join(", ")
+                );
+            } else {
+                eprintln!(
+                    "❓ There are {} remote files that Kerblam! cannot fetch: {}",
+                    names.len(),
+                    names.join(", ")
+                );
+            }
         } else {
             eprintln!(
-                "There are {} remote files that Kerblam! cannot fetch",
+                "❓ There are {} remote files that Kerblam! cannot fetch",
                 non_fetcheable.len(),
             );
         }
@@ -250,7 +249,7 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
 
     let remote_files: Vec<RemoteFile> = remote_files
         .into_iter()
-        .filter(|x| x.path.to_str().unwrap() != "_")
+        .filter(|x| x.url.is_some())
         .collect();
 
     log::debug!("Fetching files: {:?}", remote_files);
@@ -291,7 +290,11 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
             continue;
         }
 
-        if let Err(msg) = fetch_remote_file(&client, file.url, file.path) {
+        if let Err(msg) = fetch_remote_file(
+            &client,
+            file.url.expect("This is expected due to above filtering"),
+            file.path,
+        ) {
             eprintln!("{}", msg);
             success = false;
         }
