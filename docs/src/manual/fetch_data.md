@@ -27,3 +27,28 @@ each file that you wish to be downloaded.
 >
 > Kerblam! will, however, warn you before acting, telling you that it is about
 > to do something potentially unwanted, and giving you the chance to abort.
+
+## Unfetcheable data
+Sometimes, a simple GET request is not enough to fetch your data.
+Perhaps you need some complicated login, or you use specific software to fetch
+your remote data.
+You can still tell Kerblam! that a file is remote, but that Kerblam! cannot
+directly fetch it: this way you can use all other Kerblam! features but
+"opt out" of the fetching one.
+
+To do this, simply specify `"_"` as the remote URL in the `kerblam.toml` file:
+```toml
+[data.remote]
+"https://example.com/" = "remote_file.txt"
+"_" = "unfetcheable_file.txt"
+```
+
+If you run `kerblam data fetch` with the above command, you'll fetch the
+`remote_file.txt`, but not `unfetcheable_file.txt` (and Kerblam! will remind
+you of that).
+
+> [!NOTE]
+> Remember that [Kerblam! replay packages](./package_pipes.md) will fetch
+> remote data for you before running the packaged workflow.
+> If an unfetcheable file is needed by the packaged workflow, be sure to fetch
+> it *inside* the workflow itself before running the computation proper.

@@ -217,6 +217,43 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
         return Ok(());
     }
 
+    // Send a message reminding the user that there are some unfetcheable remote files
+    let non_fetcheable: Vec<&RemoteFile> =
+        remote_files.iter().filter(|x| x.url.is_none()).collect();
+
+    if !non_fetcheable.is_empty() {
+        if non_fetcheable.len() <= 5 {
+            let names: Vec<&str> = non_fetcheable
+                .into_iter()
+                .map(|x| x.to_owned().path.to_str().unwrap())
+                .collect();
+            if names.len() == 1 {
+                eprintln!(
+                    "❓ There is one remote file that Kerblam! cannot fetch: {}",
+                    names.join(", ")
+                );
+            } else {
+                eprintln!(
+                    "❓ There are {} remote files that Kerblam! cannot fetch: {}",
+                    names.len(),
+                    names.join(", ")
+                );
+            }
+        } else {
+            eprintln!(
+                "❓ There are {} remote files that Kerblam! cannot fetch",
+                non_fetcheable.len(),
+            );
+        }
+    }
+
+    let remote_files: Vec<RemoteFile> = remote_files
+        .into_iter()
+        .filter(|x| x.url.is_some())
+        .collect();
+
+    log::debug!("Fetching files: {:?}", remote_files);
+
     // Check if any remote files will be saved somewhere else than the
     // input data dir. If so, warn the user before continuing.
     let data_dir = config.input_data_dir();
@@ -253,7 +290,11 @@ pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
             continue;
         }
 
-        if let Err(msg) = fetch_remote_file(&client, file.url, file.path) {
+        if let Err(msg) = fetch_remote_file(
+            &client,
+            file.url.expect("This is expected due to above filtering"),
+            file.path,
+        ) {
             eprintln!("{}", msg);
             success = false;
         }
