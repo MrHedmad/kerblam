@@ -7,7 +7,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::execution::{setup_ctrlc_hook, Executor};
+use crate::execution::Executor;
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
 use crate::utils::{find_files, gzip_file, tar_files};
@@ -112,9 +112,8 @@ pub fn package_pipe(
             pipe_name
         )
     };
-    let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
     let backend: String = config.execution.backend.clone().into();
-    let base_container = executor.build_env(sigint_rec, &backend, false)?;
+    let base_container = executor.build_env(&backend, false)?;
     log::debug!("Base container name: {base_container:?}");
 
     // We now have the empty container. We can add our own layers.

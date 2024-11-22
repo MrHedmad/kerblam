@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::cache::{check_last_profile, delete_last_profile, get_cache};
-use crate::execution::{setup_ctrlc_hook, Executor, FileMover};
+use crate::execution::{Executor, FileMover};
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
 use crate::utils::update_timestamps;
@@ -24,13 +24,10 @@ pub fn kerblam_run_project(
     } else {
         pipe
     };
+    log::debug!("Profile: {:?}", profile);
 
     // Create an executor for later.
     let executor: Executor = pipe.into_executor(runtime_dir)?;
-
-    // From here on we should not crash. Therefore, we have to catch SIGINTs
-    // as the come in.
-    let sigint_rec = setup_ctrlc_hook().expect("Failed to setup SIGINT hook!");
 
     // Handle renaming the input files if we are in a profile
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile.clone() {
@@ -98,7 +95,11 @@ pub fn kerblam_run_project(
                 &config,
                 &last_cache.unwrap().last_executed_profile.unwrap(),
                 false,
-            )?;
+            )
+            .unwrap_or_else(|_| {
+                log::warn!("Could not find old profile paths. Skipping re-touching.");
+                vec![]
+            });
 
             for mover in profile_paths {
                 log::debug!("Touching {:?}", &mover.clone().get_from());
@@ -129,8 +130,7 @@ pub fn kerblam_run_project(
     };
 
     // Execute the executor
-    let runtime_result =
-        executor.execute(sigint_rec, &config, env_vars, skip_build_cache, extra_args);
+    let runtime_result = executor.execute(&config, env_vars, skip_build_cache, extra_args);
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {

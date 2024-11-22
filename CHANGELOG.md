@@ -29,6 +29,13 @@ the top. Non pre-release versions sometimes have an associated name.
   Now, the original files are moved to `.kerblam/scratch/` during the workflow,
   instead of remaining in the original directory (and being renamed `.original`).
 
+### Fixed
+- Fixed a bug that occurred if you used a profile in a run, then deleted that
+  profile and run again with no profile selected. Kerblam! wanted to re-touch
+  your old profile files for you (to trigger workflows), but it failed (since
+  you deleted the profile). Now, the error is ignored, and Kerblam! simply
+  complains with a warning.
+
 ## [v1.1.1] - 2024-10-14
 
 ### Fixed
