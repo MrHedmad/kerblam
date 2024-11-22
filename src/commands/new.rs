@@ -165,9 +165,10 @@ pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
             Ok(_) => (),
             Err(e) => {
                 eprintln!(
-                    "❌ Couldn't execute command '{}': {}. Ignoring.",
-                    format!("{} {}", command, args.join(" ")),
-                    e
+                    "❌ Couldn't execute command '{}': {} {}. Ignoring.",
+                    e,
+                    command,
+                    args.join(" "),
                 )
             }
         }

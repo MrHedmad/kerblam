@@ -403,7 +403,7 @@ impl KerblamTomlOptions {
         .concat()
         .into_iter()
         // Get rid of hidden files - we ignore them like a good little program should.
-        .filter(|x| !x.file_name().unwrap().to_string_lossy().starts_with("."))
+        .filter(|x| !x.file_name().unwrap().to_string_lossy().starts_with('.'))
         .collect()
     }
 
@@ -531,11 +531,11 @@ struct Profile<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug>
 
 impl<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug> Profile<T> {
     #[allow(dead_code)]
-    fn add_paths(&mut self, origin: T, target: Option<T>) -> () {
+    fn add_paths(&mut self, origin: T, target: Option<T>) {
         self.targets.insert(origin, target);
     }
 
-    fn to_filemovers(self) -> Vec<FileMover> {
+    fn into_filemovers(self) -> Vec<FileMover> {
         log::debug!("Converting hashmap to filemovers: {:?}", self.targets);
         self.targets
             .into_iter()
@@ -548,26 +548,21 @@ impl<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug> Profile<T
                     FileMover::from((
                         &self.root_dir.join(&original),
                         push_fragment(
-                            &self
-                                .temp_dir
-                                .join(&original.strip_prefix(&self.root_dir).unwrap()),
+                            self.temp_dir
+                                .join(original.strip_prefix(&self.root_dir).unwrap()),
                             &format!(".{}", get_salt(5)),
                         ),
                     )),
                 ];
 
-                match target {
-                    Some(t) => {
-                        // This is a regular target: we also need to move the target to the original's
-                        // position
-                        let target = t.into();
-                        res.push(FileMover::from((
-                            &self.root_dir.join(&target),
-                            &self.root_dir.join(&original),
-                        )));
-                    }
-                    // If there is no target, we don't need to do anything.
-                    None => (),
+                if let Some(t) = target {
+                    // This is a regular target: we also need to move the target to the original's
+                    // position
+                    let target = t.into();
+                    res.push(FileMover::from((
+                        &self.root_dir.join(target),
+                        &self.root_dir.join(&original),
+                    )));
                 }
 
                 res
@@ -633,7 +628,7 @@ pub fn extract_profile_paths(
 
     // Expand profile paths
     let profile: HashMap<PathBuf, Option<PathBuf>> = profile
-        .into_iter()
+        .iter()
         .map(|(x, y)| {
             if y.to_string_lossy() == "_" {
                 (root_dir.join(x), None)
@@ -645,7 +640,7 @@ pub fn extract_profile_paths(
 
     let profile = Profile::from(profile.to_owned(), root_dir.clone(), temp_dir);
 
-    let file_movers = profile.to_filemovers();
+    let file_movers = profile.into_filemovers();
     log::debug!("Obtained filemovers: {:?}", file_movers);
 
     // Check if the sources exist, otherwise we crash now, and not later
@@ -669,13 +664,11 @@ pub fn extract_profile_paths(
         .map(|x| format!("\t- {}", x.to_string_lossy()))
         .collect();
 
-    if check_existance {
-        if !origin_exist_check.is_empty() {
-            bail!(
-                "Failed to find some profiles files:\n{}",
-                origin_exist_check.join("\n")
-            )
-        }
+    if check_existance && !origin_exist_check.is_empty() {
+        bail!(
+            "Failed to find some profiles files:\n{}",
+            origin_exist_check.join("\n")
+        )
     }
 
     Ok(file_movers)

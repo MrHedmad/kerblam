@@ -320,7 +320,7 @@ pub fn find_pipe_by_name(config: &KerblamTomlOptions, pipe_name: Option<String>)
         .clone()
         .data
         .and_then(|x| x.profiles)
-        .and_then(|x| Some(x.into_keys().collect()));
+        .map(|x| x.into_keys().collect());
     let profiles_list = match profiles {
         None => "No profiles defined".to_string(),
         Some(list) => list.join(", "),

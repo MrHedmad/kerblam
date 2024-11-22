@@ -13,7 +13,6 @@ use crate::options::Pipe;
 use crate::utils::{find_files, gzip_file, tar_files};
 
 use anyhow::{bail, Result};
-use chrono;
 use serde::Serialize;
 
 use tempfile::tempdir;
