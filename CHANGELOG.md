@@ -19,6 +19,10 @@ the top. Non pre-release versions sometimes have an associated name.
   the file for the duration of the workflow.
   For example `"test.txt" = "_"` will temporarily remove the `"test.txt"` file
   from its original position (it will be moved to `.kerblam/scratch`).
+- When specifying remote files, using `"_"` as URL will tell Kerblam! to skip
+  fetching the file with `kerblam data fetch`, but will still treat it as
+  remote for all other purposes (e.g. for `kerblam data clean`).
+  This allows the user to use non-canonical fetching methods.
 
 ### Changed
 - The way that profiles are handled was changed.
