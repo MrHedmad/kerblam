@@ -6,9 +6,7 @@ use std::process::{Command, Stdio};
 use anyhow::{bail, Result};
 use tempfile::TempDir;
 
-use crate::execution::{
-    generate_bind_mount_strings, run_protected_command, setup_ctrlc_hook, CommandResult,
-};
+use crate::execution::{generate_bind_mount_strings, run_protected_command, CommandResult};
 use crate::options::{ContainerBackend, KerblamTomlOptions};
 use crate::utils::gunzip_file;
 
@@ -112,10 +110,8 @@ pub fn replay(
             .expect("Cannot retrieve command output!")
     };
 
-    let signal_receiver = setup_ctrlc_hook()?;
-
     eprintln!("Replaying...");
-    let _return_value = match run_protected_command(builder, signal_receiver) {
+    let _return_value = match run_protected_command(builder) {
         Ok(CommandResult::Exited { res }) => Ok(Some(res)), // We don't care if it succeeded.
         Ok(CommandResult::Killed) => {
             eprintln!("\nChild process was killed.");

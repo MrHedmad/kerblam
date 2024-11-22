@@ -11,6 +11,7 @@ use crate::utils::update_timestamps;
 
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
+use lazy_static::lazy_static;
 
 // TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
 // functions can be simplified a lot.
@@ -39,6 +40,10 @@ pub fn setup_ctrlc_hook() -> Result<Receiver<bool>> {
     })?;
 
     Ok(receiver)
+}
+
+lazy_static! {
+    pub static ref KEYBOARD_INTERRUPT_RECEIVER: Receiver<bool> = setup_ctrlc_hook().unwrap();
 }
 
 /// Encapsulate what file to execute and how to execute it
@@ -113,7 +118,6 @@ impl Executor {
     /// filesystem and therefore invalidate itself during execution.
     pub fn execute(
         self,
-        signal_receiver: Receiver<bool>,
         config: &KerblamTomlOptions,
         env_vars: HashMap<String, String>,
         skip_build_cache: bool,
@@ -124,8 +128,7 @@ impl Executor {
         let mut command_args = if self.env.is_some() {
             // This is a containerized run
             let backend: String = config.execution.backend.clone().into();
-            let runtime_name =
-                self.build_env(signal_receiver.clone(), &backend, skip_build_cache)?;
+            let runtime_name = self.build_env(&backend, skip_build_cache)?;
             let mut partial: Vec<String> = if stdout().is_terminal() {
                 // We are in a terminal. Run interactively
                 stringify![vec![&backend, "run", "--rm", "-it"]]
@@ -202,7 +205,7 @@ impl Executor {
                 .expect("Cannot retrieve command output!")
         };
 
-        let return_value = match run_protected_command(builder, signal_receiver) {
+        let return_value = match run_protected_command(builder) {
             Ok(CommandResult::Exited { res }) => Ok(Some(res)), // We don't care if it succeeded.
             Ok(CommandResult::Killed) => {
                 eprintln!("\nChild process exited early. Continuing to cleanup...");
@@ -226,12 +229,7 @@ impl Executor {
     /// Build the context of this executor and return its tag.
     ///
     /// If the executor has no environment file, this function fails.
-    pub fn build_env(
-        &self,
-        signal_receiver: Receiver<bool>,
-        backend: &str,
-        no_cache: bool,
-    ) -> Result<String> {
+    pub fn build_env(&self, backend: &str, no_cache: bool) -> Result<String> {
         let mut cleanup: Vec<PathBuf> = vec![];
 
         if self.env.is_none() {
@@ -284,7 +282,7 @@ impl Executor {
                 .expect("Failed to spawn builder process.")
         };
 
-        let success = match run_protected_command(builder, signal_receiver.clone()) {
+        let success = match run_protected_command(builder) {
             Ok(CommandResult::Exited { res }) => res.success(),
             Ok(CommandResult::Killed) => false,
             Err(_) => false,
@@ -477,11 +475,12 @@ pub enum CommandResult {
 /// Returns an error if the child cannot be killed.
 /// Panics if something really bad happens and the kernel cannot get a handle
 /// on what the child is doing.
-pub fn run_protected_command<F>(cmd_builder: F, receiver: Receiver<bool>) -> Result<CommandResult>
+pub fn run_protected_command<F>(cmd_builder: F) -> Result<CommandResult>
 where
     F: FnOnce() -> Child,
 {
     let mut child = cmd_builder();
+    let receiver = KEYBOARD_INTERRUPT_RECEIVER.clone();
 
     loop {
         // Check every 50 ms how the child is faring.
