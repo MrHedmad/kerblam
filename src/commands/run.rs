@@ -18,7 +18,7 @@ pub fn kerblam_run_project(
     ignore_container: bool,
     skip_build_cache: bool,
     extra_args: Option<Vec<String>>,
-) -> Result<String> {
+) -> Result<()> {
     let pipe = if ignore_container {
         pipe.drop_env()
     } else {
@@ -153,7 +153,7 @@ pub fn kerblam_run_project(
         match runtime_result.unwrap() {
             Some(res) => {
                 if res.success() {
-                    Ok("Done!".into())
+                    Ok(())
                 } else {
                     Err(anyhow!("Process exited with error: {res:?}"))
                 }
