@@ -1,6 +1,6 @@
 use clap::ValueEnum;
 use serde::Deserialize;
-use std::env::current_dir;
+use std::env::{current_dir, set_current_dir};
 use std::fmt::Display;
 use std::fmt::Write;
 use std::fs::{self, File};
@@ -672,4 +672,50 @@ pub fn extract_profile_paths(
     }
 
     Ok(file_movers)
+}
+
+/// Find and parse the kerblam.toml file
+///
+/// This function walks through the filetree to find the kerblam.toml file.
+/// If no kerblam.toml exists, it fails.
+/// If one is found, it parses it and the CDs the project to the location of
+/// the TOML and parses it.
+pub fn find_and_parse_kerblam_toml() -> Result<KerblamTomlOptions> {
+    let toml_file = match find_kerblam_toml() {
+        // If we find a toml file, move the current working directory there.
+        Some(path) => {
+            set_current_dir(path.parent().unwrap())?;
+            path
+        }
+        None => {
+            bail!(
+                "Not a kerblam! project (or any of the parent directories): no kerblam.toml found."
+            );
+        }
+    };
+
+    let here = &current_dir().unwrap();
+
+    log::debug!("Kerblam is starting in {:?}", here);
+
+    parse_kerblam_toml(toml_file)
+}
+
+/// Find the kerblam.toml file in the working directory tree
+///
+/// This function starts from the current working directory and
+/// works its way up to find a kerblam.toml file, returning its
+/// path if it finds one.
+pub fn find_kerblam_toml() -> Option<PathBuf> {
+    let here = current_dir().unwrap();
+
+    for piece in here.ancestors() {
+        let mut test_path = piece.to_owned().to_path_buf();
+        test_path.push("kerblam.toml");
+        if test_path.exists() {
+            return Some(test_path);
+        }
+    }
+
+    None
 }

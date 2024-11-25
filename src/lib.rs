@@ -1,5 +1,4 @@
 use anyhow::*;
-use options::parse_kerblam_toml;
 use std::env::current_dir;
 use std::ffi::OsString;
 
@@ -11,8 +10,6 @@ mod options;
 mod utils;
 
 use cli::Cli;
-
-use crate::utils::find_kerblam_toml;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 

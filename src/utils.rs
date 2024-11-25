@@ -1,7 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use filetime::{set_file_mtime, FileTime};
 use flate2::Compression;
-use std::env::current_dir;
 use std::ffi::{OsStr, OsString};
 use std::fs::File;
 use std::fs::{self, create_dir_all};
@@ -356,25 +355,6 @@ pub fn find_pipe_by_name(config: &KerblamTomlOptions, pipe_name: Option<String>)
     };
 
     Ok(pipe)
-}
-
-/// Find the kerblam.toml file in the working directory tree
-///
-/// This function starts from the current working directory and
-/// works its way up to find a kerblam.toml file, returning its
-/// path if it finds one.
-pub fn find_kerblam_toml() -> Option<PathBuf> {
-    let here = current_dir().unwrap();
-
-    for piece in here.ancestors() {
-        let mut test_path = piece.to_owned().to_path_buf();
-        test_path.push("kerblam.toml");
-        if test_path.exists() {
-            return Some(test_path);
-        }
-    }
-
-    None
 }
 
 // This is stolen from Cargo

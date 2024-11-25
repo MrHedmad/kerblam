@@ -1,19 +1,18 @@
 use clap::{Args, Parser, Subcommand};
+use std::env::current_dir;
+use std::ffi::OsString;
 use std::path::PathBuf;
-use std::{
-    env::{current_dir, set_current_dir},
-    ffi::OsString,
-};
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 
+use crate::commands::FetchCommand;
 use crate::commands::{
-    clean_data, create_kerblam_project, fetch_remote_data, ignore, kerblam_run_project,
-    package_data_to_archive, package_pipe, replay, DataStatus,
+    clean_data, create_kerblam_project, ignore, kerblam_run_project, package_data_to_archive,
+    package_pipe, replay, DataStatus,
 };
-use crate::options::{ContainerBackend, KerblamTomlOptions};
+use crate::options::find_and_parse_kerblam_toml;
+use crate::options::ContainerBackend;
 use crate::utils::{find_pipe_by_name, print_md};
-use crate::{find_kerblam_toml, parse_kerblam_toml};
 
 const KERBLAM_LONG_ABOUT: &str = concat!(
     "  _  __           _     _               _ \n",
@@ -28,28 +27,7 @@ const KERBLAM_LONG_ABOUT: &str = concat!(
     "The source code is available at https://github.com/MrHedmad/kerblam"
 );
 
-fn find_and_parse_kerblam_toml() -> Result<KerblamTomlOptions> {
-    let toml_file = match find_kerblam_toml() {
-        // If we find a toml file, move the current working directory there.
-        Some(path) => {
-            set_current_dir(path.parent().unwrap())?;
-            path
-        }
-        None => {
-            bail!(
-                "Not a kerblam! project (or any of the parent directories): no kerblam.toml found."
-            );
-        }
-    };
-
-    let here = &current_dir().unwrap();
-
-    log::debug!("Kerblam is starting in {:?}", here);
-
-    parse_kerblam_toml(toml_file)
-}
-
-trait Executable {
+pub trait Executable {
     fn execute(self) -> Result<()>;
 }
 
@@ -322,23 +300,6 @@ impl Executable for Command {
             Self::Package(x) => x.execute(),
             Self::Ignore(x) => x.execute(),
         }
-    }
-}
-
-/// Fetch remote data and save it locally
-///
-/// You can specify data to fetch in the kerblam.toml file, like so:
-///
-/// [data.remote]
-/// "url to be fetched" = "target file"
-#[derive(Args, Debug, Clone)]
-#[command(verbatim_doc_comment)]
-struct FetchCommand {}
-
-impl Executable for FetchCommand {
-    fn execute(self) -> Result<()> {
-        let config = find_and_parse_kerblam_toml()?;
-        fetch_remote_data(config)
     }
 }
 
