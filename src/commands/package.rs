@@ -7,15 +7,59 @@ use std::{
     process::{Command, Stdio},
 };
 
+use crate::cli::Executable;
 use crate::execution::Executor;
+use crate::options::find_and_parse_kerblam_toml;
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
-use crate::utils::{find_files, gzip_file, tar_files};
+use crate::utils::{find_files, find_pipe_by_name, gzip_file, tar_files};
 
 use anyhow::{bail, Result};
+use clap::Args;
 use serde::Serialize;
 
 use tempfile::tempdir;
+
+/// Package a workflow for execution later
+///
+/// Package your workflow in a container primed for execution and
+/// a replay tarball with input data and execution parameters.
+///
+/// If you upload the container to a registry and share your replay
+/// tarball, other people can use Kerblam! to re-execute your workflow
+/// (or do it manually).
+///
+/// If you want, you can sign the package by passing the --sign option.
+/// This includes your git name and git email in the package.
+///
+/// Example:
+///   kerblam package process_csv --tag username/process_csv:latest
+#[derive(Args, Debug, Clone)]
+#[command(verbatim_doc_comment)]
+pub struct PackageCommand {
+    /// The name of the workflow to package. Must have a related container
+    pipe: Option<String>,
+    /// The label of the exported container image
+    #[arg(long)]
+    tag: Option<String>,
+    /// If passed, sign the package with git name and email
+    #[arg(long)]
+    sign: bool,
+}
+
+impl Executable for PackageCommand {
+    fn execute(self) -> Result<()> {
+        let config = find_and_parse_kerblam_toml()?;
+        let default_pipe_name = format!("{}_exec", &self.pipe.clone().unwrap_or("x".to_string()));
+        let pipe = find_pipe_by_name(&config, self.pipe)?;
+        package_pipe(
+            config,
+            pipe,
+            &self.tag.unwrap_or(default_pipe_name),
+            self.sign,
+        )
+    }
+}
 
 #[derive(Serialize, Debug)]
 struct Signature {

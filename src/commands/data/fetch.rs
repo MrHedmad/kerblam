@@ -34,7 +34,7 @@ impl Executable for FetchCommand {
 ///
 /// Shows a pretty download bar for each, and gracefully handles files
 /// that are already there to begin with.
-pub fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
+fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     // I work with this instead of undownloaded_files() to show a message
     // when the file is already there, but it's a choice I guess.
     let remote_files = config.remote_files();

@@ -1,14 +1,63 @@
-use std::env::set_current_dir;
+use std::env::{current_dir, set_current_dir};
 use std::fs::{create_dir_all, read_to_string, File};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use anyhow::{bail, Result};
+use clap::Args;
 use tempfile::TempDir;
 
+use crate::cli::Executable;
 use crate::execution::{generate_bind_mount_strings, run_protected_command, CommandResult};
 use crate::options::{ContainerBackend, KerblamTomlOptions};
 use crate::utils::gunzip_file;
+
+/// Replay a pipeline previously packaged with `package`
+///
+/// The replay tarball made by `kerblam package` contains all the info
+/// to replay a workflow run in the past. This can be done manually by
+/// anyone with a containerization engine.
+///
+/// This command is here for convenience: it unpacks the files for you
+/// in their correct positions and starts the replay workflow on top
+/// with the correct mountpoints.
+///
+/// Example:
+///     > Replay the 'test.kerblam.tar' replay package
+///         kerblam replay test.kerblam.tar
+#[derive(Args, Debug, Clone)]
+#[command(verbatim_doc_comment)]
+pub struct ReplayCommand {
+    /// The name of the compressed replay package
+    name: PathBuf,
+    /// Where the replay should happen in. Defaults to the current dir
+    destination: Option<PathBuf>,
+    /// Skip decompressing data? Useful if you replayed before already.
+    #[arg(long, short, action)]
+    no_decompress: bool,
+    /// The name of the container used to run, overriding the
+    /// instructions of the .kerblam file.
+    #[arg(long, short)]
+    tag: Option<String>,
+    /// The backend to use, either 'docker' or 'podman'
+    #[arg(long, short)]
+    #[clap(default_value = "docker")]
+    backend: ContainerBackend,
+}
+
+impl Executable for ReplayCommand {
+    fn execute(self) -> Result<()> {
+        replay(
+            self.name,
+            self.destination
+                .unwrap_or(current_dir().expect("Could not find current directory")),
+            self.no_decompress,
+            self.tag,
+            self.backend,
+        )?;
+        Ok(())
+    }
+}
 
 /// Replay a kerblam! analysis.
 ///

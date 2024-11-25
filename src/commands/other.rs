@@ -1,11 +1,49 @@
 use std::{
+    env::current_dir,
     fs::{copy, read, File},
     io::Write,
     path::{Path, PathBuf},
 };
 
+use crate::cli::Executable;
+use crate::options::find_and_parse_kerblam_toml;
 use crate::utils::fetch_gitignore;
+
 use anyhow::{Context, Result};
+use clap::Args;
+
+/// Add paths and whole languages to a .gitignore file
+///
+/// Supported names can be seen in https://github.com/github/gitignore
+/// The input is case-sensitive!
+///
+/// Examples:
+///     > Use the Python gitignore from Github
+///         kerblam ignore Python
+///
+///     > Use the Rust gitignore from Github, and delete duplicates
+///         kerblam ignore Rust --compress
+///
+///     > Ignore a specific file in the project
+///         kerblam ignore ./src/test_script.sh
+#[derive(Args, Debug, Clone)]
+#[command(verbatim_doc_comment)]
+pub struct IgnoreCommand {
+    /// The name of a language or a path to ignore
+    path_or_name: String,
+    /// Should the gitignore be compressed to remove duplicates?
+    #[arg(long, action)]
+    compress: bool,
+}
+
+impl Executable for IgnoreCommand {
+    fn execute(self) -> Result<()> {
+        // We need this to change the wd correctly
+        let _ = find_and_parse_kerblam_toml();
+        let gitignore_path = current_dir()?.join(".gitignore");
+        ignore(gitignore_path, &self.path_or_name, self.compress)
+    }
+}
 
 fn is_whitespace(item: &str) -> bool {
     item.chars().all(|x| (x == ' ') | (x == '\t') | (x == '\n'))

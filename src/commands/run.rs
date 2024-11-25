@@ -1,14 +1,78 @@
-use crate::options::extract_profile_paths;
 use std::collections::HashMap;
+use std::env::current_dir;
 use std::path::PathBuf;
 
 use crate::cache::{check_last_profile, delete_last_profile, get_cache};
+use crate::cli::Executable;
 use crate::execution::{Executor, FileMover};
+use crate::options::extract_profile_paths;
+use crate::options::find_and_parse_kerblam_toml;
 use crate::options::KerblamTomlOptions;
 use crate::options::Pipe;
+use crate::utils::find_pipe_by_name;
+use crate::utils::print_md;
 use crate::utils::update_timestamps;
 
 use anyhow::{anyhow, bail, Result};
+use clap::Args;
+
+/// Start a workflow within a Kerblam! project
+///
+/// Start workflow managers for your workflows, potentially with a data
+/// profile attached.
+///
+/// If no workflow is specified, shows the list of available workflows.
+///
+/// Examples:
+///     > List the available workflows that Kerblam! can manage
+///         kerblam run
+///
+///     > Run the workflow named 'process_csv.sh'
+///         kerblam run process_csv
+///
+///     > Use the 'test' profile with a workflow
+///         kerblam run process_csv --profile test
+#[derive(Args, Debug, Clone)]
+#[command(verbatim_doc_comment)]
+pub struct RunCommand {
+    /// Name of the workflow to be started
+    module_name: Option<String>,
+    /// Name of a data profile to use during this execution
+    #[arg(long)]
+    profile: Option<String>,
+    /// Show the pipe description and exit
+    #[arg(long, short, action)]
+    desc: bool,
+    /// Do not run in container, even if a container is available
+    #[arg(long, short, action)]
+    local: bool,
+    /// Do not use the containerization engine build cache if running in a container
+    #[arg(long = "no-build-cache", action)]
+    skip_build_cache: bool,
+    /// Command line arguments to be passed to child process
+    #[clap(last = true, allow_hyphen_values = true)]
+    extra_args: Option<Vec<String>>,
+}
+
+impl Executable for RunCommand {
+    fn execute(self) -> Result<()> {
+        let config = find_and_parse_kerblam_toml()?;
+        let pipe = find_pipe_by_name(&config, self.module_name)?;
+        if self.desc {
+            print_md(&pipe.long_description());
+            return Ok(());
+        }
+        kerblam_run_project(
+            config,
+            pipe,
+            &current_dir().unwrap(),
+            self.profile,
+            self.local,
+            self.skip_build_cache,
+            self.extra_args,
+        )
+    }
+}
 
 pub fn kerblam_run_project(
     config: KerblamTomlOptions,

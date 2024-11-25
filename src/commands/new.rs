@@ -1,9 +1,36 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use clap::Args;
 
+use crate::cli::Executable;
 use crate::utils::{self, fetch_gitignore, normalize_path, GitCloneMethod, YesNo};
 use crate::VERSION;
+
+/// Initialize a new, empty Kerblam! project.
+///
+/// This command asks you a few initialization questions to get you
+/// started, such as which programming languages you will use, if you
+/// want to use `git` and a remote Git server, etc...
+///
+/// Examples:
+///     > Create a new project in the 'my_project' directory
+///          kerblam new ./my_project
+///
+#[derive(Args, Debug, Clone)]
+#[command(verbatim_doc_comment)]
+pub struct NewCommand {
+    /// Path to the new project
+    path: PathBuf,
+}
+
+impl Executable for NewCommand {
+    fn execute(self) -> Result<()> {
+        eprintln!("Creating a new project in {:?}!", &self.path);
+        create_kerblam_project(&self.path)?;
+        Ok(())
+    }
+}
 
 pub fn create_kerblam_project(dir: &PathBuf) -> Result<()> {
     let dirs_to_create: Vec<&str> = vec![
