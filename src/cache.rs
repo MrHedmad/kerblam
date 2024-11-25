@@ -8,17 +8,9 @@ use anyhow::Result;
 use homedir::get_my_home;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Cache {
     pub last_executed_profile: Option<String>,
-}
-
-impl Default for Cache {
-    fn default() -> Self {
-        Cache {
-            last_executed_profile: None,
-        }
-    }
 }
 
 /// Return the cache file for the current directory
@@ -83,6 +75,7 @@ pub fn write_cache(content: Cache) -> Result<()> {
 /// Returns None if there is no cache.
 ///
 /// Also updates the cache to the new profile
+#[allow(clippy::needless_update)]
 pub fn check_last_profile(current_profile: String) -> Option<bool> {
     let last_profile = get_cache();
 
@@ -93,6 +86,9 @@ pub fn check_last_profile(current_profile: String) -> Option<bool> {
 
     let new_cache = Cache {
         last_executed_profile: Some(current_profile),
+        // This line is where clippy complains: there is no need to do this
+        // as Cache has only the `last_executed_profile` field.
+        // But - just for now. It's added for future compatibility
         ..last_profile.clone().unwrap_or_default()
     };
     match write_cache(new_cache) {
@@ -112,11 +108,15 @@ pub fn check_last_profile(current_profile: String) -> Option<bool> {
 /// Delete from the cache the last profile used.
 ///
 /// This currently just deletes the cache.
+#[allow(clippy::needless_update)]
 pub fn delete_last_profile() -> Result<()> {
     let cache = get_cache();
 
     let new_cache = Cache {
         last_executed_profile: None,
+        // This line is where clippy complains: there is no need to do this
+        // as Cache has only the `last_executed_profile` field.
+        // But - just for now. It's added for future compatibility
         ..cache.unwrap_or_default()
     };
 
@@ -125,6 +125,7 @@ pub fn delete_last_profile() -> Result<()> {
     Ok(())
 }
 
+/// Calculate the hash of some hashable object
 fn calc_hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();
     t.hash(&mut s);

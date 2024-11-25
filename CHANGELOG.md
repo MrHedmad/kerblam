@@ -28,6 +28,8 @@ the top. Non pre-release versions sometimes have an associated name.
 - The way that profiles are handled was changed.
   Now, the original files are moved to `.kerblam/scratch/` during the workflow,
   instead of remaining in the original directory (and being renamed `.original`).
+- For developers: the Command Line Interface module was refactored and subdivided
+  into sub-modules.
 
 ### Fixed
 - Fixed a bug that occurred if you used a profile in a run, then deleted that
