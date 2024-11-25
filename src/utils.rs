@@ -218,6 +218,9 @@ pub fn run_command(
     }
 }
 
+/// Fetch the default gitignore for `name` from the Github repo of gitignores
+///
+/// It is case-sensitive, so "Rust" is different from "rust".
 pub fn fetch_gitignore(name: &str) -> Result<String> {
     let url = format!(
         "https://raw.githubusercontent.com/github/gitignore/main/{}.gitignore",
@@ -228,6 +231,16 @@ pub fn fetch_gitignore(name: &str) -> Result<String> {
     Ok(response)
 }
 
+/// Recursively list all files in a path, optionally ignoring some subpaths
+///
+/// Will walk through `inspected_path` recursively, finding all sub-paths.
+/// If the path is a children of one of the paths in `filters`, the path is
+/// filtered out.
+/// The filters are here to get rid of items that *might* be included
+/// by accident, especially when finding data paths.
+///
+/// For example, if we want all files in /data/out but we want to
+/// preserve the files in /data/, we can add the /data/ filter.
 fn find_path_items_with_filter(
     inspected_path: impl AsRef<Path>,
     top_level_filter: fn(&DirEntry) -> bool,
@@ -236,11 +249,6 @@ fn find_path_items_with_filter(
     let inspected_path = inspected_path.as_ref();
 
     if let Some(filters) = filters {
-        // The filters are here to get rid of items that *might* be included
-        // by accident, especially when finding data paths.
-        //
-        // For example, if we want all files in /data/out but we want to
-        // preserve the files in /data/, we can add the /data/ filter.
         walkdir::WalkDir::new(inspected_path)
             .into_iter()
             .filter_map(|i| i.ok())
@@ -267,14 +275,21 @@ fn find_path_items_with_filter(
     }
 }
 
+/// Find all *files* in a path, recursively, and with some filters.
+///
+/// Identical to `find_path_items_with_filters` but keeps only files, not dirs.
 pub fn find_files(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
     find_path_items_with_filter(inspected_path, |x| x.metadata().unwrap().is_file(), filters)
 }
 
+/// Find all *directories* in a path, recursively, and with some filters.
+///
+/// Identical to `find_path_items_with_filters` but keeps only directories, not files.
 pub fn find_dirs(inspected_path: impl AsRef<Path>, filters: Option<Vec<PathBuf>>) -> Vec<PathBuf> {
     find_path_items_with_filter(inspected_path, |x| x.metadata().unwrap().is_dir(), filters)
 }
 
+/// Warn the user if there is a version mismatch between the config and the real version
 pub fn warn_kerblam_version(config: &KerblamTomlOptions) {
     // TODO: is there a way to avoid this clone()? I feel like there should be
     // but I'm not sure.
@@ -304,6 +319,11 @@ pub fn warn_kerblam_version(config: &KerblamTomlOptions) {
 }
 
 /// Find a pipe by name or die trying
+///
+/// This takes the pipe name (like 'test') and finds the corresponding pipe,
+/// like 'test.sh'.
+///
+/// Errors if no pipe in found.
 pub fn find_pipe_by_name(config: &KerblamTomlOptions, pipe_name: Option<String>) -> Result<Pipe> {
     let pipes = config.pipes();
     let mut pipes_list = pipes.iter().map(|x| x.to_string()).collect::<Vec<String>>();
@@ -385,6 +405,7 @@ pub fn normalize_path(path: &Path) -> PathBuf {
     ret
 }
 
+/// Get the default `termimad` skin.
 fn get_termimad_skin() -> MadSkin {
     let mut skin = termimad::MadSkin::default_dark();
     skin.set_headers_fg(termimad::crossterm::style::Color::Yellow);
@@ -392,6 +413,7 @@ fn get_termimad_skin() -> MadSkin {
     skin
 }
 
+/// Print a markdown document with `minimad`, formatting it well for the shell.
 pub fn print_md(s: &str) {
     let options = minimad::Options::default()
         .clean_indentations(true)
@@ -399,6 +421,7 @@ pub fn print_md(s: &str) {
     print_text(minimad::parse_text(s, options));
 }
 
+/// Print a formatted text to the shell, obeying markdown formatting.
 fn print_text(text: minimad::Text) {
     let skin = get_termimad_skin();
     let fmt_text = termimad::FmtText::from_text(&skin, text, None);
@@ -437,6 +460,10 @@ pub fn tar_files(files: Vec<PathBuf>, strip: impl AsRef<Path>, target: PathBuf) 
     Ok(data_tar)
 }
 
+/// Create a gzip file from an uncompressed file.
+///
+/// Automatically appends the '.gz' to the end of 'output'.
+/// TODO: Why do this? It's just stupid.
 pub fn gzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<PathBuf> {
     let input: PathBuf = input.as_ref().to_path_buf();
     let output: PathBuf = output.as_ref().to_path_buf();
@@ -453,6 +480,10 @@ pub fn gzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<Pa
     Ok(zipped)
 }
 
+/// Unzips a gzipped file.
+///
+/// Automatically removes the terminal '.gz' of the output
+/// TODO: Why do this? It's just stupid.
 pub fn gunzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<PathBuf> {
     let input: PathBuf = input.as_ref().to_path_buf();
     let output: PathBuf = output.as_ref().to_path_buf();
@@ -470,6 +501,7 @@ pub fn gunzip_file(input: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<
     Ok(unzipped)
 }
 
+/// Touch a file, intimately, to update its timestamp to now.
 pub fn update_timestamps(path: &PathBuf) -> anyhow::Result<()> {
     let mut files_touched = 0;
     if path.is_file() {

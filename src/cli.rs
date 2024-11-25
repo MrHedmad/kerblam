@@ -7,6 +7,7 @@ use crate::commands::{
     DataCommand, IgnoreCommand, NewCommand, PackageCommand, ReplayCommand, RunCommand,
 };
 
+/// This string is displayed when the help message is invoked.
 const KERBLAM_LONG_ABOUT: &str = concat!(
     "  _  __           _     _               _ \n",
     " | |/ / ___  _ _ | |__ | | __ _  _ __  | |\n",
@@ -20,6 +21,9 @@ const KERBLAM_LONG_ABOUT: &str = concat!(
     "The source code is available at https://github.com/MrHedmad/kerblam"
 );
 
+/// A very simple trait that every command has
+///
+/// This makes it easier to implement the right signature with tab-completion
 pub trait Executable {
     fn execute(self) -> Result<()>;
 }
@@ -30,6 +34,9 @@ pub struct Cli {
     #[command(subcommand)]
     command: Command,
 }
+
+// Each command has its own docstring near the implementation of the
+// **Command struct. See the deeper files.
 
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -54,8 +61,11 @@ impl Executable for Command {
     }
 }
 
+// This is the same as the trait `Executable`, but for module privacy reasons
+// it's not implemented as such, but as a normal (associated) function.
+// Plus, it's hard to store the args data in the Cli struct, so an associated
+// function would be needed anyway.
 impl Cli {
-    /// Execute whatever instruction the CLI got
     pub fn execute<I, T>(raw_args: I) -> Result<()>
     where
         I: IntoIterator<Item = T>,

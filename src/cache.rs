@@ -125,6 +125,7 @@ pub fn delete_last_profile() -> Result<()> {
     Ok(())
 }
 
+/// Calculate the hash of some hashable object
 fn calc_hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();
     t.hash(&mut s);

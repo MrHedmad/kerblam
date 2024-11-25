@@ -88,17 +88,6 @@ impl From<ContainerBackend> for String {
     }
 }
 
-pub fn parse_kerblam_toml(toml_file: impl AsRef<Path>) -> Result<KerblamTomlOptions> {
-    let toml_file = toml_file.as_ref();
-    log::debug!("Reading {:?} for TOML options...", toml_file);
-    let toml_content = String::from_utf8(fs::read(toml_file)?)?;
-    let config: KerblamTomlOptions = toml::from_str(toml_content.as_str())?;
-
-    warn_kerblam_version(&config);
-
-    Ok(config)
-}
-
 #[derive(Debug)]
 pub struct RemoteFile {
     pub url: Option<Url>,
@@ -270,6 +259,21 @@ impl Display for Pipe {
 }
 
 impl KerblamTomlOptions {
+    /// Try to parse a TOML into a KerblamTomlOptions
+    ///
+    /// This also takes care of warning about the version mismatch of the TOML,
+    /// if needed.
+    pub fn try_from_file(toml_file: impl AsRef<Path>) -> Result<Self> {
+        let toml_file = toml_file.as_ref();
+        log::debug!("Reading {:?} for TOML options...", toml_file);
+        let toml_content = String::from_utf8(fs::read(toml_file)?)?;
+        let config: KerblamTomlOptions = toml::from_str(toml_content.as_str())?;
+
+        warn_kerblam_version(&config);
+
+        Ok(config)
+    }
+
     /// Return all paths representing remote files specified in the config
     ///
     /// This includes **all** the files, including those not yet downloaded.
@@ -698,14 +702,14 @@ pub fn find_and_parse_kerblam_toml() -> Result<KerblamTomlOptions> {
 
     log::debug!("Kerblam is starting in {:?}", here);
 
-    parse_kerblam_toml(toml_file)
+    KerblamTomlOptions::try_from_file(toml_file)
 }
 
 /// Find the kerblam.toml file in the working directory tree
 ///
 /// This function starts from the current working directory and
 /// works its way up to find a kerblam.toml file, returning its
-/// path if it finds one.
+/// path if it finds one, or None otherwise.
 pub fn find_kerblam_toml() -> Option<PathBuf> {
     let here = current_dir().unwrap();
 

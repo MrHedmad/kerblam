@@ -14,6 +14,8 @@ use cli::Cli;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Run Kerblam! with a certain arguments list.
+///
+/// This is *the* way that Kerblam! is invoked through.
 pub fn kerblam<I, T>(arguments: I) -> anyhow::Result<()>
 where
     I: Iterator<Item = T>,
