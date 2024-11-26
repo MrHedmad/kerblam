@@ -552,8 +552,7 @@ impl<T: Into<PathBuf> + Hash + std::cmp::Eq + Clone + std::fmt::Debug> Profile<T
                     FileMover::from((
                         &self.root_dir.join(&original),
                         push_fragment(
-                            self.temp_dir
-                                .join(original.strip_prefix(&self.root_dir).unwrap()),
+                            self.temp_dir.join(original.file_name().unwrap()),
                             &format!(".{}", get_salt(5)),
                         ),
                     )),
