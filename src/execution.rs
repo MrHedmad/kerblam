@@ -13,12 +13,6 @@ use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
 use lazy_static::lazy_static;
 
-#[cfg(target_family = "unix")]
-static SHELL: &str = "bash";
-
-#[cfg(target_family = "windows")]
-static SHELL: &str = "powershell";
-
 // TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
 // functions can be simplified a lot.
 // E.g. make a "cleanup: Option<Vec<PathBuf>>" to the Executor and remove
@@ -167,7 +161,7 @@ impl Executor {
                 ]),
                 ExecutionStrategy::Shell => stringify!(vec![
                     "--entrypoint",
-                    SHELL,
+                    "bash",
                     &runtime_name,
                     &format!("{}/executor", workdir)
                 ]),
@@ -186,7 +180,19 @@ impl Executor {
                     stringify![vec!["make", "-f", self.target.to.to_str().unwrap()]]
                 }
                 ExecutionStrategy::Shell => {
-                    stringify![vec![SHELL, self.target.to.to_str().unwrap()]]
+                    #[cfg(target_family = "unix")]
+                    {
+                        stringify![vec!["bash", self.target.to.to_str().unwrap()]]
+                    }
+
+                    #[cfg(target_family = "windows")]
+                    {
+                        // The double {{ and }} are the escaped forms of { and } for format!
+                        let powershell_slug = format!("& {{Invoke-command -ScriptBlock ([ScriptBlock]::Create((Get-Content {})))}}",
+                            self.target.to.into_os_string().into_string().unwrap()
+                        );
+                        stringify![vec!["powershell", "-Command", &powershell_slug]]
+                    }
                 }
             }
         };
