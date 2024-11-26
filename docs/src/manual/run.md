@@ -8,7 +8,10 @@ It automatically uses the proper execution strategy based on what extension
 the file is saved as: either `make` or `bash`.
 
 > [!IMPORTANT]
-> Shell scripts are always executed in `bash`.
+> Shell scripts are always executed in `bash` for Linux/Unix, and as Powershell
+> scripts for Windows.
+> 
+> Note that the extension for shell files is *always* `.sh`, even on windows.
 
 You can use any workflow manager that is installed on your system
 through Kerblam! (e.g. `snakemake` or `nextflow`) by writing thin shell wrappers

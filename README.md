@@ -118,7 +118,7 @@ It provides an overview of what Kerblam! is and does with an hands-on project.
 > binaries in the releases tab, the command below or compile directly from git with
 > `cargo install --git https://github.com/MrHedmad/kerblam`.
 
-In short, use a unix-compatible OS and either: 
+In short, use: 
 ```bash
 # Install a prebuilt binary
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/MrHedmad/kerblam/releases/latest/download/kerblam-installer.sh | sh
