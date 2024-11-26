@@ -1,10 +1,15 @@
 use core::iter::Sum;
 use std::fmt::Display;
 use std::fs;
-use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 
 use crate::options::KerblamTomlOptions;
+
+#[cfg(target_family = "windows")]
+use std::os::windows::fs::MetadataExt;
+
+#[cfg(target_family = "unix")]
+use std::os::unix::fs::MetadataExt;
 
 #[derive(Debug, Clone)]
 /// Wrapper to interpret a usize as a File size.
@@ -19,6 +24,14 @@ impl TryFrom<PathBuf> for FileSize {
     fn try_from(value: PathBuf) -> std::result::Result<Self, Self::Error> {
         let meta = fs::metadata(value)?;
 
+        #[cfg(target_family = "windows")]
+        {
+            Ok(FileSize {
+                size: meta.file_size() as usize,
+            })
+        }
+
+        #[cfg(target_family = "unix")]
         Ok(FileSize {
             size: meta.size() as usize,
         })
