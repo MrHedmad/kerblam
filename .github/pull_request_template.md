@@ -13,6 +13,7 @@ You can delete this comment, if you'd like!
 
 ## TODO
 Before merging, tick all of these boxes:
+- [ ] New unit or integration tests have been added, as needed.
 - [ ] `cargo test -- --include-ignored` passes without errors or warnings.
 - [ ] The [`CHANGELOG.md`](https://github.com/MrHedmad/kerblam/blob/main/CHANGELOG.md) has been updated to reflect these changes.
 - [ ] Documentation is updated that reflect these changes, or this PR changes nothing that is reflected in the docs.
