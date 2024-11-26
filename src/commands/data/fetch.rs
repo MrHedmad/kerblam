@@ -141,13 +141,15 @@ fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
 /// If the download fails, the progress bar is cleaned up an this function
 /// returns the error.
 fn fetch_remote_file(client: &Client, url: Url, target: PathBuf) -> Result<()> {
+    // This used to have an emoji - but it got removed due to an issue in
+    // indicatif: https://github.com/console-rs/indicatif/issues/497
+    // You can re-introduce it if it ever gets fixed.
     let spinner_bar_style =
-        ProgressStyle::with_template("⬇️  [{binary_bytes_per_sec}] {msg} {spinner} ({elapsed})")
+        ProgressStyle::with_template("[{binary_bytes_per_sec}] {msg} {spinner} ({elapsed})")
             .unwrap();
-    let bar_style = ProgressStyle::with_template(
-        "⬇️  [{binary_bytes_per_sec}] {msg} {wide_bar} {eta} ({elapsed})",
-    )
-    .unwrap();
+    let bar_style =
+        ProgressStyle::with_template("[{binary_bytes_per_sec}] {msg} {wide_bar} {eta} ({elapsed})")
+            .unwrap();
     let filename = target.file_name().unwrap().to_string_lossy();
     let created_msg = format!("Created {}!", filename);
     let bar_msg = format!("Fetching {}", filename);

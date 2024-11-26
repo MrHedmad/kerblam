@@ -37,6 +37,9 @@ the top. Non pre-release versions sometimes have an associated name.
   your old profile files for you (to trigger workflows), but it failed (since
   you deleted the profile). Now, the error is ignored, and Kerblam! simply
   complains with a warning.
+- Fixed an issue in `indicatif` (see [here](https://github.com/console-rs/indicatif/issues/497))
+  that caused the download bar shown when invoking `kerblam data fetch` to not
+  reset correctly, spamming the terminal with broken bars.
 
 ## [v1.1.1] - 2024-10-14
 
