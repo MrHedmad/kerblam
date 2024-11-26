@@ -23,6 +23,8 @@ the top. Non pre-release versions sometimes have an associated name.
   fetching the file with `kerblam data fetch`, but will still treat it as
   remote for all other purposes (e.g. for `kerblam data clean`).
   This allows the user to use non-canonical fetching methods.
+- Experimental: Kerblam! is now compatible with Windows.
+  In Windows systems, shell scripts are executed with PowerShell instead of Bash.
 
 ### Changed
 - The way that profiles are handled was changed.

@@ -109,7 +109,7 @@ impl Executor {
     /// Execute this executor based on its data
     ///
     /// Either builds and runs a container, or executes make and/or
-    /// bash, depending on the execution strategy.
+    /// bash (powershell on windows), depending on the execution strategy.
     ///
     /// Needs the kerblam config to work, as we need to bind-mount the local
     /// paths in the containers as locally needed and follow other settings.
@@ -180,7 +180,19 @@ impl Executor {
                     stringify![vec!["make", "-f", self.target.to.to_str().unwrap()]]
                 }
                 ExecutionStrategy::Shell => {
-                    stringify![vec!["bash", self.target.to.to_str().unwrap()]]
+                    #[cfg(target_family = "unix")]
+                    {
+                        stringify![vec!["bash", self.target.to.to_str().unwrap()]]
+                    }
+
+                    #[cfg(target_family = "windows")]
+                    {
+                        // The double {{ and }} are the escaped forms of { and } for format!
+                        let powershell_slug = format!("& {{Invoke-command -ScriptBlock ([ScriptBlock]::Create((Get-Content {})))}}",
+                            self.target.to.into_os_string().into_string().unwrap()
+                        );
+                        stringify![vec!["powershell", "-Command", &powershell_slug]]
+                    }
                 }
             }
         };
@@ -414,7 +426,16 @@ impl FileMover {
     fn _link(&self) -> Result<PathBuf> {
         // TODO: Make this compatible with other operating systems.
         log::debug!("Linking {:?} to {:?}", self.from, self.to);
+
+        #[cfg(target_family = "unix")]
         std::os::unix::fs::symlink(self.from.clone(), self.to.clone())?;
+
+        #[cfg(target_family = "windows")]
+        if self.from.is_dir() {
+            std::os::windows::fs::symlink_dir(self.from.clone(), self.to.clone())?;
+        } else {
+            std::os::windows::fs::symlink_file(self.from.clone(), self.to.clone())?;
+        }
 
         Ok(self.to.clone())
     }
