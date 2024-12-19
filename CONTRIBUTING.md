@@ -88,13 +88,16 @@ due to your specific environment before starting the debug process.
 ## Cutting releases
 
 When we are ready to push a new release, do the following:
-- Update `cargo.toml` with the new tag, and commit the change.
+- Check if `cargo dist` needs to be updated (update `cargo dist` via package manager, then
+  run `cargo dist init` to apply the new configuration). Commit the change and push.
+- Update `cargo.toml` with the new tag, commit the change and push.
 - To trigger a release, push a tag to the `main` branch with the version that
   needs to be release.
   This triggers `cargo-dist` to build the binaries and installers and upload them
   to the release.
   - For example: `git tag v0.0.0 && git push --tags`
 - To publish on `crates.io`, use `cargo publish` after triggering `cargo-dist`.
+  - Wait until the `cargo dist` action on Github has concluded before pushing to crates.io.
 
 And you're done! You might want to edit the release made automatically by
 `cargo-dist` with more information, perhaps by adding a changelog.
