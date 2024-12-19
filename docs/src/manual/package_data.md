@@ -13,3 +13,8 @@ non-remotely-available `.data/in` files and the files in `./data/out`.
 You can also pass the `--cleanup` flag to also delete them after packing.
 
 You can then share the data pack with others.
+
+## Omit input data
+If you only want to package your output data, simply pass the `--output-only`
+flag to `kerblam data pack`.
+The resulting tarball will just contain the `data/out` folder.

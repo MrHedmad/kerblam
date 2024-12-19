@@ -23,6 +23,10 @@ the top. Non pre-release versions sometimes have an associated name.
   fetching the file with `kerblam data fetch`, but will still treat it as
   remote for all other purposes (e.g. for `kerblam data clean`).
   This allows the user to use non-canonical fetching methods.
+- Added the `--output-only` option to `kerblam data pack` to only package output
+  files, without the precious input files.
+  - To package only precious input files, use the `kerblam data clean` command
+    before packaging the data.
 
 ### Changed
 - The way that profiles are handled was changed.

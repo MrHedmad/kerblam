@@ -24,7 +24,11 @@ use clap::Args;
 #[derive(Args, Debug, Clone)]
 #[command(verbatim_doc_comment)]
 pub struct PackCommand {
+    /// Output path to store the resulting tar.gz file.
     output_path: Option<PathBuf>,
+    /// Do not include input data, only output.
+    #[arg(long, short, action)]
+    output_only: bool,
 }
 
 impl Executable for PackCommand {
@@ -34,6 +38,7 @@ impl Executable for PackCommand {
             config,
             self.output_path
                 .unwrap_or(current_dir()?.join("data/data_export.tar.gz")),
+            self.output_only,
         )
     }
 }
@@ -41,6 +46,7 @@ impl Executable for PackCommand {
 fn package_data_to_archive(
     config: KerblamTomlOptions,
     output_path: impl AsRef<Path>,
+    output_only: bool,
 ) -> Result<()> {
     let output_path = output_path.as_ref();
     // This is to render relative paths not relative.
@@ -48,11 +54,19 @@ fn package_data_to_archive(
 
     let precious_files = config.precious_files();
 
-    let files_to_package: Vec<PathBuf> = [precious_files, config.output_files()]
-        .concat()
-        .into_iter()
-        .filter(|x| x.is_file())
-        .collect();
+    let files_to_package: Vec<PathBuf> = if output_only {
+        config
+            .output_files()
+            .into_iter()
+            .filter(|x| x.is_file())
+            .collect()
+    } else {
+        [precious_files, config.output_files()]
+            .concat()
+            .into_iter()
+            .filter(|x| x.is_file())
+            .collect()
+    };
 
     if files_to_package.is_empty() {
         println!("🕸️ Nothing to pack!");
