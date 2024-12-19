@@ -395,20 +395,26 @@ impl KerblamTomlOptions {
     /// Return all files that are deemed 'volatile'
     ///
     /// Volatile files are output files, remote files and intermediate files.
-    pub fn volatile_files(&self) -> Vec<PathBuf> {
-        [
-            self.intermediate_files(),
-            self.output_files(),
-            self.downloaded_files()
-                .into_iter()
-                .map(|x| x.path)
-                .collect(),
-        ]
-        .concat()
-        .into_iter()
-        // Get rid of hidden files - we ignore them like a good little program should.
-        .filter(|x| !x.file_name().unwrap().to_string_lossy().starts_with('.'))
-        .collect()
+    pub fn volatile_files(&self, output: bool, remote: bool) -> Vec<PathBuf> {
+        let mut files = self.intermediate_files();
+
+        if output {
+            files.extend(self.output_files());
+        }
+        if remote {
+            files.extend(
+                self.downloaded_files()
+                    .into_iter()
+                    .map(|x| x.path)
+                    .collect::<Vec<PathBuf>>(),
+            );
+        }
+
+        files
+            .into_iter()
+            // Get rid of hidden files - we ignore them like a good little program should.
+            .filter(|x| !x.file_name().unwrap().to_string_lossy().starts_with('.'))
+            .collect()
     }
 
     /// Return all files that are deemed 'precious'

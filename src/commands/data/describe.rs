@@ -177,7 +177,7 @@ impl TryFrom<KerblamTomlOptions> for DataStatus {
             input_data: unsafe_path_filesize_conversion(&input_files),
             output_data: unsafe_path_filesize_conversion(&output_files),
             remote_data: unsafe_path_filesize_conversion(&remote_files),
-            cleanable_data: unsafe_path_filesize_conversion(&value.volatile_files()),
+            cleanable_data: unsafe_path_filesize_conversion(&value.volatile_files(true, true)),
             not_local: undownloaded_files.len() as u64,
         })
     }

@@ -21,6 +21,8 @@ pass the `--keep-dirs` flag to do just that.
 Kerblam! will ask for your confirmation before deleting the files.
 If you're feeling bold, skip it with the `--yes` flag.
 
+With the `--preserve-output` flag, Kerblam! will skip deleting the output files.
+
 ## Dry runs
 With the `--dry-run` option, Kerblam! will just show the list of files to be deleted,
 without *actually* deleting anything:
@@ -30,4 +32,3 @@ Files to clean:
 data/temp.csv
 data/out/finala.txt
 ```
-

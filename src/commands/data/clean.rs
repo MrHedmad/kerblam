@@ -36,6 +36,9 @@ pub struct CleanCommand {
     #[arg(long, short('r'), action)]
     /// Also delete locally present remote files.
     include_remote: bool,
+    /// Do not delete output files.
+    #[arg(long, action)]
+    preserve_output: bool,
     #[arg(long, short('d'), action)]
     /// Do not delete locally present directories.
     keep_dirs: bool,
@@ -53,6 +56,7 @@ impl Executable for CleanCommand {
         clean_data(
             config,
             !self.include_remote,
+            self.preserve_output,
             self.keep_dirs,
             self.yes,
             self.dry_run,
@@ -99,11 +103,12 @@ fn delete_files(files: Vec<PathBuf>) -> Result<()> {
 fn clean_data(
     config: KerblamTomlOptions,
     keep_remote: bool,
+    keep_output: bool,
     keep_dirs: bool,
     skip_confirm: bool,
     dry_run: bool,
 ) -> Result<()> {
-    let cleanable_files = config.volatile_files();
+    let cleanable_files = config.volatile_files(!keep_output, true);
     let remote_files: Vec<PathBuf> = config
         .remote_files()
         .into_iter()

@@ -15,6 +15,8 @@ the top. Non pre-release versions sometimes have an associated name.
 ### Added
 - Added the `--dry-run` option to `kerblam data clean` to only show the files
   that will be deleted without actually doing anything to them.
+- Added the `--preserve-output` option to `kerblam data clean` to skip cleaning
+  the output files.
 - When using a profile, specifying `"_"` as target will simply temporarily hide
   the file for the duration of the workflow.
   For example `"test.txt" = "_"` will temporarily remove the `"test.txt"` file
