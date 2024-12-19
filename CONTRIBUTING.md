@@ -90,6 +90,8 @@ due to your specific environment before starting the debug process.
 When we are ready to push a new release, do the following:
 - Check if `cargo dist` needs to be updated (update `cargo dist` via package manager, then
   run `cargo dist init` to apply the new configuration). Commit the change and push.
+- Check the changelog. Come up with a new SemVer tag appropriately.
+- Edit the changelog with the new tag, replacing the `[Unreleased]` section to `[v0.0.0] - YYYY-MM-DD`.
 - Update `cargo.toml` with the new tag, commit the change and push.
 - To trigger a release, push a tag to the `main` branch with the version that
   needs to be release.
