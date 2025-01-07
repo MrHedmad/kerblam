@@ -173,7 +173,15 @@ pub fn package_pipe(
     let kerblam_path = temp_build_dir.path().join("kerblam");
     copy(myself, kerblam_path)?;
 
-    let content = format!("FROM {base_container}\nWORKDIR {workdir}\nCOPY ./kerblam .\nENTRYPOINT [\"./kerblam\", \"run\", \"{pipe_name}\"]");
+    // Create the execution file for replay
+    let execution = format!("set -euo pipefail\n./kerblam data fetch\n./kerblam run {pipe_name}");
+    let execution_file_path = temp_build_dir.path().join("replay.sh");
+    let mut new_execution_file = File::create(&execution_file_path)?;
+    new_execution_file.write_all(execution.as_bytes())?;
+
+    let content = format!(
+        "FROM {base_container}\nWORKDIR {workdir}\nCOPY ./kerblam ./replay.sh .\nENTRYPOINT [\"/bin/bash\", \"./replay.sh\"]"
+    );
     log::debug!("Execution string: {content}");
     let new_container_file_path = temp_build_dir.path().join("Containerfile");
     let mut new_container_file = File::create(&new_container_file_path)?;
