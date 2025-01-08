@@ -155,13 +155,3 @@ This project is named after the fictitious online shop/delivery company in
 Kerblam! might be referred to as Kerblam!, Kerblam or Kerb!am, interchangeably, although Kerblam! is preferred.
 The Kerblam! logo is written in the [Kwark Font](https://www.1001fonts.com/kwark-font.html)
 by [tup wanders](https://www.1001fonts.com/users/tup/).
-
----
-
-<div align="center">
-
-And remember! If you want it...
-
-![Kerblam it!](docs/images/kerblam_it.gif)
-
-</div>
