@@ -15,7 +15,7 @@ exclude = [
     ".pre-commit-config.yaml", "trun"
 ]
 autotests = false
-rust-version = "1.78"
+rust-version = "1.86"
 
 [lib]
 doctest = false
