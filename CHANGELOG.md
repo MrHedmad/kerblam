@@ -11,7 +11,7 @@ Possible sections are "Added", "Changed", "Deprecated", "Removed", "Fixed" and
 Versions are listed in reverse chronological order, with the most recent at
 the top. Non pre-release versions sometimes have an associated name.
 
-## [Unreleased]
+## [v1.2.1] - 2025-04-15
 ### Fixed
 - Kerblam package will now correctly configure the resulting container to
   fetch the remote data and only then run the configured pipe, as one would
