@@ -227,7 +227,7 @@ pub fn fetch_gitignore(name: &str) -> Result<String> {
         name
     );
 
-    let response = reqwest::blocking::get(url)?.text()?;
+    let response = ureq::get(url).call()?.into_body().read_to_string()?;
     Ok(response)
 }
 
