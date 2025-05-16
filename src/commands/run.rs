@@ -59,6 +59,8 @@ impl Executable for RunCommand {
         let config = find_and_parse_kerblam_toml()?;
         let pipe = find_pipe_by_name(&config, self.module_name)?;
         if self.desc {
+            println!("DEPRECATION WARNING: The --desc option is deprecated, and will be removed in a future version of Kerblam!. Use 'kerblam inspect <name>' instead.");
+            #[allow(deprecated)]
             print_md(&pipe.long_description());
             return Ok(());
         }
