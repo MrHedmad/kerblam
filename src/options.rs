@@ -205,6 +205,10 @@ impl Pipe {
     }
 
     /// Generate a long description for this pipe
+    #[deprecated(
+        since = "1.3.0",
+        note = "Please use the Pipe.description() struct directly instead."
+    )]
     pub fn long_description(self) -> String {
         let desc = self
             .description()

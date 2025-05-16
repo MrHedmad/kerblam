@@ -4,7 +4,8 @@ use std::ffi::OsString;
 use anyhow::Result;
 
 use crate::commands::{
-    DataCommand, IgnoreCommand, NewCommand, PackageCommand, ReplayCommand, RunCommand,
+    DataCommand, IgnoreCommand, InspectCommand, NewCommand, PackageCommand, ReplayCommand,
+    RunCommand,
 };
 
 /// This string is displayed when the help message is invoked.
@@ -46,6 +47,7 @@ enum Command {
     Replay(ReplayCommand),
     Package(PackageCommand),
     Ignore(IgnoreCommand),
+    Inspect(InspectCommand),
 }
 
 impl Executable for Command {
@@ -57,6 +59,7 @@ impl Executable for Command {
             Self::Replay(x) => x.execute(),
             Self::Package(x) => x.execute(),
             Self::Ignore(x) => x.execute(),
+            Self::Inspect(x) => x.execute(),
         }
     }
 }

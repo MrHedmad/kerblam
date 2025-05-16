@@ -3,6 +3,7 @@ use crate::options::find_and_parse_kerblam_toml;
 use clap::Args;
 use std::borrow::Cow;
 use std::fs::{self, create_dir_all};
+use std::io::copy;
 use std::path::PathBuf;
 
 use crate::options::{KerblamTomlOptions, RemoteFile};
@@ -10,7 +11,7 @@ use crate::utils::{ask_for, YesNo};
 
 use anyhow::{bail, Result};
 use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
-use reqwest::blocking::Client;
+use ureq;
 use url::Url;
 
 /// Fetch remote data and save it locally
@@ -107,8 +108,6 @@ fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
     }
 
     let mut success = true;
-    let client = Client::new();
-
     for file in remote_files {
         // Stop if the file is already there
         if file.path.exists() {
@@ -118,7 +117,6 @@ fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
         }
 
         if let Err(msg) = fetch_remote_file(
-            &client,
             file.url.expect("This is expected due to above filtering"),
             file.path,
         ) {
@@ -140,7 +138,7 @@ fn fetch_remote_data(config: KerblamTomlOptions) -> Result<()> {
 /// the download progress.
 /// If the download fails, the progress bar is cleaned up an this function
 /// returns the error.
-fn fetch_remote_file(client: &Client, url: Url, target: PathBuf) -> Result<()> {
+fn fetch_remote_file(url: Url, target: PathBuf) -> Result<()> {
     // This used to have an emoji - but it got removed due to an issue in
     // indicatif: https://github.com/console-rs/indicatif/issues/497
     // You can re-introduce it if it ever gets fixed.
@@ -154,18 +152,14 @@ fn fetch_remote_file(client: &Client, url: Url, target: PathBuf) -> Result<()> {
     let created_msg = format!("Created {}!", filename);
     let bar_msg = format!("Fetching {}", filename);
 
-    let mut result = match client.get(url).send() {
+    let result = match ureq::get(url.as_str()).call() {
         Ok(res) => res,
         Err(e) => {
             bail!("Failed to fetch {}! {}", target.to_string_lossy(), e);
         }
     };
     // See if we have the content size
-    let size = result
-        .headers()
-        .get("content-length")
-        .and_then(|val| val.to_str().unwrap().parse::<u64>().ok());
-
+    let size = result.body().content_length();
     let progress = match size {
         None => ProgressBar::new_spinner()
             .with_style(spinner_bar_style.clone())
@@ -189,7 +183,7 @@ fn fetch_remote_file(client: &Client, url: Url, target: PathBuf) -> Result<()> {
 
     // Create the container dir and open a file connection
     let _ = create_dir_all(target.parent().unwrap());
-    let writer = match fs::File::create(target) {
+    let mut writer = match fs::File::create(target) {
         Ok(f) => f,
         Err(e) => {
             // We are failing but we still clear the bar as normal
@@ -198,7 +192,9 @@ fn fetch_remote_file(client: &Client, url: Url, target: PathBuf) -> Result<()> {
         }
     };
 
-    match result.copy_to(&mut progress.wrap_write(writer)) {
+    let mut reader = result.into_body().into_reader();
+
+    match copy(&mut reader, &mut writer) {
         Ok(_) => progress.finish_using_style(),
         Err(e) => {
             bail!(" ❌ Failed to write to output buffer: {e}");
