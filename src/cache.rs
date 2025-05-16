@@ -1,3 +1,4 @@
+use chrono::{self, Utc};
 use std::env::current_dir;
 use std::fs::File;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -8,9 +9,23 @@ use anyhow::Result;
 use homedir::get_my_home;
 use serde::{Deserialize, Serialize};
 
+use crate::filesystem_state::FilesystemDiff;
+
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Cache {
     pub last_executed_profile: Option<String>,
+    pub run_metadata: Option<Vec<RunMetadata>>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RunMetadata {
+    pub start_timestamp: i64,
+    pub end_timestamp: i64,
+    pub exit_code: i32,
+    pub pipe_path: PathBuf,
+    pub env_path: Option<PathBuf>,
+    pub used_env: bool,
+    pub modified_files: Vec<FilesystemDiff>,
 }
 
 /// Return the cache file for the current directory
@@ -31,7 +46,10 @@ pub fn get_cache_path() -> Result<PathBuf> {
         std::fs::create_dir_all(&cache_dir)?;
     };
     let path_hash = calc_hash(&current_dir().unwrap());
-    Ok(cache_dir.join(format!("{}", path_hash)))
+    let cache_path = cache_dir.join(format!("{}", path_hash));
+    log::debug!("Determined cache path: {:?}", cache_path);
+
+    Ok(cache_path)
 }
 
 /// Read the content of the cache file to a string

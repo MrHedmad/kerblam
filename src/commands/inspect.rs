@@ -1,7 +1,9 @@
 use std::{env::current_dir, process::exit};
 
 use crate::{
+    cache::{get_cache, RunMetadata},
     cli::Executable,
+    filesystem_state::generate_tree_summary,
     options::find_and_parse_kerblam_toml,
     utils::{find_pipe_by_name, print_md},
 };
@@ -22,6 +24,9 @@ use clap::Args;
 pub struct InspectCommand {
     /// Name of the workflow to be inspected
     module_name: Option<String>,
+    /// Show the latest run information for this workflow
+    #[arg(long, short)]
+    trace: bool,
 }
 
 impl Executable for InspectCommand {
@@ -31,6 +36,24 @@ impl Executable for InspectCommand {
         let here = current_dir().unwrap().to_string_lossy().into_owned();
         // It's safe to unwrape the name, the previous call would have failed.
         let module_name = self.module_name.unwrap();
+
+        let cache = get_cache();
+        let last_run_trace: Option<RunMetadata> = if cache.is_none() {
+            None
+        } else {
+            let cache = cache.unwrap();
+            if cache.run_metadata.is_none() {
+                None
+            } else {
+                let meta = cache.run_metadata.unwrap();
+                let last_run = meta
+                    .into_iter()
+                    .rev()
+                    .find(|s| s.pipe_path == pipe.pipe_path);
+
+                last_run
+            }
+        };
 
         // Unpack the description struct and set defaults if needed.
         let desc = match pipe.description() {
@@ -73,6 +96,21 @@ impl Executable for InspectCommand {
                 println!("❌ No workflow description found.")
             }
         }
+
+        if !self.trace {
+            if last_run_trace.is_some() {
+                println!("Omitted trace information. Use --trace to include.");
+            } else {
+                println!("No trace information for this run.")
+            }
+            return Ok(());
+        };
+
+        // We have to show the trace information
+        println!(
+            "-- Last run file differences --\n\n{}",
+            generate_tree_summary(&last_run_trace.unwrap().modified_files)
+        );
 
         Ok(())
     }
