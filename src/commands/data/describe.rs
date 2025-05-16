@@ -102,7 +102,7 @@ impl Display for DataStatus {
         ));
 
         concat.push(format!(
-            "└── in\t{} [{}]",
+            "├── in\t{} [{}]",
             self.input_data.clone().into_iter().sum::<FileSize>(),
             self.input_data.len()
         ));
@@ -135,7 +135,7 @@ impl Display for DataStatus {
         ));
 
         concat.push(format!(
-            "└── remote\t{} [{}]",
+            "    └── remote\t{} [{}]",
             self.remote_data.clone().into_iter().sum::<FileSize>(),
             self.remote_data.len()
         ));
