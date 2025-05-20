@@ -1,7 +1,7 @@
 # Quickstart
 
 Welcome to Kerblam! This page will give you a hands-on introduction.
-If you like what you see, you can check out [the manual](manual/intro.md)
+If you like what you see, you can check out [the manual](intro.md)
 to learn all there is to know about Kerblam!
 
 To follow along, be sure to be comfortable in the command line and
