@@ -55,7 +55,7 @@ You can run your same workflows, *as-is*, on different data thanks to data profi
 
 By default, Kerblam! will leave `./data/in/` untouched when running workflow managers.
 If you want the same workflows to run on different sets of input data, Kerblam! can
-temporarily swap out your real data with this 'substitute' data during execution.
+temporarily swap out your real data with this 'substitute' data or completely hide it during execution.
 
 For example, a `process_csv.makefile` requires an input `./data/in/input.csv` file.
 However, you might want to run the same workflow on another, `different_input.csv` file.
@@ -135,7 +135,22 @@ fails, and even if you kill your workflow with `CTRL-C`.
 > process to be cleaned up by the OS and the (eventual) profile not cleaned up.
 >
 > This is to allow you to stop whatever Kerblam! or the workflow is doing in
-> case of emergency.
+> case of emergency, but be careful that eventual profiles will not be cleaned up.
+
+### Temporarely hiding files with profiles
+If you specify in a data profile the special symbol `"_"` as the replacement file,
+Kerblam! will temporarily hide the file during the workflow execution.
+The file is actually moved in the `.kerblam` folder at the project's root.
+This can be useful in case some workflow looks for all files in a folder, so just
+renaming them is not enough to exclude them.
+
+For example:
+
+```toml
+[data.profiles.hide_some_inputs]
+"file_to_hide.txt" = "_"
+```
+Will move `file_to_hide.txt` away during the execution, hiding it from the workflow.
 
 ### Detecting if you are in a profiled run
 
