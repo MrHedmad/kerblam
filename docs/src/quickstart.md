@@ -19,7 +19,6 @@ Move to a location where the new project will be stored. Run:
 ```sh
 kerblam new example_project
 ```
-Go in a directory where you want to store the new project and run `kerblam new test-project`.
 Kerblam! asks you some setup questions:
 - If you want to use [Python](https://www.python.org/);
 - If you want to use [R](https://www.r-project.org/);
@@ -37,7 +36,7 @@ Say 'yes' to all of these questions to follow along. Kerblam! will then:
   files (if you opted to use Python),
 - and setup the `.gitignore` file with appropriate ignores.
 
-You can now start working in your new project, simply `cd test-project`.
+You can now start working in your new project, simply `cd example_project`.
 Since Kerblam took care of making a virtual environment, use `source env/bin/activate`
 to start working in it.
 
@@ -69,7 +68,7 @@ Open the `kerblam.toml` file and add at the bottom:
 > The benefit of letting Kerblam! handle data retrieval for you is that, later,
 > it can delete this remote data to save disk space.
 
-Save the file and run
+Save the `kerblam.toml` file and run
 ```bash
 kerblam data fetch
 ```
@@ -84,7 +83,7 @@ disk is being used by using `kerblam data`. You'll see a summary like this:
 ──────────────────────
 Total	4 KiB [2]
 └── cleanup	4 KiB [2] (100.00%)
-└── remote	4 KiB [2]
+    └── remote	4 KiB [2]
 ```
 
 ## Write the processing logic
@@ -138,8 +137,7 @@ python src/process_csv.py data/in/iris.csv data/out/plot.png
 Try it now! It should create a `plot.png` file which you can manually inspect.
 
 ## Create and run a workflow
-This is a very simple example, but a lot of day-to-day data analysis is
-relatively straightforward.
+This is a very simple example, but a lot of day-to-day data analysis is relatively straightforward.
 In this case, we do not need a rich workflow manager: a bash script does the trick.
 
 We can let Kerblam! handle the execution through Bash.
@@ -240,34 +238,41 @@ using `kerblam replay`:
 ```bash
 # Let's move to an empty directory
 mkdir -p test-replay && cd test-replay
-kerblam replay ../
+kerblam replay ../create_iris_plot.kerblam.tar
 ```
 Kerblam! unpacks the tarball for you, creates a dummy project directory,
-fetches the remote input data and runs the pipeline for you in the correct
+fetches the remote input data and runs the pipeline in the correct
 docker container, automatically.
 
 You can use replay packages manually too - they include the kerblam binary
 that created them, so the reproducer does not need to leave anything to chance.
 
+> [!TIP]
+> If you need to send the workflow to others, upload the container image to a
+> registry by setting the correct Docker tag: `--tag my_repo/my_container:version`.
+> See the [Docker Registry](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-registry/) documentation.
+> On another PC, Kerblam! will use Docker to run the container, which will be automatically fetched from the registry at execution.
+
 ## Cleaning up
-We're done! The output is sent to the reviewers, together with the replay
-package, and we can close up shop.
+We're done! The output is sent to the reviewers, together with the replay package, and we can close up shop.
 
 If you don't want to completely delete the project, you can make it lightweight
 by using Kerblam!.
 
 Run:
 ```bash
-kerblam data clean
+kerblam data clean --include-remote
 ```
 Kerblam! will clean out all output data, intermediate (in `data/`) data and
 input data that can be fetched remotely, saving you disk space for dormant
 projects.
 
+> [!TIP]
+> You can use `kerblam data clean` during development to quickly restart a workflow without intermediate data from past runs potentially interfering during execution.
+> Some workflow managers do this for you through dedicated staging folders: Kerblam! is here in case you are not using such a tool.
+
 ## Conclusions
 
 Hopefully this toy example got you excited to use Kerblam!.
 It only showcases some of Kerblam! features.
-Read [the manual](manual/intro.md) to learn all theres is to know about how
-Kerblam! can make your life easier.
-
+Read [the manual](manual/intro.md) to learn all theres is to know about how Kerblam! can make your life easier.
