@@ -1,10 +1,14 @@
 use std::collections::HashMap;
 use std::env::current_dir;
 use std::path::PathBuf;
+use std::process::ExitStatus;
 
-use crate::cache::{check_last_profile, delete_last_profile, get_cache};
+use crate::cache::{
+    check_last_profile, delete_last_profile, get_cache, write_cache, Cache, RunMetadata,
+};
 use crate::cli::Executable;
 use crate::execution::{Executor, FileMover};
+use crate::filesystem_state::{compare_filesystem_states, FilesystemDiff, FilesystemState};
 use crate::options::extract_profile_paths;
 use crate::options::find_and_parse_kerblam_toml;
 use crate::options::KerblamTomlOptions;
@@ -14,7 +18,36 @@ use crate::utils::print_md;
 use crate::utils::update_timestamps;
 
 use anyhow::{anyhow, bail, Result};
+use chrono::Utc;
 use clap::Args;
+
+#[derive(Debug, Clone)]
+enum ProcessExitStatus {
+    Success,
+    Error { code: i32 },
+    Killed,
+    Exited,
+}
+
+impl From<Result<Option<ExitStatus>>> for ProcessExitStatus {
+    fn from(value: Result<Option<ExitStatus>>) -> Self {
+        match value {
+            Ok(status) => match status {
+                Some(status) => {
+                    if status.success() {
+                        return Self::Success;
+                    } else {
+                        return Self::Error {
+                            code: status.code().unwrap_or(143),
+                        };
+                    }
+                }
+                None => return Self::Killed,
+            },
+            Err(_) => return Self::Exited,
+        }
+    }
+}
 
 /// Start a workflow within a Kerblam! project
 ///
@@ -59,6 +92,8 @@ impl Executable for RunCommand {
         let config = find_and_parse_kerblam_toml()?;
         let pipe = find_pipe_by_name(&config, self.module_name)?;
         if self.desc {
+            println!("DEPRECATION WARNING: The --desc option is deprecated, and will be removed in a future version of Kerblam!. Use 'kerblam inspect <name>' instead.");
+            #[allow(deprecated)]
             print_md(&pipe.long_description());
             return Ok(());
         }
@@ -91,7 +126,13 @@ pub fn kerblam_run_project(
     log::debug!("Profile: {:?}", profile);
 
     // Create an executor for later.
-    let executor: Executor = pipe.into_executor(runtime_dir)?;
+    let executor: Executor = pipe.clone().into_executor(runtime_dir)?;
+
+    // Save the filesystem state
+    log::debug!("Getting filesystem state before run execution...");
+    let initial_input_state = FilesystemState::new(config.input_data_dir())?;
+    let initial_output_state = FilesystemState::new(config.output_data_dir())?;
+    let initial_intermediate_states = FilesystemState::new(config.intermediate_data_dir())?;
 
     // Handle renaming the input files if we are in a profile
     let unwinding_paths: Vec<FileMover> = if let Some(profile) = profile.clone() {
@@ -193,8 +234,13 @@ pub fn kerblam_run_project(
         HashMap::new()
     };
 
+    // Save run metadata before the execution
+    let run_start = Utc::now();
+
     // Execute the executor
-    let runtime_result = executor.execute(&config, env_vars, skip_build_cache, extra_args);
+    let runtime_result: ProcessExitStatus = executor
+        .execute(&config, env_vars, skip_build_cache, extra_args)
+        .into();
 
     // Undo the input file renaming
     if !unwinding_paths.is_empty() {
@@ -209,22 +255,58 @@ pub fn kerblam_run_project(
         }
     }
 
-    // Try and destroy the symlinks
+    // Save run metadata after the execution
+    let run_end = Utc::now();
+    log::debug!("Getting filesystem state after run execution...");
+    let state_diffs: Vec<FilesystemDiff> = vec![
+        compare_filesystem_states(
+            &initial_input_state,
+            &FilesystemState::new(config.input_data_dir())?,
+        ),
+        compare_filesystem_states(
+            &initial_output_state,
+            &FilesystemState::new(config.output_data_dir())?,
+        ),
+        compare_filesystem_states(
+            &initial_intermediate_states,
+            &FilesystemState::new(config.intermediate_data_dir())?,
+        ),
+    ];
+
+    // Build a metadata object and push it into the cache
+    let run_metadata = RunMetadata {
+        start_timestamp: run_start.timestamp(),
+        end_timestamp: run_end.timestamp(),
+        exit_code: match runtime_result.clone() {
+            ProcessExitStatus::Success => 0,
+            ProcessExitStatus::Killed => 143,
+            ProcessExitStatus::Exited => -1,
+            ProcessExitStatus::Error { code } => code,
+        },
+        pipe_path: pipe.pipe_path.clone(),
+        env_path: pipe.env_path.clone(),
+        used_env: pipe.env_path.is_some() & !ignore_container,
+        modified_files: state_diffs,
+    };
+
+    // Update the cache and save it.
+    let mut cache = get_cache().unwrap_or(Cache::default());
+    match cache.run_metadata {
+        Some(ref mut meta) => meta.push(run_metadata),
+        None => cache.run_metadata = Some(vec![run_metadata]),
+    }
+    match write_cache(cache) {
+        Ok(_) => {}
+        Err(e) => log::warn!("Failed to write cache file: {:?}", e),
+    };
 
     // Return either an error or OK, if the pipeline finished appropriately
     // or crashed and burned.
-    if runtime_result.is_ok() {
-        match runtime_result.unwrap() {
-            Some(res) => {
-                if res.success() {
-                    Ok(())
-                } else {
-                    Err(anyhow!("Process exited with error: {res:?}"))
-                }
-            }
-            None => Err(anyhow!("Process killed.")),
-        }
-    } else {
-        Err(anyhow!("Process exited."))
+
+    match runtime_result {
+        ProcessExitStatus::Error { code } => Err(anyhow!("Process exited with code: {}", code)),
+        ProcessExitStatus::Exited => Err(anyhow!("Process exited.")),
+        ProcessExitStatus::Killed => Err(anyhow!("Process killed.")),
+        ProcessExitStatus::Success => Ok(()),
     }
 }
