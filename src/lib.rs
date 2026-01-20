@@ -6,6 +6,7 @@ mod cache;
 mod cli;
 mod commands;
 mod execution;
+mod filesystem_state;
 mod options;
 mod utils;
 
