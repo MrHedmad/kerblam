@@ -64,7 +64,7 @@ walkdir = "^2.4"
 
 [dev-dependencies]
 chwd = "0.2.0"
-git2 = "0.18.2"
+git2 = "0.20.4"
 paste = "1.0.14"
 rusty-fork = "0.3.0"
 serial_test = "3.1.1"
