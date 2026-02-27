@@ -13,6 +13,10 @@ use anyhow::{anyhow, bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver};
 use lazy_static::lazy_static;
 
+mod strategies;
+
+use strategies::ExecutionStrategy;
+
 // TODO: I think we can add all cleanup code to `Drop`, so that a lot of these
 // functions can be simplified a lot.
 // E.g. make a "cleanup: Option<Vec<PathBuf>>" to the Executor and remove
@@ -375,14 +379,6 @@ impl Executor {
         self.env.is_some()
     }
 }
-
-#[derive(Debug, Clone)]
-pub enum ExecutionStrategy {
-    Make,
-    Shell,
-}
-
-impl Copy for ExecutionStrategy {}
 
 #[derive(Debug, Clone)]
 /// Struct to conveniently move, copy or symlink two files
